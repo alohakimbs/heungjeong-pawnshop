@@ -39,6 +39,9 @@ var rel: Dictionary = {}  # 단골 관계: {키: {visits, last}}
 var receipt: Dictionary = {}
 var auction: Dictionary = {}
 var upcoming: Array = []  # 대기 줄에 서 있는 다음 손님들의 정체
+var history: Array = []  # 날마다의 정산 기록 (통계용)
+var collection: Dictionary = {}  # 도감: "종류/이름" → 가져 본 최고 희귀도
+var col_done: Array = []  # 완성한 종류(카테고리)
 var draft := 0  # 계산기에 찍힌 금액
 var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
 
@@ -78,6 +81,11 @@ static func fmt(n: float) -> String:
 
 func toast(m: String) -> void:
 	messages.append(m)
+
+
+## 오늘 장부에 금액을 더한다 (통계용)
+func book(key: String, amount: int) -> void:
+	today[key] = int(today.get(key, 0)) + amount
 
 
 func line(key: String, price: int = -1, item: String = "") -> String:
@@ -165,6 +173,34 @@ func gen_item(fake_p := 0.1, boost := 0) -> Dictionary:
 	}
 	nid += 1
 	return it
+
+
+## 도감에 기록. 종류(카테고리)의 물건을 모두 모으면 보상.
+func collect(it: Dictionary) -> void:
+	var key := "%s/%s" % [it["cat"], it["name"]]
+	var first := not collection.has(key)
+	collection[key] = maxi(int(collection.get(key, -1)), int(it["r"]))
+	if first:
+		toast("도감에 새 물건: %s" % it["name"])
+	var cat: String = it["cat"]
+	if col_done.has(cat):
+		return
+	for t in D.items["categories"][cat]["items"]:
+		if not collection.has("%s/%s" % [cat, t[0]]):
+			return
+	col_done.append(cat)
+	var bonus := 500 * (shop + 1)
+	money += bonus
+	rep += 5
+	book("prize", bonus)
+	toast("도감 완성: %s! 수집가 협회 상금 %s, 평판 +5" % [D.items["categories"][cat]["n"], fmt(bonus)])
+
+
+func collection_total() -> int:
+	var n := 0
+	for k in D.items["categories"]:
+		n += D.items["categories"][k]["items"].size()
+	return n
 
 
 func find_item(id) -> Dictionary:
@@ -532,6 +568,7 @@ func _deal_sell(x: int) -> void:
 	money -= x
 	it["paid"] = x
 	inv.append(it)
+	collect(it)
 	if cur.get("pawn", false):
 		var days: int = cur["days"]
 		it["pawn"] = {"due": day + days, "repay": pawn_repay(x, days), "owner": cur["name"]}
@@ -602,6 +639,7 @@ func appraise(id) -> bool:
 		toast("감정비가 부족해요")
 		return false
 	money -= fee
+	book("fees", fee)
 	it["known"] = true
 	toast("정밀 감정 완료 (%s)" % fmt(fee))
 	return true
@@ -620,6 +658,7 @@ func restore(id) -> bool:
 		toast("돈이 부족해요")
 		return false
 	money -= c
+	book("fees", c)
 	it["restoring"] = true
 	toast("내일 아침까지 수리됩니다")
 	return true
@@ -637,6 +676,7 @@ func dump(id) -> bool:
 		return false
 	var p := r10(val(it, false) * 0.5)
 	money += p
+	book("sold", p)
 	stats["profit"] += p - int(it["paid"])
 	remove_item(id)
 	toast("도매상: \"%s? %s 드리죠.\"" % [it["name"], fmt(p)])
@@ -747,6 +787,7 @@ func visit_pick(i: int) -> void:
 		"insurance":
 			if i == 0:
 				money -= 300
+				book("penalty", 300)
 				md = "happy"
 				txt = "현명한 선택이십니다. 내일 또 올게요~"
 			elif has_staff("guard"):
@@ -754,6 +795,7 @@ func visit_pick(i: int) -> void:
 				txt = "(경비원 마동이 판매원을 정중하게 들어 올려 내보냈다)"
 			elif rng.randf() < 0.5:
 				money -= 900
+				book("penalty", 900)
 				md = "angry"
 				txt = "후회하실 텐데... (그날 오후 유리창이 깨졌다. 수리비 $900)"
 			else:
@@ -766,11 +808,13 @@ func visit_pick(i: int) -> void:
 			else:
 				var it := gen_item(0.0)
 				inv.append(it)
+				collect(it)
 				md = "happy"
 				txt = "%s이여. 잘 써." % it["name"]
 		"tax":
 			var f := r10(money * 0.05)
 			money -= f
+			book("penalty", f)
 			txt = "추징금 %s 납부 확인했습니다. 수고하세요." % fmt(f)
 		"streamer":
 			if i == 0:
@@ -845,6 +889,7 @@ func close_shop() -> void:
 			notes.append("%s님이 맡긴 %s을(를) 찾아감: 상환 %s" % [pw["owner"], it["name"], fmt(pw["repay"])])
 		elif left < 0:
 			it["pawn"] = {}
+			collect(it)
 			notes.append("%s님이 기한까지 오지 않아 %s은(는) 이제 내 것!" % [pw["owner"], it["name"]])
 	var stealable := inv.filter(func(i): return not is_pawned(i))
 	if not has_staff("guard") and stealable.size() > 0 and rng.randf() < 0.12:
@@ -857,11 +902,13 @@ func close_shop() -> void:
 			if sc.get("knew", true):
 				var f := r10(sc["price"] * 1.5)
 				money -= f
+				book("penalty", f)
 				rep = maxi(0, rep - 8)
 				notes.append("가품 판매 신고(%s): 벌금 %s, 평판 -8" % [sc["name"], fmt(f)])
 			else:
 				var refund := r10(int(sc["price"]) * 0.5)
 				money -= refund
+				book("penalty", refund)
 				rep = maxi(0, rep - 3)
 				notes.append("손님이 가품이라며 항의(%s): 절반 환불 %s로 합의, 평판 -3" % [sc["name"], fmt(refund)])
 		elif day - int(sc["day"]) < 5:
@@ -877,12 +924,20 @@ func close_shop() -> void:
 				break
 			var p := r10(val(it, false) * 0.5)
 			money += p
+			book("sold", p)
 			stats["profit"] += p - int(it["paid"])
 			remove_item(it["id"])
 			taken.append(it["name"])
 		if not taken.is_empty():
 			notes.append("빚 독촉: 도매상이 %s을(를) 헐값에 가져감" % ", ".join(taken))
 	receipt = {"day": day, "deals": today["deals"], "bought": today["bought"], "sold": today["sold"], "rent": int(sh["rent"]), "shop": sh["n"], "wages": wg, "lent": int(today.get("lent", 0)), "repaid": int(today.get("repaid", 0)), "d": money - int(today["start"]), "xp": today.get("xp", 0), "notes": notes}
+	var h := {"day": day, "rent": int(sh["rent"]), "wages": wg}
+	for k in ["bought", "sold", "lent", "repaid", "fees", "penalty", "prize", "deals"]:
+		h[k] = int(today.get(k, 0))
+	h["cash"] = money - int(today["start"])
+	history.append(h)
+	if history.size() > 400:
+		history.pop_front()
 
 
 ## 파산선: 차고 -$3,000, 가게 단계마다 $2,000씩 더 버틴다
@@ -900,6 +955,7 @@ func next_day() -> bool:
 		return true
 	if is_bankrupt():
 		return false
+	_finalize_history()
 	day += 1
 	start_day()
 	return true
@@ -917,6 +973,7 @@ func start_auction() -> bool:
 		toast("참가비가 부족해요")
 		return false
 	money -= auction_fee()
+	book("fees", auction_fee())
 	auction_done = true
 	auction = {"lots": [gen_item(0.12, 2), gen_item(0.12, 2), gen_item(0.12, 2)], "i": 0}
 	_start_lot()
@@ -984,6 +1041,8 @@ func _end_lot() -> void:
 		money -= price
 		it["paid"] = price
 		inv.append(it)
+		collect(it)
+		book("bought", price)
 		gain_xp(15)
 		auction["res"] = "낙찰! %s을(를) %s에 손에 넣었습니다." % [it["name"], fmt(price)]
 	elif auction["leader"] != "":
@@ -1007,7 +1066,7 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done"]
 const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft"]
 
 
@@ -1050,3 +1109,26 @@ func load_game(path := SAVE_PATH) -> bool:
 		return false
 	from_dict(parsed)
 	return true
+
+
+
+## 마감 뒤(밤)에 생긴 거래(도매 처분 등)까지 그날 기록에 반영
+func _finalize_history() -> void:
+	if history.is_empty() or int(history[-1]["day"]) != day:
+		return
+	var h: Dictionary = history[-1]
+	for k in ["bought", "sold", "lent", "repaid", "fees", "penalty", "prize", "deals"]:
+		h[k] = int(today.get(k, 0))
+	h["cash"] = money - int(today["start"])
+
+
+## 통계: 최근 n일 합계 (n=0이면 전체)
+func stats_sum(n: int = 0) -> Dictionary:
+	var out := {}
+	var rows: Array = history if n == 0 else history.slice(maxi(0, history.size() - n))
+	for h in rows:
+		for k in h:
+			if k != "day":
+				out[k] = int(out.get(k, 0)) + int(h[k])
+	out["days"] = rows.size()
+	return out

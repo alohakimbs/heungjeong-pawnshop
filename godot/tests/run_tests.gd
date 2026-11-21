@@ -37,6 +37,7 @@ func _init() -> void:
 	test_debt_liquidation()
 	test_pawn()
 	test_specials()
+	test_stats_and_collection()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -457,3 +458,22 @@ func test_specials() -> void:
 	var before: int = g.their_price()
 	g.use_special("persuade")
 	check(g.cur["gone"] or (g.their_price() != before or String(g.cur["msg"]).contains("말로")), "설득 결과가 가격이나 대사에 반영")
+
+
+func test_stats_and_collection() -> void:
+	print("[통계·도감]")
+	var g = new_game(41)
+	var bot = Bots.new(g, "random", 41)
+	for d in 10:
+		bot.play_day()
+	var sum: Dictionary = g.stats_sum(0)
+	check(int(sum["days"]) == g.history.size() and g.history.size() >= 9, "마감한 날마다 기록 (%d일)" % g.history.size())
+	check(int(sum["cash"]) == g.money - 5000, "기록된 현금 변화 합계 = 실제 현금 변화 (%s)" % g.fmt(int(sum["cash"])))
+	var w: Dictionary = g.stats_sum(7)
+	check(int(w["days"]) == mini(7, g.history.size()), "최근 7일 합계")
+	var h = new_game(42)
+	var cat: String = "art"
+	var m0: int = h.money
+	for t in data.items["categories"][cat]["items"]:
+		h.collect({"cat": cat, "name": t[0], "r": 1})
+	check(h.col_done.has(cat) and h.money > m0 and h.collection.size() == data.items["categories"][cat]["items"].size(), "한 종류 완성 시 상금 지급")

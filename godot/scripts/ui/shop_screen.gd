@@ -333,6 +333,8 @@ func _render_hud() -> void:
 		l.add_theme_color_override("font_color", Color.WHITE)
 		cv.add_child(l)
 	dyn.add_child(cal)
+	_round_button(Vector2(510, 27), "도감", func(): show_collection())
+	_round_button(Vector2(600, 27), "통계", func(): show_stats("today"))
 	_round_button(Vector2(690, 27), "장부" + (" ●" if g.sp > 0 else ""), func(): show_ledger())
 	_round_button(Vector2(780, 27), "직원", func(): show_staff())
 
@@ -1091,3 +1093,69 @@ func show_auction() -> void:
 			show_auction(), Color("#4a3a3e"), Color("#f6e7d0"), a["leader"] != "me")
 	for l in a["log"].slice(0, 4):
 		t(v, l, 13, null, Color("#d9c3a5"))
+
+
+func show_stats(mode: String) -> void:
+	var v := sheet(Color("#f3d98a"), INK, Color("#8a6420"))
+	t(v, "통계", 26, font_k)
+	var tabs := row(v)
+	for m in [["today", "오늘"], ["week", "최근 7일"], ["all", "전체"]]:
+		var mm: String = m[0]
+		btn(tabs, m[1], func(): show_stats(mm), Color("#8a6420") if mm == mode else Color("#c9a85a"), Color.WHITE if mm == mode else INK)
+	var d: Dictionary
+	if mode == "today":
+		d = g.today.duplicate()
+		d["rent"] = int(g.shop_info()["rent"])
+		d["wages"] = g.wages()
+		d["cash"] = g.money - int(g.today.get("start", g.money))
+		t(v, "오늘은 아직 마감 전입니다. 임대료·급여는 마감 때 나갑니다.", 13, null, Color("#6b4a10"))
+	else:
+		d = g.stats_sum(7 if mode == "week" else 0)
+		t(v, "마감한 날 %d일 기준" % int(d.get("days", 0)), 13, null, Color("#6b4a10"))
+	var rows := [["수입 · 판매", "sold", 1], ["수입 · 대출 상환", "repaid", 1], ["수입 · 도감 상금", "prize", 1], ["지출 · 매입", "bought", -1], ["지출 · 대출", "lent", -1], ["지출 · 감정·수리·참가비", "fees", -1], ["지출 · 벌금·사고", "penalty", -1], ["지출 · 임대료", "rent", -1], ["지출 · 직원 급여", "wages", -1]]
+	for r in rows:
+		var h := row(v)
+		var a := t(h, r[0], 16)
+		a.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		a.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var amt: int = int(d.get(r[1], 0)) * int(r[2])
+		var b := t(h, GameState.fmt(amt), 16, font_b, Color("#2f6a2a") if amt > 0 else (Color("#a02a1a") if amt < 0 else INK), HORIZONTAL_ALIGNMENT_RIGHT)
+		b.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var hh := row(v)
+	var a2 := t(hh, "현금 변화", 19, font_k)
+	a2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t(hh, GameState.fmt(int(d.get("cash", 0))), 19, font_k, Color("#2f6a2a") if int(d.get("cash", 0)) >= 0 else Color("#a02a1a"), HORIZONTAL_ALIGNMENT_RIGHT)
+	t(v, "거래 %d건 · 누적 판매 차익 %s · 도감 %d/%d" % [int(d.get("deals", 0)), GameState.fmt(g.stats["profit"]), g.collection.size(), g.collection_total()], 14)
+
+
+func show_collection() -> void:
+	var v := sheet(Color("#2a2a3a"), Color("#eceaf6"), Color("#4a4a6a"))
+	t(v, "아이템 도감  %d / %d" % [g.collection.size(), g.collection_total()], 26, font_k)
+	t(v, "한 번이라도 손에 넣은 물건이 기록됩니다. 한 종류를 모두 모으면 수집가 협회 상금과 평판을 받습니다.", 14)
+	var cats: Dictionary = D.items["categories"]
+	for ck in cats:
+		var done: bool = g.col_done.has(ck)
+		var items: Array = cats[ck]["items"]
+		var have := 0
+		for it in items:
+			if g.collection.has("%s/%s" % [ck, it[0]]):
+				have += 1
+		t(v, "%s  %d/%d%s" % [cats[ck]["n"], have, items.size(), "  ★ 완성" if done else ""], 18, font_k, Color("#ffd77a") if done else null)
+		var grid := GridContainer.new()
+		grid.columns = 6
+		grid.add_theme_constant_override("h_separation", 8)
+		grid.add_theme_constant_override("v_separation", 8)
+		v.add_child(grid)
+		for it in items:
+			var key := "%s/%s" % [ck, it[0]]
+			var owned := g.collection.has(key)
+			var card := PanelContainer.new()
+			var rc := Color(D.items["rarity"][int(g.collection[key])]["c"]) if owned else Color("#4a4a5a")
+			card.add_theme_stylebox_override("panel", _box(Color("#3a3a4e") if owned else Color("#2e2e3c"), 3, rc, 10, 6))
+			card.custom_minimum_size = Vector2(100, 92)
+			grid.add_child(card)
+			var cv := VBoxContainer.new()
+			cv.set_meta("ink", Color("#eceaf6"))
+			card.add_child(cv)
+			t(cv, it[1] if owned else "?", 30, null, Color.WHITE if owned else Color("#6a6a80"), HORIZONTAL_ALIGNMENT_CENTER)
+			t(cv, it[0] if owned else "???", 11, font_b, null, HORIZONTAL_ALIGNMENT_CENTER)

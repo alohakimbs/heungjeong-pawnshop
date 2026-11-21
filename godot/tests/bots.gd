@@ -36,7 +36,7 @@ func play_day() -> bool:
 		step()
 		check_invariants("%d일차" % g.day)
 	if guard >= 2000:
-		errors.append("%d일차: 하루가 끝나지 않음(무한 루프)" % g.day)
+		errors.append("%d일차: 하루가 끝나지 않음(무한 루프) phase=%s cur=%s stage=%s gone=%s queue=%d" % [g.day, g.phase, g.cur.get("name", "-"), g.cur.get("stage", "-"), g.cur.get("gone", "-"), g.queue])
 		return false
 	_evening()
 	return g.next_day()
