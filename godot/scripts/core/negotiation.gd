@@ -63,7 +63,7 @@ func setup_buyer(perceived: float, rarity: int, p_traits: Array, haggle_skill: i
 	mx *= 0.8 if has_trait("stingy") else 1.0
 	mx *= 1.35 if (has_trait("collector") and rarity >= 2) else 1.0
 	mx *= 1.25 if has_trait("naive") else 1.0
-	mx *= _rnd(0.95, 1.15) * (1.0 + haggle_skill * 0.02) / min_adj
+	mx *= _rnd(1.0, 1.25) * (1.0 + haggle_skill * 0.03) / min_adj
 	max_price = r10(mx)
 	offer = r10(mx * _rnd(0.5, 0.75))
 	_setup_patience(charm_skill)

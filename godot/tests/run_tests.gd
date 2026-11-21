@@ -313,10 +313,12 @@ func test_sim_smart() -> void:
 		shops.append(g.shop)
 		errs.append_array(bot.errors)
 	worths.sort()
-	print("    30일 후 순자산(현금+재고 절반): ", worths, " · 가게 단계: ", shops)
+	var moved := shops.filter(func(x): return x >= 1).size()
+	print("    30일 후 순자산(현금+재고 절반+가게 투자): ", worths, " · 가게 단계: ", shops)
 	check(errs.is_empty(), "규칙 위반 0건")
 	check(bankrupt == 0, "숙련 플레이는 파산하지 않음 (파산 %d)" % bankrupt)
 	check(worths[worths.size() / 2] > 5000, "숙련 플레이 중앙값 순자산이 시작 자금($5,000)보다 큼")
+	check(moved >= 4, "숙련 플레이 절반 이상이 30일 안에 첫 가게 이전 (%d/8)" % moved)
 
 
 func test_ui_smoke() -> void:

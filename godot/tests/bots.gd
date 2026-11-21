@@ -180,12 +180,15 @@ func _evening() -> void:
 			g.restore(it["id"])
 	if g.inv.size() >= g.cap() and g.inv.size() > 0:
 		g.dump(g.inv[0]["id"])
-	if g.shop + 1 < g.D.shops.size() and g.money > int(g.D.shops[g.shop + 1]["cost"]) * 1.6:
+	if g.shop + 1 < g.D.shops.size() and g.money > int(g.D.shops[g.shop + 1]["cost"]) + 4000:
 		g.move_shop()
 
 
+## 순자산 = 현금 + 재고(가치의 절반) + 가게 이전에 투자한 금액
 func net_worth() -> float:
 	var w := float(g.money)
+	for i in range(1, g.shop + 1):
+		w += float(g.D.shops[i]["cost"])
 	for it in g.inv:
 		w += g.val(it, false) * 0.5
 	return w
