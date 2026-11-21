@@ -16,7 +16,7 @@ var failed := 0
 
 func _init() -> void:
 	data = GameDataScript.new()
-	for scr in [GameState, Bots, Negotiation, load("res://scripts/ui/svg_art.gd"), load("res://scripts/ui/shop_screen.gd")]:
+	for scr in [GameState, Bots, Negotiation, load("res://scripts/ui/svg_art.gd"), load("res://scripts/ui/shop_screen.gd"), load("res://scripts/ui/sfx.gd")]:
 		if not scr.can_instantiate():
 			print("✗ 스크립트 컴파일 실패: ", scr.resource_path)
 			quit(1)
@@ -356,6 +356,14 @@ func test_ui_smoke() -> void:
 		opened = opened and main.modal.visible
 		main.close_modal()
 	check(opened, "창고·직원·장부·성향·키패드 화면이 열림")
+	for f in ["show_collection"]:
+		main.call(f)
+		opened = opened and main.modal.visible
+		main.close_modal()
+	main.show_stats("week")
+	check(opened and main.modal.visible, "도감·통계 화면이 열림")
+	main.close_modal()
+	check(main.sfx != null and main.sfx.bank.size() == 6, "효과음 6종 합성")
 
 
 func test_flow_and_queue() -> void:

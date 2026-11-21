@@ -743,7 +743,7 @@ func start_day() -> void:
 	var small: Array = D.text["small_news"]
 	var a: int = rng.randi_range(0, small.size() - 1)
 	var b: int = (a + rng.randi_range(1, small.size() - 1)) % small.size()
-	news = {"head": pick(D.text["headlines"]), "sub": [small[a], small[b]], "up": up, "dn": dn}
+	news = {"head": pick(D.text["headlines"]), "sub": [small[a], small[b]], "up": up, "dn": dn, "tip": (day - 1) % maxi(1, D.tips.size())}
 	if day > auction_day:
 		auction_day = day + rng.randi_range(2, 4)
 	auction_done = false

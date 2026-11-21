@@ -7,6 +7,7 @@ extends Control
 
 const GameState := preload("res://scripts/core/game_state.gd")
 const SvgArt := preload("res://scripts/ui/svg_art.gd")
+const SfxScript := preload("res://scripts/ui/sfx.gd")
 const W := 1170.0
 const H := 540.0
 const INK := Color("#2a1a10")
@@ -30,6 +31,8 @@ var toast_lbl: Label
 var bob_tween: Tween
 var _cache := {}
 var _px := 2.0
+var sfx
+var _snap := {}  # 효과음 판단용 직전 상태
 
 
 func _ready() -> void:
@@ -41,6 +44,9 @@ func _ready() -> void:
 	if not g.load_game():
 		g.start_day()
 	_build()
+	sfx = SfxScript.new()
+	add_child(sfx)
+	sfx.muted = bool(g.stats.get("muted", false))
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	render()
@@ -173,9 +179,28 @@ func hot(rect: Rect2, label: String, cb: Callable, enabled := true) -> Button:
 
 
 func _act(cb: Callable) -> void:
+	var before := _state_snap()
 	cb.call()
+	_play_for(before, _state_snap())
 	g.save_game()
 	render()
+
+
+func _state_snap() -> Dictionary:
+	return {"name": g.cur.get("name", ""), "gone": g.cur.get("gone", false), "mood": g.cur.get("mood", ""), "money": g.money, "lv": g.lv, "rounds": g.neg.rounds if g.neg != null else 0}
+
+
+func _play_for(a: Dictionary, b: Dictionary) -> void:
+	if sfx == null:
+		return
+	if b["lv"] > a["lv"]:
+		sfx.play("fanfare")
+	elif b["gone"] and not a["gone"]:
+		sfx.play("coin" if b["mood"] == "happy" else "buzz")
+	elif b["name"] != a["name"] and b["name"] != "":
+		sfx.play("door")
+	elif b["rounds"] > a["rounds"]:
+		sfx.play("tap")
 
 
 func _flush_toasts() -> void:
@@ -373,7 +398,9 @@ func _render_counter() -> void:
 		price_btn.gui_input.connect(_on_sign_drag)
 		hot(Rect2(830, 456, 100, 74), "제안하기 ✓", func(): g.propose(g.draft))
 		hot(Rect2(944, 456, 100, 74), "거절 ✗", func(): g.refuse())
-		hot(Rect2(1062, 436, 80, 96), "망치: 최종 제안", func(): g.propose(g.draft, true))
+		hot(Rect2(1062, 436, 80, 96), "망치: 최종 제안", func():
+			sfx.play("bell")
+			g.propose(g.draft, true))
 		lbl("최종", Vector2(1066, 512), Vector2(70, 22), 13, Color("#ffd77a"), font_k, HORIZONTAL_ALIGNMENT_CENTER)
 		lbl("◀ 끌어서 조정 · 눌러서 입력 ▶", Vector2(830, 446), Vector2(230, 14), 11, Color("#ffd77a"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
 
@@ -611,6 +638,9 @@ func _render_newspaper() -> void:
 	for k in D.staff:
 		if not g.has_staff(k):
 			items.append(["%s 구함" % D.staff[k]["n"], "%s · 일급 %s" % [D.staff[k]["pn"], GameState.fmt(D.staff[k]["w"])], func(): show_hire(k), Color("#2a6a5a"), true])
+	if D.tips.size() > 0:
+		var tip_i: int = int(n.get("tip", 0)) % D.tips.size()
+		items.append(["오늘의 팁 #%d" % (tip_i + 1), "눌러서 읽기", func(): g.toast(D.tips[tip_i]), Color("#5a3a9a"), true])
 	for s in n.get("sub", []):
 		items.append(["단신", s, func(): pass, Color("#3a3428"), false])
 	for i in mini(items.size(), 12):
@@ -1032,6 +1062,10 @@ func show_ledger() -> void:
 	for k in g.rel:
 		t(v, "%s — 방문 %d회, 지난번: %s" % [D.specials[k]["n"], int(g.rel[k]["visits"]), outcome.get(g.rel[k].get("last", ""), "-")], 15)
 	t(v, "누적 거래 %d건 · 판매 차익 %s" % [int(g.stats["deals"]), GameState.fmt(g.stats["profit"])], 14)
+	btn(v, "효과음 켜기" if sfx.muted else "효과음 끄기", func():
+		sfx.muted = not sfx.muted
+		g.stats["muted"] = sfx.muted
+		show_ledger(), Color("#5a636e"), Color.WHITE)
 	btn(v, "처음부터 다시 하기", func():
 		var w := sheet(Color("#f3ead4"), Color("#1d1915"), Color("#1d1915"), true, 480)
 		t(w, "처음부터 다시?", 24, font_k)
