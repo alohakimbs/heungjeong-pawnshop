@@ -8,6 +8,9 @@ var staff: Dictionary = {}
 var traits: Dictionary = {}
 var specials: Dictionary = {}
 var text: Dictionary = {}
+var archetypes: Array = []
+var events: Dictionary = {}
+var lines: Dictionary = {}
 
 
 func _init() -> void:
@@ -21,6 +24,9 @@ func reload() -> void:
 	traits = load_json("res://data/traits.json")
 	specials = load_json("res://data/specials.json")
 	text = load_json("res://data/text.json")
+	archetypes = load_json("res://data/archetypes.json")
+	events = load_json("res://data/events.json")
+	lines = load_json("res://data/lines.json")
 
 
 static func load_json(path: String) -> Variant:

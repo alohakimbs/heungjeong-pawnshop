@@ -1,0 +1,890 @@
+class_name GameState
+extends RefCounted
+## 게임 한 판의 전체 상태와 규칙. 화면과 분리되어 있어 헤드리스 테스트·자동 플레이가 가능하다.
+## 웹 프로토타입 v0.2의 로직을 이식했다. 화면은 이 객체의 값을 읽고 메서드를 호출하기만 한다.
+
+const Negotiation := preload("res://scripts/core/negotiation.gd")
+const SAVE_VERSION := 1
+const SAVE_PATH := "user://save.json"
+
+var D  # GameData: items, shops, staff, traits, specials, text, archetypes, events, lines
+var rng := RandomNumberGenerator.new()
+
+var money := 5000
+var day := 1
+var rep := 0
+var xp := 0
+var lv := 1
+var sp := 0
+var skills := {"haggle": 0, "appraise": 0, "psych": 0, "charm": 0}
+var shop := 0
+var inv: Array = []
+var staff: Array = []
+var trend: Dictionary = {}
+var next_up := ""
+var scams: Array = []
+var phase := "morning"  # morning(아침) → visit(불청객) → open(영업) → night(마감)
+var queue := 0
+var cur: Dictionary = {}  # 지금 카운터 앞의 손님(또는 불청객). 없으면 빈 딕셔너리
+var neg: Negotiation = null
+var today: Dictionary = {}
+var nid := 1
+var auction_day := 3
+var auction_done := false
+var event := ""
+var news: Dictionary = {}
+var won := false
+var stats := {"deals": 0, "profit": 0}
+var rel: Dictionary = {}  # 단골 관계: {키: {visits, last}}
+var receipt: Dictionary = {}
+var auction: Dictionary = {}
+var draft := 0  # 계산기에 찍힌 금액
+var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
+
+
+func _init(data, seed_value: int = 0) -> void:
+	D = data
+	if seed_value != 0:
+		rng.seed = seed_value
+	else:
+		rng.randomize()
+
+
+# ---------------------------------------------------------------- 도우미
+func pick(a: Array):
+	return a[rng.randi_range(0, a.size() - 1)]
+
+
+func rnd(a: float, b: float) -> float:
+	return rng.randf_range(a, b)
+
+
+static func r10(n: float) -> int:
+	return maxi(10, int(round(n / 10.0)) * 10)
+
+
+static func fmt(n: float) -> String:
+	var s := str(int(round(absf(n))))
+	var out := ""
+	var c := 0
+	for i in range(s.length() - 1, -1, -1):
+		out = s[i] + out
+		c += 1
+		if c % 3 == 0 and i > 0:
+			out = "," + out
+	return ("-$" if n < 0 else "$") + out
+
+
+func toast(m: String) -> void:
+	messages.append(m)
+
+
+func line(key: String, price: int = -1, item: String = "") -> String:
+	var v = D.lines.get(key, "")
+	var s: String = pick(v) if v is Array else str(v)
+	return s.replace("{price}", fmt(price)).replace("{item}", item)
+
+
+func tic() -> String:
+	var t: Array = cur.get("tic", [""])
+	return pick(t) if t.size() > 0 else ""
+
+
+func has_staff(k: String) -> bool:
+	return staff.has(k)
+
+
+func shop_info() -> Dictionary:
+	return D.shops[shop]
+
+
+func cap() -> int:
+	return int(shop_info()["st"])
+
+
+func trend_of(cat: String) -> float:
+	return float(trend.get(cat, 1.0))
+
+
+# ---------------------------------------------------------------- 물건
+func val(it: Dictionary, genuine := false) -> float:
+	var rar: Array = D.items["rarity"]
+	var con: Array = D.items["condition"]
+	var f := 0.08 if (it["fake"] and not genuine) else 1.0
+	return float(it["base"]) * float(rar[int(it["r"])]["m"]) * float(con[int(it["c"])]["m"]) * trend_of(it["cat"]) * f
+
+
+func est_w() -> float:
+	return maxf(0.06, 0.55 - skills["appraise"] * 0.07 - (0.2 if has_staff("expert") else 0.0))
+
+
+## 추정가 [하한, 상한]. 실제 가치(진품 기준)는 항상 이 범위 안에 있다.
+func est(it: Dictionary, wide := false) -> Array:
+	var g := val(it, true)
+	var w := est_w() * (1.5 if wide else 1.0)
+	var u := float(it["u"])
+	return [r10(g * (1.0 - w * u)), r10(g * (1.0 + w * (1.0 - u)))]
+
+
+func appr_fee(it: Dictionary) -> int:
+	return r10(maxf(30.0, val(it, true) * 0.05))
+
+
+func inspect(it: Dictionary) -> void:
+	var lvl := 2 if has_staff("expert") else 1
+	if int(it.get("chk", 0)) >= lvl:
+		return
+	it["chk"] = lvl
+	var p: float = (0.75 + skills["appraise"] * 0.05) if has_staff("expert") else skills["appraise"] * 0.08
+	if it["fake"]:
+		it["suspect"] = rng.randf() < p
+	else:
+		it["suspect"] = has_staff("expert") and rng.randf() < 0.03
+
+
+func gen_item(fake_p := 0.1, boost := 0) -> Dictionary:
+	var cats: Dictionary = D.items["categories"]
+	var ck: String = pick(cats.keys())
+	var t: Array = pick(cats[ck]["items"])
+	var l := shop + boost
+	var w := [maxf(1, 62 - l * 6), maxf(1, 26 + l * 2), maxf(1, 9 + l * 3), maxf(1, 3 + l * 1.5)]
+	var total := 0.0
+	for x in w:
+		total += x
+	var roll := rng.randf() * total
+	var r := 0
+	while r < 3 and roll > w[r]:
+		roll -= w[r]
+		r += 1
+	var it := {
+		"id": nid, "cat": ck, "name": t[0], "e": t[1],
+		"base": int(round(float(t[2]) * rnd(0.8, 1.25) * (1.0 + shop * 0.15))),
+		"r": r, "c": pick([0, 1, 1, 2, 2, 2, 3, 3, 4]), "fake": rng.randf() < fake_p, "u": rng.randf(),
+		"paid": 0, "known": false, "suspect": false, "chk": 0, "restoring": false,
+	}
+	nid += 1
+	return it
+
+
+func find_item(id) -> Dictionary:
+	for i in inv:
+		if int(i["id"]) == int(id):
+			return i
+	if not cur.is_empty() and cur.has("item") and int(cur["item"]["id"]) == int(id):
+		return cur["item"]
+	return {}
+
+
+func remove_item(id) -> void:
+	for n in inv.size():
+		if int(inv[n]["id"]) == int(id):
+			inv.remove_at(n)
+			return
+
+
+# ---------------------------------------------------------------- 손님
+func _conflicts(k: String, tr: Array) -> bool:
+	for pair in D.traits["conflicts"]:
+		if pair.has(k):
+			for q in pair:
+				if q != k and tr.has(q):
+					return true
+	return false
+
+
+func gen_customer() -> Dictionary:
+	var avail := inv.filter(func(i): return not i["restoring"])
+	if not today.has("sp"):
+		today["sp"] = []
+	var spk := ""
+	if rng.randf() < 0.24:
+		var ks: Array = D.specials.keys().filter(func(k): return not today["sp"].has(k))
+		if ks.size() > 0:
+			spk = pick(ks)
+			today["sp"].append(spk)
+	var spd: Dictionary = D.specials[spk] if spk != "" else {}
+	var sell_only := false
+	for t in spd.get("tr", []):
+		if t == "scammer" or t == "desperate":
+			sell_only = true
+	# 창고가 찰수록 사러 오는 손님이 늘어난다 (빈 창고 35% → 꽉 찬 창고 75%)
+	var buy_p := 0.35 + 0.4 * float(inv.size()) / cap()
+	var buy: bool = (not sell_only) and avail.size() > 0 and rng.randf() < buy_p
+	var tr: Array = []
+	var c := {}
+	if spk != "":
+		tr = spd["tr"].duplicate()
+		c = {"name": spd["n"], "role": spd["role"], "tic": spd["tic"], "look": spd["L"], "sk": spk}
+	else:
+		var keys: Array = D.traits["traits"].keys().filter(func(k): return not (buy and (k == "desperate" or k == "scammer")))
+		var n := 1 if rng.randf() < 0.55 else 2
+		var guard := 0
+		while tr.size() < n and guard < 50:
+			guard += 1
+			var k: String = pick(keys)
+			if tr.has(k) or _conflicts(k, tr):
+				continue
+			tr.append(k)
+		var ar: Dictionary = pick(D.archetypes)
+		c = {"name": pick(D.text["surnames"]) + pick(D.text["given_names"]), "role": ar["n"], "tic": ar["tic"], "arch": ar["id"], "look_seed": rng.randi(), "sk": ""}
+	c["tr"] = tr
+	c["buy"] = buy
+	var shown := tr.size() if (has_staff("profiler") or skills["psych"] >= 3) else (1 if skills["psych"] >= 1 else 0)
+	c["seen"] = tr.slice(0, shown)
+	c["gone"] = false
+	c["res"] = ""
+	c["accused"] = false
+	c["mood"] = "ok"
+	var intro := ""
+	var min_adj := 1.0
+	var pat_mul := 1.0
+	if spk != "":
+		var r: Dictionary = rel.get(spk, {})
+		var last: String = r.get("last", "")
+		if last != "" and spd["cb"].has(last):
+			intro = spd["cb"][last] + " "
+			match last:
+				"fair":
+					pat_mul = 1.25
+				"steal", "angry":
+					pat_mul = 0.8
+					min_adj = 1.1
+				"scam":
+					pat_mul = 0.6
+					min_adj = 1.2
+		else:
+			intro = spd["hi"] + " "
+	cur = c
+	neg = Negotiation.new(rng)
+	if not buy:
+		var it := gen_item(0.5 if tr.has("scammer") else 0.1)
+		c["item"] = it
+		var per := val(it, true) * (0.6 if tr.has("naive") else 1.0) * (rnd(0.95, 1.05) if tr.has("expert") else rnd(0.8, 1.2))
+		neg.setup_seller(per, tr, skills["haggle"], skills["charm"], min_adj)
+		var m := ""
+		if tr.has("scammer"):
+			m = line("sell_scammer", -1, it["name"])
+		elif tr.has("desperate"):
+			m = line("sell_desperate", -1, it["name"])
+		elif tr.has("greedy"):
+			m = line("sell_greedy", -1, it["name"])
+		else:
+			m = line("sell_open", -1, it["name"])
+		m += line("sell_ask", neg.ask)
+		if tr.has("chatty"):
+			m += line("sell_chatty", r10(neg.min_price * rnd(1.0, 1.12)))
+		c["msg"] = intro + m + tic()
+		draft = r10(neg.ask * 0.55)
+	else:
+		var it: Dictionary = pick(avail)
+		c["item_id"] = it["id"]
+		if it["fake"] and tr.has("expert"):
+			c["fake_call"] = true
+			c["mood"] = "angry"
+			c["msg"] = intro + line("buy_fake_spotted", -1, it["name"])
+			neg.setup_buyer(10.0, 0, tr)
+		else:
+			neg.setup_buyer(val(it, true), int(it["r"]), tr, skills["haggle"], skills["charm"], min_adj)
+			var m := ""
+			if tr.has("collector") and int(it["r"]) >= 2:
+				m = line("buy_collector", neg.offer, it["name"])
+			elif tr.has("stingy"):
+				m = line("buy_stingy", neg.offer, it["name"])
+			else:
+				m = line("buy_open", neg.offer, it["name"])
+			if tr.has("chatty"):
+				m += line("buy_chatty", r10(neg.max_price * rnd(0.88, 1.0)))
+			c["msg"] = intro + m + tic()
+			draft = r10(neg.offer * 1.6)
+	neg.max_patience = round(neg.max_patience * pat_mul)
+	neg.patience = neg.max_patience
+	return c
+
+
+func cur_item() -> Dictionary:
+	if cur.is_empty() or cur.get("visitor", false):
+		return {}
+	if cur["buy"]:
+		for i in inv:
+			if int(i["id"]) == int(cur["item_id"]):
+				return i
+		return {}
+	return cur["item"]
+
+
+func is_haggling() -> bool:
+	return phase == "open" and not cur.is_empty() and not cur.get("visitor", false) and not cur["gone"]
+
+
+func mood() -> String:
+	if cur.is_empty():
+		return "ok"
+	if cur["gone"] or cur.get("visitor", false) or neg == null:
+		return cur.get("mood", "ok")
+	var m := neg.patience_ratio()
+	return "ok" if m > 0.66 else ("meh" if m > 0.33 else "angry")
+
+
+func their_price() -> int:
+	return neg.their_price() if neg != null else 0
+
+
+# ---------------------------------------------------------------- 흥정 행동
+func propose(x: int, final := false) -> void:
+	if not is_haggling():
+		return
+	if x <= 0:
+		toast("계산기에 금액을 먼저 찍으세요")
+		return
+	if not cur["buy"] and inv.size() >= cap():
+		toast("창고가 가득 찼어요")
+		return
+	var r := neg.propose(x, final)
+	var b := "buy" if cur["buy"] else "sell"
+	match r:
+		Negotiation.Result.DEAL:
+			if cur["buy"]:
+				_deal_buy(neg.deal_price)
+			else:
+				_deal_sell(neg.deal_price)
+		Negotiation.Result.LEAVE_ANGRY:
+			_leave(line("gave_up") if neg.line == "gave_up" else line(neg.line + "_" + b), true)
+		_:
+			match neg.line:
+				"repeat":
+					cur["msg"] = line("repeat_" + b)
+				"counter":
+					cur["msg"] = line("counter_" + b, neg.their_price())
+				"low":
+					cur["msg"] = line("low_" + b) + line("low_" + b + "_tail", neg.their_price())
+			if rng.randf() < 0.35:
+				cur["msg"] += tic()
+
+
+func accept() -> void:
+	if not is_haggling():
+		return
+	if cur["buy"]:
+		_deal_buy(neg.offer)
+	else:
+		_deal_sell(neg.ask)
+
+
+func refuse() -> void:
+	if not is_haggling():
+		return
+	_leave(line("refuse_buy" if cur["buy"] else "refuse_sell"), false)
+
+
+func accuse() -> void:
+	if not is_haggling() or cur["buy"] or cur["accused"]:
+		return
+	var it: Dictionary = cur["item"]
+	cur["accused"] = true
+	if it["fake"]:
+		var f := val(it, false)
+		neg.ask = r10(f * rnd(1.6, 2.6))
+		neg.min_price = r10(f * 0.8)
+		neg.last = -1
+		neg.patience -= 10
+		cur["msg"] = line("accuse_fake_scammer" if cur["tr"].has("scammer") else "accuse_fake", neg.ask)
+		it["known"] = true
+		draft = neg.min_price
+	else:
+		neg.patience -= 40 * (1.4 if cur["tr"].has("expert") else 1.0)
+		cur["msg"] = line("accuse_wrong")
+		if neg.patience <= 0:
+			_leave(line("accuse_wrong_leave"), true)
+
+
+func gain_xp(n: float) -> void:
+	var g := int(round(n))
+	xp += g
+	today["xp"] = int(today.get("xp", 0)) + g
+	while xp >= lv * 120:
+		xp -= lv * 120
+		lv += 1
+		sp += 1
+		toast("레벨 업! Lv.%d · 스킬 포인트 +1" % lv)
+
+
+func _rel_note(outcome: String) -> void:
+	var k: String = cur.get("sk", "")
+	if k == "":
+		return
+	var r: Dictionary = rel.get(k, {"visits": 0})
+	r["visits"] = int(r["visits"]) + 1
+	r["last"] = outcome
+	rel[k] = r
+
+
+func _deal_sell(x: int) -> void:
+	var it: Dictionary = cur["item"]
+	if money < x:
+		toast("금고에 돈이 부족해요")
+		return
+	if inv.size() >= cap():
+		toast("창고가 가득 찼어요")
+		return
+	money -= x
+	it["paid"] = x
+	inv.append(it)
+	today["bought"] += x
+	today["deals"] += 1
+	stats["deals"] += 1
+	rep += 1
+	_rel_note("steal" if x < val(it, true) * 0.75 else "fair")
+	gain_xp(8 + neg.rounds * 2 + clampf((val(it, false) - x) / 40.0, 0, 40))
+	_finish("happy", line("deal_sell") + tic(), "%s에 매입" % fmt(x))
+
+
+func _deal_buy(x: int) -> void:
+	var it := cur_item()
+	if it.is_empty():
+		return
+	money += x
+	remove_item(it["id"])
+	today["sold"] += x
+	today["deals"] += 1
+	stats["deals"] += 1
+	stats["profit"] += x - int(it["paid"])
+	rep += 1
+	if it["fake"]:
+		# 알고 판 가품(감정으로 확인했거나 의심 표시가 있던 것)만 벌금 대상. 모르고 판 것은 환불로 끝난다.
+		scams.append({"day": day, "price": x, "name": it["name"], "knew": bool(it["known"] or it["suspect"])})
+	_rel_note("scam" if it["fake"] else ("steal" if x > val(it, true) * 1.25 else "fair"))
+	gain_xp(8 + neg.rounds * 2 + clampf((x - int(it["paid"])) / 40.0, 0, 40))
+	var d := x - int(it["paid"])
+	_finish("happy", line("deal_buy") + tic(), "%s에 판매 (%s %s)" % [fmt(x), "이익" if d >= 0 else "손해", fmt(absi(d))])
+
+
+func _leave(msg: String, angry: bool) -> void:
+	if angry:
+		rep = maxi(0, rep - 2)
+		_rel_note("angry")
+	_finish("angry" if angry else "meh", msg, "화내며 떠남 · 평판 -2" if angry else "손님이 돌아감")
+
+
+func _finish(md: String, msg: String, res: String) -> void:
+	cur["gone"] = true
+	cur["mood"] = md
+	cur["msg"] = msg
+	cur["res"] = res
+
+
+# ---------------------------------------------------------------- 창고·직원·성장
+func appraise(id) -> bool:
+	var it := find_item(id)
+	if it.is_empty() or it["known"]:
+		return false
+	var fee := appr_fee(it)
+	if money < fee:
+		toast("감정비가 부족해요")
+		return false
+	money -= fee
+	it["known"] = true
+	toast("정밀 감정 완료 (%s)" % fmt(fee))
+	return true
+
+
+func restore_cost(it: Dictionary) -> int:
+	return r10(val(it, true) * 0.12)
+
+
+func restore(id) -> bool:
+	var it := find_item(id)
+	if it.is_empty() or not has_staff("restorer") or int(it["c"]) >= 4 or it["restoring"]:
+		return false
+	var c := restore_cost(it)
+	if money < c:
+		toast("돈이 부족해요")
+		return false
+	money -= c
+	it["restoring"] = true
+	toast("내일 아침까지 수리됩니다")
+	return true
+
+
+func dump(id) -> bool:
+	var it := find_item(id)
+	if it.is_empty() or it["restoring"]:
+		return false
+	if is_haggling() and cur["buy"] and int(cur["item_id"]) == int(id):
+		toast("손님이 보고 있는 물건이에요")
+		return false
+	var p := r10(val(it, false) * 0.5)
+	money += p
+	stats["profit"] += p - int(it["paid"])
+	remove_item(id)
+	toast("도매상: \"%s? %s 드리죠.\"" % [it["name"], fmt(p)])
+	return true
+
+
+func staff_slots() -> int:
+	return 1 + shop
+
+
+func hire(k: String) -> bool:
+	if has_staff(k) or staff.size() >= staff_slots() or not D.staff.has(k):
+		return false
+	staff.append(k)
+	toast("%s: %s" % [D.staff[k]["pn"], D.staff[k]["q"]])
+	return true
+
+
+func fire(k: String) -> bool:
+	if not has_staff(k):
+		return false
+	staff.erase(k)
+	return true
+
+
+func skill_up(k: String) -> bool:
+	if sp <= 0 or not skills.has(k) or skills[k] >= 5:
+		return false
+	sp -= 1
+	skills[k] += 1
+	return true
+
+
+func can_move() -> bool:
+	return shop + 1 < D.shops.size() and money >= int(D.shops[shop + 1]["cost"])
+
+
+func move_shop() -> bool:
+	if not can_move():
+		return false
+	money -= int(D.shops[shop + 1]["cost"])
+	shop += 1
+	if shop == D.shops.size() - 1:
+		won = true
+	toast("%s(으)로 이전!" % shop_info()["n"])
+	return true
+
+
+# ---------------------------------------------------------------- 하루 흐름
+func start_day() -> void:
+	today = {"bought": 0, "sold": 0, "deals": 0, "xp": 0, "bonus": 0, "start": money, "sp": []}
+	var keys: Array = D.items["categories"].keys()
+	var t := {}
+	for k in keys:
+		t[k] = 1.0 + (trend_of(k) - 1.0) * 0.4
+	var up: String = next_up if next_up != "" else pick(keys)
+	var dn: String = pick(keys)
+	while dn == up:
+		dn = pick(keys)
+	t[up] *= rnd(1.25, 1.5)
+	t[dn] *= rnd(0.65, 0.8)
+	trend = t
+	next_up = pick(keys)
+	var small: Array = D.text["small_news"]
+	var a: int = rng.randi_range(0, small.size() - 1)
+	var b: int = (a + rng.randi_range(1, small.size() - 1)) % small.size()
+	news = {"head": pick(D.text["headlines"]), "sub": [small[a], small[b]], "up": up, "dn": dn}
+	if day > auction_day:
+		auction_day = day + rng.randi_range(2, 4)
+	auction_done = false
+	var ev: Array = []
+	for k in D.events:
+		if money > int(D.events[k].get("min_money", -999999)):
+			ev.append(k)
+	event = pick(ev) if (day > 1 and rng.randf() < 0.35 and ev.size() > 0) else ""
+	phase = "morning"
+	cur = {}
+	neg = null
+	receipt = {}
+
+
+func is_auction_today() -> bool:
+	return day == auction_day and not auction_done and phase == "morning"
+
+
+## 아침에 팻말을 뒤집는다. 불청객 이벤트가 있으면 먼저 등장한다.
+func flip_open() -> void:
+	if phase != "morning":
+		return
+	if event != "":
+		var e: Dictionary = D.events[event]
+		var look = D.specials[e["look_special"]]["L"] if e.has("look_special") else e.get("look", {})
+		cur = {"visitor": true, "vk": event, "name": e["n"], "role": "불청객", "look": look, "msg": e["d"], "opts": e["opts"], "tr": [], "seen": [], "gone": false, "mood": "ok", "sk": ""}
+		neg = null
+		event = ""
+		phase = "visit"
+		return
+	open_shop()
+
+
+func visit_pick(i: int) -> void:
+	if phase != "visit" or cur.is_empty() or cur["gone"]:
+		return
+	var md := "ok"
+	var txt := ""
+	match cur["vk"]:
+		"insurance":
+			if i == 0:
+				money -= 300
+				md = "happy"
+				txt = "현명한 선택이십니다. 내일 또 올게요~"
+			elif has_staff("guard"):
+				md = "angry"
+				txt = "(경비원 마동이 판매원을 정중하게 들어 올려 내보냈다)"
+			elif rng.randf() < 0.5:
+				money -= 900
+				md = "angry"
+				txt = "후회하실 텐데... (그날 오후 유리창이 깨졌다. 수리비 $900)"
+			else:
+				md = "meh"
+				txt = "쳇. 운 좋은 줄 아세요."
+		"grandma":
+			if inv.size() >= cap():
+				md = "meh"
+				txt = "창고가 꽉 찼다고? 아이고, 그럼 다음에."
+			else:
+				var it := gen_item(0.0)
+				inv.append(it)
+				md = "happy"
+				txt = "%s이여. 잘 써." % it["name"]
+		"tax":
+			var f := r10(money * 0.05)
+			money -= f
+			txt = "추징금 %s 납부 확인했습니다. 수고하세요." % fmt(f)
+		"streamer":
+			if i == 0:
+				rep += 6
+				today["bonus"] += 2
+				md = "happy"
+				txt = "대박! 오늘 손님 몰려올 거예요! (평판 +6)"
+			else:
+				md = "meh"
+				txt = "힝... 다음에 또 올게요."
+		"blackout":
+			today["bonus"] -= 2
+			txt = "손님이 좀 줄 거예요. 수고하세요!"
+	cur["mood"] = md
+	cur["msg"] = txt
+	cur["gone"] = true
+
+
+func open_shop() -> void:
+	phase = "open"
+	queue = maxi(2, int(shop_info()["cust"]) + (2 if has_staff("clerk") else 0) + rep / 25 + int(today.get("bonus", 0)))
+	next_customer()
+
+
+func next_customer() -> void:
+	if phase != "open":
+		return
+	if queue <= 0:
+		close_shop()
+		return
+	queue -= 1
+	cur = gen_customer()
+	if cur.get("fake_call", false):
+		rep = maxi(0, rep - 3)
+		cur["gone"] = true
+		cur["res"] = "가품을 들킴 · 평판 -3"
+
+
+func wages() -> int:
+	var w := 0
+	for k in staff:
+		w += int(D.staff[k]["w"])
+	return w
+
+
+func close_shop() -> void:
+	phase = "night"
+	cur = {}
+	neg = null
+	var sh := shop_info()
+	var wg := wages()
+	money -= int(sh["rent"]) + wg
+	var notes: Array = []
+	for it in inv:
+		if it["restoring"]:
+			it["restoring"] = false
+			var up := 2 if rng.randf() < 0.2 else 1
+			it["c"] = mini(4, int(it["c"]) + up)
+			notes.append("수리 완료: %s → %s" % [it["name"], D.items["condition"][int(it["c"])]["n"]])
+	if not has_staff("guard") and inv.size() > 0 and rng.randf() < 0.12:
+		var it: Dictionary = pick(inv)
+		remove_item(it["id"])
+		notes.append("밤도둑이 %s을(를) 훔쳐 감!" % it["name"])
+	var keep: Array = []
+	for sc in scams:
+		if rng.randf() < 0.3:
+			if sc.get("knew", true):
+				var f := r10(sc["price"] * 1.5)
+				money -= f
+				rep = maxi(0, rep - 8)
+				notes.append("가품 판매 신고(%s): 벌금 %s, 평판 -8" % [sc["name"], fmt(f)])
+			else:
+				money -= int(sc["price"])
+				rep = maxi(0, rep - 3)
+				notes.append("손님이 가품을 알고 반품(%s): 환불 %s, 평판 -3" % [sc["name"], fmt(sc["price"])])
+		elif day - int(sc["day"]) < 5:
+			keep.append(sc)
+	scams = keep
+	receipt = {"day": day, "deals": today["deals"], "bought": today["bought"], "sold": today["sold"], "rent": int(sh["rent"]), "shop": sh["n"], "wages": wg, "d": money - int(today["start"]), "xp": today.get("xp", 0), "notes": notes}
+
+
+func is_bankrupt() -> bool:
+	return money < -3000
+
+
+## 다음 날 아침으로. 파산이면 false.
+func next_day() -> bool:
+	if phase != "night":
+		return true
+	if is_bankrupt():
+		return false
+	day += 1
+	start_day()
+	return true
+
+
+# ---------------------------------------------------------------- 경매
+func auction_fee() -> int:
+	return 100 * (shop + 1)
+
+
+func start_auction() -> bool:
+	if not is_auction_today():
+		return false
+	if money < auction_fee():
+		toast("참가비가 부족해요")
+		return false
+	money -= auction_fee()
+	auction_done = true
+	auction = {"lots": [gen_item(0.12, 2), gen_item(0.12, 2), gen_item(0.12, 2)], "i": 0}
+	_start_lot()
+	return true
+
+
+func lot() -> Dictionary:
+	return auction["lots"][auction["i"]] if not auction.is_empty() else {}
+
+
+func _start_lot() -> void:
+	var it := lot()
+	inspect(it)
+	var g := val(it, true)
+	auction["price"] = r10(g * 0.25)
+	auction["step"] = r10(maxf(10.0, g * 0.06))
+	auction["leader"] = ""
+	auction["over"] = false
+	auction["res"] = ""
+	var bids: Array = []
+	for b in D.text["auction_npcs"]:
+		bids.append({"n": b["n"], "max": g * rnd(0.45, 1.05)})
+	auction["bid"] = bids
+	auction["log"] = ["경매사: 시작가 %s!" % fmt(auction["price"])]
+
+
+func next_bid_price() -> int:
+	return int(auction["price"]) + (int(auction["step"]) if auction["leader"] != "" else 0)
+
+
+func auction_bid() -> void:
+	if auction.is_empty() or auction["over"]:
+		return
+	var np := next_bid_price()
+	if money < np:
+		toast("돈이 부족해요")
+		return
+	if inv.size() >= cap():
+		toast("창고가 가득 찼어요")
+		return
+	auction["price"] = np
+	auction["leader"] = "me"
+	auction["log"].push_front("나: %s" % fmt(np))
+	var cands := (auction["bid"] as Array).filter(func(b): return b["max"] >= np + int(auction["step"]))
+	if cands.size() > 0 and rng.randf() < 0.9:
+		var b: Dictionary = pick(cands)
+		auction["price"] = np + int(auction["step"])
+		auction["leader"] = b["n"]
+		auction["log"].push_front("%s: %s!" % [b["n"], fmt(auction["price"])])
+	else:
+		_end_lot()
+
+
+func auction_pass() -> void:
+	if auction.is_empty() or auction["over"] or auction["leader"] == "me":
+		return
+	_end_lot()
+
+
+func _end_lot() -> void:
+	var it := lot()
+	auction["over"] = true
+	var price: int = int(auction["price"])
+	if auction["leader"] == "me":
+		money -= price
+		it["paid"] = price
+		inv.append(it)
+		gain_xp(15)
+		auction["res"] = "낙찰! %s을(를) %s에 손에 넣었습니다." % [it["name"], fmt(price)]
+	elif auction["leader"] != "":
+		auction["res"] = "%s에게 %s에 낙찰." % [auction["leader"], fmt(price)]
+	else:
+		var best = null
+		for b in auction["bid"]:
+			if b["max"] >= price and (best == null or b["max"] > best["max"]):
+				best = b
+		auction["res"] = ("%s에게 %s에 낙찰." % [best["n"], fmt(price)]) if best != null else "아무도 입찰하지 않아 유찰."
+
+
+## 다음 물건으로. 마지막이었으면 경매를 끝내고 false.
+func auction_next() -> bool:
+	auction["i"] += 1
+	if auction["i"] >= auction["lots"].size():
+		auction = {}
+		return false
+	_start_lot()
+	return true
+
+
+# ---------------------------------------------------------------- 저장
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft"]
+const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft"]
+
+
+func to_dict() -> Dictionary:
+	var d := {"v": SAVE_VERSION}
+	for k in FIELDS:
+		d[k] = get(k)
+	d["neg"] = neg.to_dict() if neg != null else null
+	return d
+
+
+func from_dict(d: Dictionary) -> void:
+	for k in FIELDS:
+		if d.has(k):
+			set(k, int(d[k]) if k in INT_FIELDS else d[k])
+	for k in skills:
+		skills[k] = int(skills[k])
+	if d.get("neg") != null:
+		neg = Negotiation.new(rng)
+		neg.from_dict(d["neg"])
+	else:
+		neg = null
+	auction = {}
+
+
+func save_game(path := SAVE_PATH) -> bool:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		return false
+	f.store_string(JSON.stringify(to_dict()))
+	return true
+
+
+func load_game(path := SAVE_PATH) -> bool:
+	if not FileAccess.file_exists(path):
+		return false
+	var f := FileAccess.open(path, FileAccess.READ)
+	var parsed = JSON.parse_string(f.get_as_text())
+	if not parsed is Dictionary or int(parsed.get("v", 0)) != SAVE_VERSION:
+		return false
+	from_dict(parsed)
+	return true

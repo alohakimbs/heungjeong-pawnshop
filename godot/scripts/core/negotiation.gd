@@ -42,7 +42,7 @@ func _rnd(a: float, b: float) -> float:
 func setup_seller(perceived: float, p_traits: Array, haggle_skill: int = 0, charm_skill: int = 0, min_adj: float = 1.0) -> void:
 	buy = false
 	traits = p_traits.duplicate()
-	var mr := 0.72 - haggle_skill * 0.025
+	var mr := 0.66 - haggle_skill * 0.025
 	if has_trait("desperate"):
 		mr -= 0.22
 	if has_trait("greedy"):
@@ -118,7 +118,7 @@ func propose(x: int, final := false) -> Result:
 		else:
 			var ratio := float(x) / min_price
 			ask = maxi(min_price, r10(ask - (ask - min_price) * _rnd(0.05, 0.2)))
-			_hurt(12 + (1.0 - ratio) * 70)
+			_hurt(8 + (1.0 - ratio) * 45)
 			line = "low"
 	else:
 		if x <= offer:
@@ -140,7 +140,7 @@ func propose(x: int, final := false) -> Result:
 			if has_trait("proud") and ratio < 0.45:
 				return _leave("insulted")
 			offer = mini(max_price, r10(offer + (max_price - offer) * _rnd(0.05, 0.2)))
-			_hurt(12 + (1.0 - ratio) * 70)
+			_hurt(8 + (1.0 - ratio) * 45)
 			line = "low"
 	last = x
 	if patience <= 0:
@@ -155,3 +155,22 @@ func their_price() -> int:
 
 func patience_ratio() -> float:
 	return clampf(patience / max_patience, 0.0, 1.0)
+
+
+const SAVE_FIELDS := ["buy", "traits", "ask", "min_price", "offer", "max_price", "patience", "max_patience", "rounds", "last", "deal_price", "line"]
+
+
+func to_dict() -> Dictionary:
+	var d := {}
+	for k in SAVE_FIELDS:
+		d[k] = get(k)
+	return d
+
+
+func from_dict(d: Dictionary) -> void:
+	for k in SAVE_FIELDS:
+		if d.has(k):
+			var v: Variant = d[k]
+			if k in ["ask", "min_price", "offer", "max_price", "rounds", "last", "deal_price"]:
+				v = int(v)
+			set(k, v)

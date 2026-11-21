@@ -5,12 +5,22 @@ extends SceneTree
 
 const Negotiation := preload("res://scripts/core/negotiation.gd")
 const GameDataScript := preload("res://scripts/core/game_data.gd")
+const GameState := preload("res://scripts/core/game_state.gd")
+const Bots := preload("res://tests/bots.gd")
+
+var data
 
 var passed := 0
 var failed := 0
 
 
 func _init() -> void:
+	data = GameDataScript.new()
+	for scr in [GameState, Bots, Negotiation]:
+		if not scr.can_instantiate():
+			print("✗ 스크립트 컴파일 실패: ", scr.resource_path)
+			quit(1)
+			return
 	test_data_files()
 	test_offer_at_ask_deals()
 	test_seller_never_below_min()
@@ -19,6 +29,13 @@ func _init() -> void:
 	test_proud_leaves_on_insult()
 	test_final_offer()
 	test_repeat_offer_costs_patience()
+	test_day_cycle()
+	test_estimate_contains_value()
+	test_save_roundtrip()
+	test_regular_remembers()
+	test_sim_random()
+	test_sim_smart()
+	data.free()
 	print("\n결과: %d 통과, %d 실패" % [passed, failed])
 	quit(1 if failed > 0 else 0)
 
@@ -172,3 +189,115 @@ func test_repeat_offer_costs_patience() -> void:
 	var before := n.patience
 	n.propose(x)
 	check(n.line == "repeat" and n.patience <= before - 15, "같은 가격 반복 시 인내심 15 이상 감소")
+
+
+func new_game(seed_value: int):
+	var g = GameState.new(data, seed_value)
+	g.start_day()
+	return g
+
+
+func test_day_cycle() -> void:
+	print("[하루 흐름]")
+	var g = new_game(11)
+	check(g.phase == "morning" and not g.news.is_empty(), "아침: 신문 생성")
+	g.event = ""
+	g.flip_open()
+	check(g.phase == "open" and not g.cur.is_empty(), "문 열면 첫 손님 등장")
+	var first_queue: int = g.queue
+	g.refuse()
+	check(g.cur["gone"], "거절하면 손님이 떠남")
+	g.next_customer()
+	check(g.queue == first_queue - 1, "다음 손님 호출 시 대기열 감소")
+	while g.phase == "open":
+		if not g.cur["gone"]:
+			g.refuse()
+		g.next_customer()
+	check(g.phase == "night" and not g.receipt.is_empty(), "손님이 다 가면 마감 영수증")
+	var before: int = g.money
+	check(g.receipt["d"] == -int(g.shop_info()["rent"]), "거래 없는 날 현금 변화 = -임대료")
+	check(g.next_day() and g.day == 2 and g.phase == "morning", "다음 날 아침으로")
+
+
+func test_estimate_contains_value() -> void:
+	print("[감정: 실제 가치는 항상 추정 범위 안]")
+	var g = new_game(12)
+	var ok := true
+	for i in 2000:
+		var it: Dictionary = g.gen_item(0.2)
+		var e: Array = g.est(it)
+		var v: float = g.val(it, true)
+		if v < e[0] - 10 or v > e[1] + 10:
+			ok = false
+	check(ok, "2000개 물건 모두 추정 범위 안 (반올림 오차 $10 허용)")
+
+
+func test_save_roundtrip() -> void:
+	print("[저장/불러오기]")
+	var g = new_game(13)
+	g.event = ""
+	g.flip_open()
+	g.propose(int(g.their_price() * 0.5))
+	var a := JSON.stringify(g.to_dict())
+	var h = GameState.new(data, 99)
+	h.from_dict(JSON.parse_string(a))
+	var b := JSON.stringify(h.to_dict())
+	check(JSON.parse_string(a) == JSON.parse_string(b), "저장 → 불러오기 → 저장 결과 동일")
+	check(h.is_haggling() == g.is_haggling() and h.their_price() == g.their_price(), "흥정 중 상태도 복원")
+	var path := "user://test_save.json"
+	check(g.save_game(path) and h.load_game(path) and h.money == g.money, "파일 저장/불러오기")
+
+
+func test_regular_remembers() -> void:
+	print("[단골이 지난 거래를 기억]")
+	var g = new_game(14)
+	g.rel["pierre"] = {"visits": 1, "last": "angry"}
+	var seen := false
+	for i in 400:
+		g.today["sp"] = []
+		var c: Dictionary = g.gen_customer()
+		if c.get("sk", "") == "pierre":
+			seen = String(c["msg"]).begins_with(String(data.specials["pierre"]["cb"]["angry"]))
+			break
+	check(seen, "화내고 떠났던 단골이 그 일을 언급하며 재방문")
+
+
+func test_sim_random() -> void:
+	print("[자동 플레이: 무작위 봇 5명 × 30일]")
+	var errs: Array = []
+	var days := 0
+	for s in 5:
+		var g = new_game(100 + s)
+		var bot = Bots.new(g, "random", 200 + s)
+		for d in 30:
+			days += 1
+			if not bot.play_day():
+				break
+		errs.append_array(bot.errors)
+	check(errs.is_empty(), "규칙 위반 0건 (%d일 진행)%s" % [days, "" if errs.is_empty() else " — " + str(errs.slice(0, 3))])
+
+
+func test_sim_smart() -> void:
+	print("[자동 플레이: 숙련 봇 8명 × 30일 — 밸런스]")
+	var worths: Array = []
+	var bankrupt := 0
+	var errs: Array = []
+	var shops: Array = []
+	for s in 8:
+		var g = new_game(300 + s)
+		var bot = Bots.new(g, "smart", 400 + s)
+		var alive := true
+		for d in 30:
+			if not bot.play_day():
+				alive = false
+				break
+		if not alive:
+			bankrupt += 1
+		worths.append(int(bot.net_worth()))
+		shops.append(g.shop)
+		errs.append_array(bot.errors)
+	worths.sort()
+	print("    30일 후 순자산(현금+재고 절반): ", worths, " · 가게 단계: ", shops)
+	check(errs.is_empty(), "규칙 위반 0건")
+	check(bankrupt == 0, "숙련 플레이는 파산하지 않음 (파산 %d)" % bankrupt)
+	check(worths[worths.size() / 2] > 5000, "숙련 플레이 중앙값 순자산이 시작 자금($5,000)보다 큼")
