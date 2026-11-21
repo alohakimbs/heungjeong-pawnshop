@@ -26,6 +26,9 @@
 - 루트 「흥정왕 전당포」: 1W-VLuxaav7WgyNP9DwHYiY5DbTqIBurt
 - 01_기획: 1Rv7mvBjQh5jbv8hgFfoxRxBOJ7qQIwdv (00_프로젝트 안내, 로드맵)
 - 02_아트: 12Z8cUSxW1zzI7YtjsbM_01tmrTXYMnuQ
+  - 캐릭터_원본: 1ywMFiklUnrESvagA870V6IYT0Xt36wV5 (사용자가 ChatGPT로 만든 그림을 올림, 프롬프트 문서 `docs/art/chatgpt_prompts.md`)
+    - 0_화풍기준 1Nd0Y5pSFzlF9_lAkIQWoN93f_1H3dG5k · 1_손님 1NCO1RYdZMHGRisiJXhmdgVdYIgBnWo0U · 2_단골 1sAGMoSk15xpTPhlc5xy_WfTdTrxt0ym- · 3_직원 1cfsYqagD9Bz-12_aNP_5vTXLytRFS1dX · 4_불청객 1C7SkHO9BIBrSsBH9m4VQPBu5EwPtTZ-8
+    - 파일 이름 `키_표정.png`(ok/happy/angry/meh). 단골 고물 할멈은 `granny_junk`(specials.json의 granny). 그림이 들어오면: 내려받기 → 배경 정리·크기 맞춤 → `godot/assets/chars/` → SvgArt 대신 텍스처 사용(없는 캐릭터는 코드 그림 유지) → 스크린샷 확인.
 - 03_빌드: 1DsEfCHNQDot8wRVm_UP80NnQ_Hgi7emI
 - 04_백업: 1RDWaCyc3hwj5GowVLpxpVm_FEId9goG2
 - 05_일일 보고: 1AijXmoMFZrzYpKGvHk3JC-Sw7F5knT-S
@@ -37,7 +40,8 @@
 - [ ] (PC) 업로드 키 생성 → GitHub Secrets 4개 등록 — 드라이브 06_출시 준비의 안내 문서 참고
 - [ ] 게임 이름 확정 (가제 「흥정왕 전당포」, 상표 검색)
 - [ ] 개인정보처리방침 공개 URL 준비 (아티팩트 공개 공유 또는 다른 공개 주소) + 개발자 이메일
-- [ ] (M2) 아트 공급 방식 결정: 외주 / 이미지 생성 / 직접
+- [x] (M2) 아트 공급 방식: 사용자가 ChatGPT 이미지 생성으로 캐릭터를 만들어 드라이브에 올림 (2026-11-21 결정)
+- [ ] 캐릭터 그림 1차(화풍 기준 + 손님 7종 × 표정 4) 업로드 → 이후 단골·직원·불청객
 - [ ] (M4) 수익 모델 결정: 유료 / 광고 / 인앱
 새로 생기면 여기에 추가하고 일일 보고에도 적는다.
 
