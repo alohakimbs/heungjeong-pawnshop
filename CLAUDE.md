@@ -28,7 +28,7 @@
 - 02_아트: 12Z8cUSxW1zzI7YtjsbM_01tmrTXYMnuQ
   - 캐릭터_원본: 1ywMFiklUnrESvagA870V6IYT0Xt36wV5 (사용자가 ChatGPT로 만든 그림을 올림, 프롬프트 문서 `docs/art/chatgpt_prompts.md`)
     - 0_화풍기준 1Nd0Y5pSFzlF9_lAkIQWoN93f_1H3dG5k · 1_손님 1NCO1RYdZMHGRisiJXhmdgVdYIgBnWo0U · 2_단골 1sAGMoSk15xpTPhlc5xy_WfTdTrxt0ym- · 3_직원 1cfsYqagD9Bz-12_aNP_5vTXLytRFS1dX · 4_불청객 1C7SkHO9BIBrSsBH9m4VQPBu5EwPtTZ-8
-    - 파일 이름 `키_표정.png`(ok/happy/angry/meh). 단골 고물 할멈은 `granny_junk`(specials.json의 granny). 그림이 들어오면: 내려받기 → 배경 정리·크기 맞춤 → `godot/assets/chars/` → SvgArt 대신 텍스처 사용(없는 캐릭터는 코드 그림 유지) → 스크린샷 확인.
+    - (2026-11-21 변경) 시트 방식: 손님·단골은 `키.png` 한 장에 2x2 표정(왼위 ok, 오른위 happy, 왼아래 angry, 오른아래 meh). 직원 `staff_1.png`(expert, restorer, profiler, analyst) `staff_2.png`(clerk, guard), 불청객 `visit_1.png`(insurance, grandma, tax, blackout) `visit_2.png`(fortune, rival, puppy, blogger) `visit_3.png`(rain) — 2x2 칸 순서 왼위→오른위→왼아래→오른아래. 칸 단위로 잘라 쓴다. 단골 고물 할멈은 `granny_junk`(specials.json의 granny). 그림이 들어오면: 내려받기 → 배경 정리·크기 맞춤 → `godot/assets/chars/` → SvgArt 대신 텍스처 사용(없는 캐릭터는 코드 그림 유지) → 스크린샷 확인.
 - 03_빌드: 1DsEfCHNQDot8wRVm_UP80NnQ_Hgi7emI
 - 04_백업: 1RDWaCyc3hwj5GowVLpxpVm_FEId9goG2
 - 05_일일 보고: 1AijXmoMFZrzYpKGvHk3JC-Sw7F5knT-S
