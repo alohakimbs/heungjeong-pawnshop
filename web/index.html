@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>흥정왕 전당포</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 시끌벅적한 동네 전당포, 만화 같은 손님들
+   IDEA: 화면 전체가 카운터 앞 한 장면, 모든 조작은 가게 소품(계산기·종·악수·금전등록기·창고 문)
+   PICTURE: 줄무늬 벽지, 진열장, 나무 카운터 위 소품, 개성 있는 손님 전신
+   COLOUR and TYPE: 와인 벽지 #7a2e2a / 나무 #6b4126 / 놋쇠 #d9a441, Do Hyeon 제목 + Gaegu 손글씨
+   LAYOUT: 400x820 무대 하나를 화면에 맞춰 확대, 오버레이는 신문·장부·코르크보드·영수증 같은 실물 */
+:root{color-scheme:light dark;--bg:#2a1712;--ink:#1e1612;--paper:#f6eedd;--brass:#d9a441;--teal:#1f8a86;--bad:#c4402a;--good:#2f8a4a}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at 50% 30%,#4a2a20,#1a0e0a);overflow:hidden;font:16px/1.5 "Noto Sans KR",system-ui,sans-serif;color:var(--ink)}
+#wrap{position:fixed;inset:0;display:grid;place-items:center}
+#stage{width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+[data-act]{cursor:pointer}
+[data-act]:focus{outline:none}[data-act]:focus-visible{outline:3px solid #ffd77a}
+.hot{transition:transform .12s}
+.hot:active{transform:translateY(2px)}
+.bob{animation:bob 3.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(200px,250px)}50%{transform:translate(200px,254px)}}
+.blink{animation:blink 4.6s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.steam{animation:steam 1.2s ease-out infinite;opacity:0}
+@keyframes steam{0%{opacity:.8;transform:translateY(0)}100%{opacity:0;transform:translateY(-22px)}}
+.shake{animation:shake .4s 2}
+@keyframes shake{0%,100%{transform:translate(200px,250px)}25%{transform:translate(193px,250px)}75%{transform:translate(207px,250px)}}
+.glow{animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{50%{opacity:.1}}
+.pop{animation:pop .25s ease-out;transform-box:fill-box;transform-origin:bottom center}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+@media(prefers-reduced-motion:reduce){.bob,.blink,.steam,.shake,.glow,.pop{animation:none}.steam{opacity:.6}}
+/* overlays */
+.modal{position:fixed;inset:0;z-index:10;background:rgba(15,6,3,.62);display:flex;align-items:center;justify-content:center;padding:12px}
+.modal.hidden{display:none}
+.sheet{width:min(560px,100%);max-height:94vh;overflow:auto;border-radius:6px;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,.55);position:relative}
+.sheet h2{font:30px/1.1 "Do Hyeon",sans-serif;margin:0 0 8px}
+.sheet h3{font:21px/1.2 "Do Hyeon",sans-serif;margin:0 0 4px}
+.note{font-size:14px;opacity:.8}
+.hand{font-family:"Gaegu",cursive;font-size:19px;line-height:1.3}
+.paper{background:#f3ead4;color:#1d1915;background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.025) 0 2px,transparent 2px 4px)}
+.mast{text-align:center;border-bottom:3px double #1d1915;padding-bottom:6px;margin-bottom:10px}
+.mast b{font:40px/1 "Do Hyeon",sans-serif;display:block}.mast span{font-size:13px}
+.head{font:26px/1.2 "Do Hyeon",sans-serif;margin:6px 0}
+.cols{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));border-top:1px solid #1d1915;padding-top:8px;font-size:15px}
+.cols p{margin:4px 0}
+.up{color:#1d7a3a;font-weight:700}.dn{color:#b0301e;font-weight:700}
+.ledger{background:#fbf6e9;color:#22201c;background-image:linear-gradient(90deg,transparent 38px,#e8a0a0 38px 40px,transparent 40px),repeating-linear-gradient(0deg,transparent 0 27px,#bcd3e6 27px 28px);padding-left:52px;border-left:10px solid #5a2a1c}
+.cork{background:#b98a55;background-image:radial-gradient(#a0723f 1px,transparent 1.5px),radial-gradient(#c99a62 1px,transparent 1.5px);background-size:9px 9px,13px 13px;border:12px solid #6b4126;color:#1e1612}
+.crate{background:#7a4f2c;background-image:repeating-linear-gradient(0deg,#6b4126 0 3px,transparent 3px 58px);border:12px solid #4a2a18;color:#1e1612}
+.crate h2,.crate>.note{color:#fbefd9}
+.receipt{width:min(360px,100%);background:#fffdf6;color:#222;font:15px/1.5 "Noto Sans KR",monospace;border-radius:0;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),95% 100%,90% calc(100% - 10px),85% 100%,80% calc(100% - 10px),75% 100%,70% calc(100% - 10px),65% 100%,60% calc(100% - 10px),55% 100%,50% calc(100% - 10px),45% 100%,40% calc(100% - 10px),35% 100%,30% calc(100% - 10px),25% 100%,20% calc(100% - 10px),15% 100%,10% calc(100% - 10px),5% 100%,0 calc(100% - 10px));padding-bottom:26px}
+.receipt table{width:100%;border-collapse:collapse}.receipt td{padding:3px 0;border-bottom:1px dashed #bbb}.receipt td:last-child{text-align:right;white-space:nowrap}
+.hall{background:#24161a;color:#f6e7d0;border:3px solid #a8823a}
+.hall svg{display:block;width:100%;height:auto;border-radius:4px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))}
+.tag{background:#f6eedd;border-radius:4px 14px 14px 4px;padding:10px 12px;box-shadow:0 3px 0 rgba(0,0,0,.3);position:relative}
+.tag::before{content:"";position:absolute;left:8px;top:8px;width:9px;height:9px;border-radius:50%;background:#7a4f2c}
+.tag .nm{font:20px/1.1 "Do Hyeon",sans-serif;padding-left:14px}
+.polar{background:#fff;padding:8px 8px 10px;box-shadow:0 4px 8px rgba(0,0,0,.35);transform:rotate(var(--rot,0deg))}
+.polar svg{width:100%;height:auto;max-height:170px;display:block;background:#cfe3e8}
+.cork .grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,128px),1fr))}
+.pin{position:absolute;left:50%;top:-6px;width:14px;height:14px;border-radius:50%;background:#c4402a;box-shadow:0 2px 2px rgba(0,0,0,.4)}
+.stamp{min-height:44px;border:3px solid currentColor;border-radius:8px;background:transparent;font:20px/1 "Do Hyeon",sans-serif;padding:6px 14px;color:var(--teal);transform:rotate(-2deg)}
+.stamp.red{color:var(--bad)}.stamp.gold{color:#8a5a10}
+.stamp:disabled{opacity:.4;cursor:not-allowed}
+.btn{min-height:46px;border:0;border-radius:8px;padding:8px 14px;background:#6b4126;color:#fbefd9;font:19px/1 "Do Hyeon",sans-serif;box-shadow:0 3px 0 #3a1f12;cursor:pointer}
+.btn.brass{background:var(--brass);color:#2a1a0a;box-shadow:0 3px 0 #8a6420}
+.btn.ghost{background:transparent;color:inherit;box-shadow:none;border:2px solid currentColor}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.row>*{flex:1 1 0}
+.paddle{display:block;margin:12px auto 0;width:150px;height:150px;border-radius:50%;border:0;background:radial-gradient(circle at 40% 35%,#ffe9a8,#d9a441 60%,#a8782a);font:26px/1.1 "Do Hyeon",sans-serif;color:#3a2108;box-shadow:0 6px 0 #6b4a14,0 10px 20px rgba(0,0,0,.5);cursor:pointer}
+.paddle:disabled{filter:grayscale(1);opacity:.5}
+.log{font-size:14px;max-height:110px;overflow:auto;background:rgba(0,0,0,.3);border-radius:6px;padding:8px;margin-top:10px}
+.skill{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:56px}
+.pips{color:#b0301e;letter-spacing:2px}
+.close{position:absolute;right:10px;top:8px;width:44px;height:44px;border:0;background:transparent;font:28px/1 "Do Hyeon";color:inherit;cursor:pointer}
+#toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) rotate(-1deg);background:#fff6a8;color:#2a1a0a;padding:10px 16px;font:20px/1.2 "Gaegu",cursive;font-weight:700;z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+#toast.on{opacity:1}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+<div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
+<div id="toast" role="status"></div>
+<script>
+{
+const $=s=>document.querySelector(s);
+const R=Math.random,rnd=(a,b)=>a+R()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),pick=a=>a[Math.floor(R()*a.length)];
+const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+const r10=n=>Math.max(10,Math.round(n/10)*10);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* ================= 데이터 ================= */
+const CATS={
+ elec:{n:'전자기기',up:'레트로 감성 열풍, 옛날 기계 품귀',dn:'신제품 대방출에 중고 기기 찬밥',items:[['낡은 휴대폰','📱',120],['노트북','💻',600],['휴대용 게임기','🕹️',350],['필름 카메라','📷',280],['트랜지스터 라디오','📻',90],['헤드폰','🎧',150]]},
+ toy:{n:'장난감',up:'어른이 수집 붐, 피규어 가격 폭등',dn:'장난감 대량 리메이크 발표',items:[['한정판 곰 인형','🧸',220],['트레이딩 카드','🃏',80],['양철 로봇','🤖',140],['보드게임','🎲',60],['블록 세트','🧱',180]]},
+ art:{n:'미술품',up:'미술관 관람객 사상 최대',dn:'위작 스캔들로 미술 시장 냉각',items:[['유화 풍경화','🖼️',900],['석조 두상','🗿',1200],['도자기 화병','🏺',700],['판화','🎨',400]]},
+ jewel:{n:'시계·보석',up:'금값 사상 최고치 경신',dn:'인조 보석 신기술 등장',items:[['손목시계','⌚',800],['다이아 반지','💍',2000],['구슬 목걸이','📿',900],['괘종시계','🕰️',650],['금화','🪙',1500]]},
+ music:{n:'악기',up:'오디션 프로그램 인기로 악기 수요 급증',dn:'"악기 대신 AI 작곡" 유행',items:[['통기타','🎸',350],['바이올린','🎻',900],['트럼펫','🎺',450],['색소폰','🎷',700],['드럼','🥁',600]]},
+ sport:{n:'스포츠',up:'국가대표 우승, 스포츠 굿즈 대란',dn:'시즌 종료로 스포츠 용품 시들',items:[['사인 야구공','⚾',300],['농구공','🏀',120],['테니스 라켓','🎾',200],['권투 글러브','🥊',180],['스케이트보드','🛹',160]]},
+ fashion:{n:'패션',up:'빈티지 패션이 다시 대세',dn:'"올해는 무채색 미니멀" 선언',items:[['명품 가방','👜',1500],['한정판 운동화','👟',400],['선글라스','🕶️',200],['중절모','🎩',120],['가죽 재킷','🧥',350]]},
+ book:{n:'책·문서',up:'고서 경매 신기록',dn:'전자책 구독 1+1 이벤트',items:[['고문서 두루마리','📜',800],['초판본 소설','📚',500],['옛날 신문','📰',60],['옛 지도','🗺️',300],['레코드판','💿',150]]}
+};
+const RAR=[{n:'흔함',m:1,c:'#8a8178'},{n:'드묾',m:2.4,c:'#2e7fc9'},{n:'희귀',m:6,c:'#9a43c0'},{n:'전설',m:18,c:'#e0801a'}];
+const CON=[{n:'고장',m:.25},{n:'낡음',m:.55},{n:'보통',m:.8},{n:'좋음',m:1},{n:'새것',m:1.3}];
+const SHOPS=[
+ {n:'변두리 차고',rent:40,st:6,cust:5,cost:0,wall:'#6a4a3a'},
+ {n:'골목 가게',rent:150,st:10,cust:6,cost:15000,wall:'#7a2e2a'},
+ {n:'상가 1층 매장',rent:400,st:15,cust:7,cost:60000,wall:'#2e5a5a'},
+ {n:'번화가 전당포',rent:1000,st:22,cust:8,cost:200000,wall:'#3a2e5a'},
+ {n:'명품 거리 부티크',rent:2500,st:30,cust:9,cost:700000,wall:'#1e3a2e'}
+];
+function look(o){return Object.assign({skin:'#eac29a',head:'round',hair:0,hc:'#2b1b12',outfit:'tee',oc:'#3d6e8f',oc2:'#fff',bw:1,eyes:'dot',brows:'norm',nose:'button',fh:0,hat:'none',glasses:0,acc:[]},o)}
+const STAFF={
+ expert:{n:'감정사',pn:'노안경 영감',d:'감정 범위를 크게 좁히고 가품을 잘 잡아냅니다.',q:'"이 나이 되면 눈 감고도 보이지."',w:120,L:look({head:'oval',hair:2,hc:'#d9d4cc',outfit:'cardigan',oc:'#7a5a3a',oc2:'#e8e0d0',glasses:1,fh:1,nose:'long',acc:['wrinkles']})},
+ restorer:{n:'수리공',pn:'멜빵 정 여사',d:'창고 물건을 하룻밤 사이 수리해 상태를 올립니다.',q:'"고장? 그런 건 없어. 덜 고쳐진 것만 있지."',w:100,L:look({hair:8,hc:'#3a2418',outfit:'apron',oc:'#d0e0e8',oc2:'#3d6e8f',hat:'headband',skin:'#d9a679'})},
+ profiler:{n:'프로파일러',pn:'요원 K',d:'손님 성향 전부와 정확한 인내심 수치를 보여줍니다.',q:'"당신 지금 왼쪽 눈썹이 0.3mm 올라갔어."',w:140,L:look({head:'long',hair:7,outfit:'coat',oc:'#2a2a2a',oc2:'#111',glasses:2,skin:'#f0caa5'})},
+ analyst:{n:'시장 분석가',pn:'엑셀 장인 최',d:'정확한 시세 변동률과 내일의 유망 품목을 알려줍니다.',q:'"차트가 말해요. 저는 받아 적을 뿐."',w:90,L:look({head:'oval',hair:6,hc:'#1d1d1d',outfit:'suit',oc:'#3a4a5a',oc2:'#d08a2c',glasses:4})},
+ clerk:{n:'점원',pn:'알바생 다온',d:'줄 관리를 해서 하루 손님이 2명 늘어납니다.',q:'"번호표 뽑아 주세요~ 아 번호표 없구나."',w:80,L:look({hair:8,hc:'#a0522d',outfit:'hoodie',oc:'#d08a2c',acc:['blush'],eyes:'big'})},
+ guard:{n:'경비원',pn:'철벽 마동',d:'밤도둑과 수상한 보험 판매원을 막아줍니다.',q:'"...(고개만 끄덕)"',w:70,L:look({head:'square',hair:9,outfit:'tee',oc:'#2d2d33',oc2:'#555',bw:1.4,acc:['scar'],brows:'proud',skin:'#c98e63'})}
+};
+const TR={
+ greedy:{n:'욕심쟁이',d:'비싸게 팔고 싶어 합니다.'},naive:{n:'순진함',d:'물건 값을 잘 모릅니다.'},
+ hasty:{n:'성급함',d:'인내심이 짧습니다.'},calm:{n:'느긋함',d:'인내심이 깁니다.'},
+ rich:{n:'부자',d:'돈을 아끼지 않습니다.'},stingy:{n:'짠돌이',d:'지갑이 단단히 닫혀 있습니다.'},
+ expert:{n:'전문가',d:'시세를 정확히 알고 헐값 제안에 크게 상처받습니다.'},collector:{n:'수집가',d:'희귀품에 웃돈을 얹어 줍니다.'},
+ scammer:{n:'사기꾼',d:'가품을 들고 올 확률이 높습니다.'},chatty:{n:'수다쟁이',d:'말하다가 속내를 흘립니다.'},
+ proud:{n:'자존심',d:'터무니없는 제안엔 바로 나갑니다.'},desperate:{n:'급전 필요',d:'싸게라도 팔아야 합니다.'}
+};
+const CONFLICT=[['hasty','calm'],['rich','stingy'],['naive','expert'],['greedy','desperate']];
+const SUR='김이박최정강조윤장임한오서신권황안송류홍'.split('');
+const GIV=['민준','서연','도윤','하은','지호','수아','현우','지민','건우','예린','태식','말순','영자','춘배','덕구','미자','상철','보람','은비','철수','영희','순자','길동','두식','봉팔','끝순'];
+const ARCH=[
+ {n:'할머니',make:()=>({head:'round',hair:5,hc:pick(['#d9d4cc','#bfb8ad','#e8e4dc']),outfit:'hanbok',oc:pick(['#c8506a','#5b7fb8','#7fa65a']),oc2:'#f0d24a',bw:rnd(.9,1.05),acc:['wrinkles'],nose:'round'}),tic:[' 허허.',' 아이고 참.',' 우리 때는 말이야.']},
+ {n:'학생',make:()=>({head:pick(['round','oval']),hair:pick([0,3,6,8,9]),outfit:'hoodie',oc:pick(['#3d6e8f','#8a8f99','#c46a8a','#5a8f4e','#2d2d33']),bw:rnd(.85,1),glasses:R()<.4?4:0}),tic:[' 진짜예요.',' 용돈이 급해서요.',' 엄마한텐 비밀이에요.']},
+ {n:'직장인',make:()=>({head:pick(['oval','square','long']),hair:pick([0,6,7,9]),outfit:'suit',oc:pick(['#2f3a4f','#4a4a52','#5a4636']),oc2:pick(['#b8473c','#3d6e8f','#d08a2c']),bw:rnd(.9,1.1),glasses:R()<.3?4:0}),tic:[' (한숨)',' 점심시간이라 빨리요.',' 팀장님이 찾아요.']},
+ {n:'아저씨',make:()=>({head:pick(['square','round']),hair:pick([2,9,0]),outfit:pick(['track','cardigan']),oc:pick(['#3a5a8a','#6b4a7a','#7a3a3a','#4a6a4a']),oc2:'#e8e0d0',bw:rnd(1.15,1.4),fh:pick([0,1,3])}),tic:[' 허 참.',' 내가 왕년에 말이야.',' 거 참 깐깐하네.']},
+ {n:'힙스터',make:()=>({head:pick(['long','oval']),hair:pick([1,8,3]),outfit:pick(['cardigan','tee']),oc:pick(['#c9a25a','#7a8a5a','#a05a3a']),oc2:'#2d2d2d',bw:rnd(.85,1),fh:pick([0,2,2]),hat:pick(['beanie','beret','none'])}),tic:[' 바이브가 있죠.',' 빈티지 감성이에요.',' 이거 레트로예요.']},
+ {n:'동네 사장님',make:()=>({head:pick(['round','square']),hair:pick([0,9,2]),outfit:'apron',oc:pick(['#e8e0d0','#d0e0e8']),oc2:pick(['#3d6e8f','#b8473c','#5a8f4e']),bw:rnd(1,1.25),hat:R()<.5?'headband':'none'}),tic:[' 요즘 장사가 영...',' 가게 비워 두고 왔어요.']},
+ {n:'사모님',make:()=>({head:'oval',hair:pick([6,1]),hc:pick(['#3a2418','#6a3a5a','#8a5a2a']),outfit:'coat',oc:pick(['#d8c3a5','#a83a4a','#2a2a2a']),oc2:'#5a3a2a',bw:rnd(.9,1.05),acc:['pearl','earring']}),tic:[' 호호.',' 기사님 기다리세요.']}
+];
+const SP={
+ pierre:{n:'피에르 김',role:'자칭 파리 유학파 감정가',tr:['expert','proud'],L:look({head:'long',hair:7,outfit:'turtle',oc:'#1f1f24',glasses:1,fh:4,hat:'beret',skin:'#f0caa5',nose:'long'}),tic:[' 세 봉.',' 오, 라 라.'],hi:'봉주르. 진짜 물건을 알아보는 눈이 있나 보러 왔소.',cb:{steal:'지난번엔 당신이 날 털었지. 오늘은 내 차례요.',fair:'지난번 거래, 아주 우아했소. 그래서 다시 왔지.',angry:'지난번 그 모욕... 파리였다면 결투였소.',scam:'지난번 산 물건 말이오. 가짜였소! 내 명성에 먹칠을!'}},
+ tanghan:{n:'한탕 박',role:'뭐든 구해 오는 남자',tr:['scammer','chatty'],L:look({head:'square',hair:7,hc:'#1d1d1d',outfit:'coat',oc:'#9a8466',oc2:'#5a4636',glasses:2,fh:3,hat:'fedora',skin:'#d9a679',acc:['goldtooth','chain']}),tic:[' 믿어 봐, 사장님.',' 이건 진짜야, 진짜.'],hi:'쉿. 좋은 물건 있어. 아무한테나 안 보여 줘.',cb:{steal:'지난번엔 사장님이 이겼지. 근데 오늘 건 진짜 진짜야.',fair:'사장님은 말이 통해. 그래서 또 왔지.',angry:'지난번엔 서로 오해가 있었고... 잊자고, 응?',scam:'가짜 팔았다는 소문 들었어. 우리 같은 업계 사람이네?'}},
+ madam:{n:'청담 최여사',role:'시간이 돈인 사모님',tr:['rich','hasty'],L:look({head:'oval',hair:6,hc:'#4a2a4a',outfit:'coat',oc:'#a83a4a',oc2:'#3a1a1a',glasses:2,skin:'#f6d3b3',acc:['pearl','earring']}),tic:[' 호호.',' 빨리빨리요.'],hi:'기사님 기다리니까 5분만 볼게요.',cb:{steal:'지난번에 바가지 씌운 거 다 알아요. 그래도 물건은 좋았어요.',fair:'여기 깔끔해서 좋아요. 또 왔어요.',angry:'지난번엔 제가 좀 급했죠? 오늘도 급해요.',scam:'지난번 그 물건, 친구가 가짜래요! 망신당했잖아요!'}},
+ minsu:{n:'공대생 민수',role:'굿즈에 영혼을 판 수집가',tr:['collector','stingy'],L:look({hair:3,outfit:'hoodie',oc:'#4a5a7a',glasses:4,skin:'#f6d3b3',acc:['pins']}),tic:[' 스펙상으로는요...',' 이거 한정판이거든요.'],hi:'혹시... 희귀한 거 들어왔어요? 알바비 들어왔거든요.',cb:{steal:'지난번에 너무 비싸게 산 거 같아서 리뷰 쓰려다 참았어요.',fair:'여기 시세 정직하다고 커뮤니티에 올렸어요!',angry:'지난번 일은 커뮤니티에 이미 올렸어요. 그래도 왔어요.',scam:'지난번 산 거, 감정 받아 봤는데 가품이던데요?!'}},
+ duchil:{n:'꽃집 사장 두칠',role:'왕년의 주먹, 지금은 꽃집',tr:['calm','proud'],L:look({head:'square',hair:9,hc:'#1d1d1d',outfit:'apron',oc:'#2d2d33',oc2:'#f2a0b8',bw:1.45,skin:'#c98e63',acc:['scar','flower'],brows:'proud'}),tic:[' 꽃은 거짓말을 안 하지.',' ...후.'],hi:'...꽃집 리모델링 중이라. 물건 좀 보자.',cb:{steal:'지난번 거래... 기억하고 있다. 웃으면서.',fair:'의리 있는 가게군. 꽃 한 송이 두고 가지.',angry:'지난번엔 내가 참았다. 두 번은 없다.',scam:'지난번 물건이 가짜였더군. ...꽃으로 때려줄까.'}},
+ granny:{n:'고물 왕할매',role:'동네 고물은 다 아는 할머니',tr:['naive','chatty'],L:look({hair:5,hc:'#e8e4dc',outfit:'hanbok',oc:'#7fa65a',oc2:'#d9483a',bw:.95,acc:['wrinkles','blush'],nose:'round'}),tic:[' 허허.',' 우리 손주 같구먼.'],hi:'아이고 젊은이, 이거 장롱에서 나왔는디 좀 봐 줘.',cb:{steal:'지난번엔 너무 싸게 판 거 같다고 손주가 그러드만.',fair:'지난번에 잘 쳐줘서 고마워서 또 왔제.',angry:'지난번엔 서운했어. 그래도 또 왔구먼.',scam:'손주가 그러는디 그거 가짜래. 늙은이라고 속이면 쓰나.'}},
+ mrq:{n:'미스터 Q',role:'은퇴한 마술사',tr:['greedy'],L:look({head:'long',hair:7,hc:'#c9c1b5',outfit:'coat',oc:'#1a1a2a',oc2:'#8a1a2a',glasses:3,fh:4,hat:'top',skin:'#f0caa5',nose:'long'}),tic:[' 짜잔!',' 마술엔 대가가 따르지.'],hi:'짜잔! 내 모자에서 나온 보물을 보시오.',cb:{steal:'지난번 거래는 당신의 마술이었소. 오늘은 내 차례.',fair:'지난번 거래는 완벽한 트릭이었소. 박수!',angry:'지난번엔 관객 매너가 별로였소.',scam:'지난번 물건, 나보다 더 감쪽같은 속임수였소!'}},
+ yuna:{n:'하이텐션 유나',role:'구독자 312명 유튜버',tr:['hasty','chatty'],L:look({head:'oval',hair:8,hc:'#e2b84a',outfit:'track',oc:'#e86a9a',hat:'headband',skin:'#f6d3b3',acc:['blush','earring'],eyes:'big'}),tic:[' 구독 좋아요!',' 이거 쇼츠각이다!'],hi:'안녕하세요 여러분~ 오늘은 전당포 흥정 챌린지!',cb:{steal:'지난 영상 댓글이 "사장님한테 털림" 도배였어요!',fair:'지난 영상 조회수 터졌어요! 감사 인사 왔어요!',angry:'지난번 화난 장면, 조회수는 제일 잘 나왔어요...',scam:'지난번 산 거 가짜라고 댓글 1000개 달렸어요!!'}}
+};
+const HEAD=['동네 고양이, 3년 연속 반상회 회장 당선','과학자들 "월요일은 원래 길다" 공식 확인','"할머니 장롱이 금광" 중고 거래 열풍','AI 김치 담그기 실패, 개발사 "간이 문제"','외계인 목격담, 알고 보니 조명 달린 우산','시장 상인회 "깎아 달라는 말에 세금 매겨야"','전국 비둘기 협회, 빵 부스러기 품질 개선 요구','시청 앞 분수대에서 동전 3톤 발견','초등학생, 용돈 협상으로 부모 상대 4연승'];
+const SMALL=['오늘의 운세: 첫 손님이 당신의 하루를 정한다','날씨: 맑음, 가끔 흥정','부고: 동네 마지막 공중전화 은퇴','광고: 금니 삽니다 (진지함)','독자 투고: "단골이 경쟁 가게에서 웃고 있었다"','사설: 정가는 시작일 뿐이다','생활 팁: 손님 표정이 굳으면 조금 물러서라'];
+const NPCB=[{n:'큰손 왕사장',L:look({head:'square',hair:2,outfit:'suit',oc:'#6a1a1a',oc2:'#d9a441',bw:1.3,glasses:2,acc:['chain']})},{n:'수집광 박 교수',L:look({head:'long',hair:3,hc:'#c9c1b5',outfit:'cardigan',oc:'#5a6a4a',glasses:1,fh:2})},{n:'중고상 이씨',L:look({hair:9,outfit:'track',oc:'#3a5a8a',fh:3,hat:'cap'})}];
+const VIS={
+ insurance:{n:'보험왕 강',L:look({head:'square',hair:7,outfit:'suit',oc:'#2a2a2a',oc2:'#c9a227',glasses:2,acc:['chain','goldtooth']}),d:'사장님, 가게 보험 하나 드시죠. 하루 $300이면 유리창이... 안 깨지거든요.',opts:[['$300 낸다',()=>{S.money-=300;return['happy','현명한 선택이십니다. 내일 또 올게요~']}],['거절한다',()=>{if(has('guard'))return['angry','(경비원 마동이 판매원을 정중하게 들어 올려 내보냈다)'];if(R()<.5){S.money-=900;return['angry','후회하실 텐데... (그날 오후 유리창이 깨졌다. 수리비 $900)']}return['meh','쳇. 운 좋은 줄 아세요.']}]]},
+ grandma:{n:'옆집 할머니',L:look({hair:5,hc:'#d9d4cc',outfit:'hanbok',oc:'#5b7fb8',oc2:'#f0d24a',acc:['wrinkles','blush'],nose:'round'}),d:'창고 정리하다 나온 건데, 자네가 쓰게.',opts:[['감사히 받는다',()=>{if(S.inv.length>=cap())return['meh','창고가 꽉 찼다고? 아이고, 그럼 다음에.'];const it=genItem(0);S.inv.push(it);return['happy',`${it.name}이여. 잘 써.`]}]]},
+ tax:{n:'세무서 김 주무관',L:look({head:'long',hair:6,outfit:'suit',oc:'#4a4a52',oc2:'#3d6e8f',glasses:4}),d:'장부 좀 보겠습니다.',cond:()=>S.money>15000,opts:[['협조한다',()=>{const f=r10(S.money*.05);S.money-=f;return['ok',`추징금 ${fmt(f)} 납부 확인했습니다. 수고하세요.`]}]]},
+ streamer:{n:'하이텐션 유나',L:SP.yuna.L,d:'구독자 여러분~ 오늘은 이 전당포에서 촬영해도 돼요?',opts:[['촬영 허락',()=>{S.rep+=6;S.today.bonus+=2;return['happy','대박! 오늘 손님 몰려올 거예요! (평판 +6)']}],['거절',()=>['meh','힝... 다음에 또 올게요.']]]},
+ blackout:{n:'전기공 오씨',L:look({hair:9,outfit:'tee',oc:'#d08a2c',hat:'cap',fh:3,bw:1.15}),d:'동네 전체가 정전이에요. 오늘은 촛불 켜고 하셔야겠네.',opts:[['촛불 영업',()=>{S.today.bonus-=2;return['ok','손님이 좀 줄 거예요. 수고하세요!']}]]}
+};
+
+/* ================= 상태 ================= */
+const KEY='haggle-king-v2';
+let S,A=null,draft=0;
+function newGame(){return{money:5000,day:1,rep:0,xp:0,lv:1,sp:0,skills:{haggle:0,appraise:0,psych:0,charm:0},shop:0,inv:[],staff:[],trend:{},next:null,scams:[],phase:'morning',queue:0,cur:null,today:{},nid:1,auctionDay:3,auctionDone:false,event:null,news:null,won:false,stats:{deals:0,profit:0},rel:{},receipt:null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const t=localStorage.getItem(KEY);return t?JSON.parse(t):null}catch(e){return null}}
+const has=k=>S.staff.includes(k);
+const cap=()=>SHOPS[S.shop].st;
+const trend=k=>S.trend[k]||1;
+const val=(it,genuine)=>it.base*RAR[it.r].m*CON[it.c].m*trend(it.cat)*(it.fake&&!genuine?0.08:1);
+const estW=()=>Math.max(.06,.55-S.skills.appraise*.07-(has('expert')?.2:0));
+function est(it,wide){const g=val(it,true),w=estW()*(wide?1.5:1);return[r10(g*(1-w*it.u)),r10(g*(1+w*(1-it.u)))]}
+const apprFee=it=>r10(Math.max(30,val(it,true)*.05));
+function inspect(it){const lv=has('expert')?2:1;if((it.chk||0)>=lv)return;it.chk=lv;
+ const p=has('expert')?.75+S.skills.appraise*.05:S.skills.appraise*.08;
+ it.suspect=it.fake?R()<p:(has('expert')&&R()<.03)}
+function genItem(fakeP=.1,boost=0){
+ const ck=pick(Object.keys(CATS)),t=pick(CATS[ck].items),lv=S.shop+boost;
+ const w=[62-lv*6,26+lv*2,9+lv*3,3+lv*1.5].map(x=>Math.max(1,x));
+ let r=0,x=R()*w.reduce((a,b)=>a+b);while(r<3&&x>w[r]){x-=w[r];r++}
+ return{id:S.nid++,cat:ck,name:t[0],e:t[1],base:Math.round(t[2]*rnd(.8,1.25)*(1+S.shop*.15)),r,c:pick([0,1,1,2,2,2,3,3,4]),fake:R()<fakeP,u:R(),paid:0,known:false,suspect:false,chk:0,restoring:false}
+}
+
+/* ================= 손님 ================= */
+function traitLook(L,tr){
+ const t=k=>tr.includes(k),acc=new Set(L.acc);
+ if(t('rich')){acc.add(L.outfit==='coat'?'pearl':'chain');if(!L.glasses&&R()<.5)L.glasses=2}
+ if(t('naive')){L.eyes='big';acc.add('blush')}
+ if(t('calm'))L.eyes='sleepy';
+ if(t('scammer')){L.eyes='shifty';L.hat='fedora';L.fh=1;if(R()<.5){L.outfit='coat';L.oc='#9a8466'}}
+ if(t('expert'))L.glasses=1;
+ if(t('hasty'))acc.add('sweat');
+ if(t('stingy'))acc.add('patch');
+ if(t('collector'))acc.add('pins');
+ if(t('desperate')){acc.add('bags');acc.add('bandaid')}
+ if(t('greedy'))acc.add('goldtooth');
+ if(t('proud'))L.brows='proud';
+ if(t('chatty'))acc.add('chatty');
+ L.acc=[...acc];return L;
+}
+function genCustomer(){
+ const avail=S.inv.filter(i=>!i.restoring);
+ S.today.sp=S.today.sp||[];
+ let spk=null;
+ if(R()<.24){const ks=Object.keys(SP).filter(k=>!S.today.sp.includes(k));if(ks.length){spk=pick(ks);S.today.sp.push(spk)}}
+ const sp=spk&&SP[spk];
+ const sellOnly=sp&&sp.tr.some(k=>k==='scammer'||k==='desperate');
+ const buy=!sellOnly&&avail.length>0&&R()<.42;
+ let tr=[],L,name,role,tic;
+ if(sp){tr=[...sp.tr];L=JSON.parse(JSON.stringify(sp.L));name=sp.n;role=sp.role;tic=sp.tic}
+ else{
+  const keys=Object.keys(TR).filter(k=>buy?!['desperate','scammer'].includes(k):true);
+  const n=R()<.55?1:2;let g=0;
+  while(tr.length<n&&g++<50){const k=pick(keys);if(tr.includes(k)||CONFLICT.some(p=>p.includes(k)&&p.some(q=>q!==k&&tr.includes(q))))continue;tr.push(k)}
+  const ar=pick(ARCH);
+  L=traitLook(look(Object.assign({skin:pick(['#f6d3b3','#eac29a','#d9a679','#b97f55','#8d5a3b']),hc:pick(['#2b1b12','#5b3a1e','#a0522d','#1d1d1d','#e2b84a']),nose:pick(['button','long','round'])},ar.make())),tr);
+  name=pick(SUR)+pick(GIV);role=ar.n;tic=ar.tic;
+ }
+ const t=k=>tr.includes(k);
+ let maxPat=Math.round(100*(t('hasty')?.6:1)*(t('calm')?1.5:1)+S.skills.charm*8);
+ const c={name,role,tic,tr,buy,L,sk:spk,rounds:0,last:null,gone:false,res:'',accused:false,mood:'ok'};
+ const shown=(has('profiler')||S.skills.psych>=3)?tr.length:S.skills.psych>=1?1:0;
+ c.seen=tr.slice(0,shown);
+ let intro='',minAdj=1;
+ const rel=spk&&S.rel[spk];
+ if(rel&&rel.last&&sp.cb[rel.last]){intro=sp.cb[rel.last]+' ';
+  if(rel.last==='fair')maxPat=Math.round(maxPat*1.25);
+  if(rel.last==='steal'||rel.last==='angry'){maxPat=Math.round(maxPat*.8);minAdj=1.1}
+  if(rel.last==='scam'){maxPat=Math.round(maxPat*.6);minAdj=1.2}}
+ else if(sp)intro=sp.hi+' ';
+ c.pat=maxPat;c.maxPat=maxPat;
+ if(!buy){
+  const it=genItem(t('scammer')?.5:.1);c.item=it;
+  const per=val(it,true)*(t('naive')?.6:1)*(t('expert')?rnd(.95,1.05):rnd(.8,1.2));
+  let mr=.72-S.skills.haggle*.025;if(t('desperate'))mr-=.22;if(t('greedy'))mr+=.13;if(t('scammer'))mr-=.15;
+  c.min=r10(per*mr*minAdj);c.ask=r10(Math.max(c.min*1.1,per*(t('greedy')?1.3:1.08)*rnd(1.05,1.35)));
+  let m=t('scammer')?`이 ${it.name}, 진품 100% 보증합니다. 제 눈을 보세요.`:t('desperate')?`급하게 돈이 필요해서요... ${it.name}, 잘 좀 봐주세요.`:t('greedy')?`이런 ${it.name}은 아무 데서나 못 구해요.`:pick([`${it.name} 팔러 왔어요.`,`이 ${it.name} 얼마 쳐주실래요?`,`집 정리하다 ${it.name}이 나와서요.`]);
+  m+=` ${fmt(c.ask)}은 받아야겠어요.`;
+  if(t('chatty'))m+=` 솔직히 ${fmt(r10(c.min*rnd(1,1.12)))} 밑으론 아쉬운데... 아, 이 말은 하지 말걸.`;
+  c.msg=intro+m+pick(tic);draft=r10(c.ask*.55);
+ }else{
+  const it=pick(avail);c.itemId=it.id;
+  if(it.fake&&t('expert')){c.fakeCall=true;c.offer=0;c.max=0;c.mood='angry';c.msg=`${intro}${it.name}이라... 잠깐, 이거 가짜잖아요! 이런 걸 진열해 두다니.`;return c}
+  const per=val(it,true);
+  const mx=per*(t('rich')?1.35:1)*(t('stingy')?.8:1)*(t('collector')&&it.r>=2?1.35:1)*(t('naive')?1.25:1)*rnd(.95,1.15)*(1+S.skills.haggle*.02)/minAdj;
+  c.max=r10(mx);c.offer=r10(mx*rnd(.5,.75));
+  let m=t('collector')&&it.r>=2?`오, 저 ${it.name}! 제가 찾던 거예요. ${fmt(c.offer)} 어때요?`:t('stingy')?`저 ${it.name}... ${fmt(c.offer)}. 그 이상은 무리예요.`:pick([`저 ${it.name} 보러 왔어요. ${fmt(c.offer)} 정도 생각해요.`,`진열장의 ${it.name}, ${fmt(c.offer)}에 주실래요?`]);
+  if(t('chatty'))m+=` 사실 ${fmt(r10(c.max*rnd(.88,1)))}까지 준비해 왔는데... 어머, 말해버렸네.`;
+  c.msg=intro+m+pick(tic);draft=r10(c.offer*1.6);
+ }
+ return c;
+}
+const curItem=()=>{const c=S.cur;if(!c||c.visitor)return null;return c.buy?S.inv.find(i=>i.id===c.itemId):c.item};
+function moodOf(c){if(c.mood&&c.gone)return c.mood;const m=c.pat/c.maxPat;return m>.66?'ok':m>.33?'meh':'angry'}
+
+/* ================= 흥정 ================= */
+const LOW=['장난하세요?','그 가격이면 그냥 집에 둘래요.','이거 가치를 모르시는군요.','흠... 너무 짜요.','사장님, 양심 어디 두셨어요?'];
+const LOWB=['그 돈이면 새 걸 사죠.','와, 배짱 좋으시네요.','너무 비싸요!','저 호구 아니에요.'];
+function hurt(c,amt,why){c.pat-=amt*(c.tr.includes('expert')?1.4:1);if(why)c.msg=why+(R()<.35?pick(c.tic):'')}
+function propose(x,final){
+ const c=S.cur;if(!c||c.gone||c.visitor)return;x=Math.round(+x||0);if(x<=0)return toast('계산기에 금액을 먼저 찍으세요');
+ if(!c.buy&&S.inv.length>=cap())return toast('창고가 가득 찼어요');
+ c.rounds++;const t=k=>c.tr.includes(k);
+ if(!c.buy){
+  if(x>=c.ask)return dealSell(x);
+  if(t('proud')&&x<c.min*.45)return leave('모욕적이군요. 다른 데 갈게요!',true);
+  if(final)return x>=c.min?dealSell(x):leave('최종이라니 어쩔 수 없죠. 안 팝니다.',true);
+  if(c.last!=null&&x<=c.last)hurt(c,15,'아까랑 똑같잖아요. 좀 올려 보세요.');
+  else if(x>=c.min){
+   const gap=(c.ask-x)/c.ask;
+   if(gap<.04||R()<.12+(x-c.min)/Math.max(1,c.ask-c.min)*.3)return dealSell(x);
+   c.ask=Math.max(x+10,r10(c.ask-(c.ask-x)*rnd(.3,.55)));hurt(c,6+gap*35,pick([`음... ${fmt(c.ask)}까지는 해드릴게요.`,`${fmt(c.ask)}. 이게 제 마지노선... 일지도요.`,`조금만 더요. ${fmt(c.ask)} 어때요?`]));
+  }else{
+   const ratio=x/c.min;c.ask=Math.max(c.min,r10(c.ask-(c.ask-c.min)*rnd(.05,.2)));hurt(c,12+(1-ratio)*70,`${pick(LOW)} ${fmt(c.ask)}은 받아야 해요.`);
+  }
+ }else{
+  if(x<=c.offer)return dealBuy(x);
+  if(final)return x<=c.max?dealBuy(x):leave('그 가격엔 못 사요. 안녕히 계세요.',true);
+  if(c.last!=null&&x>=c.last)hurt(c,15,'가격이 안 내려가네요?');
+  else if(x<=c.max){
+   const gap=(x-c.offer)/x;
+   if(gap<.04||R()<.12+(c.max-x)/Math.max(1,c.max-c.offer)*.3)return dealBuy(x);
+   c.offer=Math.min(x-10,r10(c.offer+(x-c.offer)*rnd(.3,.55)));hurt(c,6+gap*35,pick([`그럼 ${fmt(c.offer)}!`,`${fmt(c.offer)}까지 올릴게요.`,`으음... ${fmt(c.offer)}?`]));
+  }else{
+   const ratio=c.max/x;if(t('proud')&&ratio<.45)return leave('사람을 뭘로 보고! 안 삽니다.',true);
+   c.offer=Math.min(c.max,r10(c.offer+(c.max-c.offer)*rnd(.05,.2)));hurt(c,12+(1-ratio)*70,`${pick(LOWB)} ${fmt(c.offer)}면 몰라도.`);
+  }
+ }
+ c.last=x;
+ if(c.pat<=0)return leave('더는 못 참겠네요. 갑니다!',true);
+ if(c.pat/c.maxPat<.33)shakeNext=true;
+ render();
+}
+let shakeNext=false;
+function gainXP(n){S.xp+=Math.round(n);S.today.xp=(S.today.xp||0)+Math.round(n);
+ while(S.xp>=S.lv*120){S.xp-=S.lv*120;S.lv++;S.sp++;toast(`레벨 업! Lv.${S.lv} · 장부에 스킬 포인트 +1`)}}
+function relNote(c,out){if(!c.sk)return;const r=S.rel[c.sk]||(S.rel[c.sk]={visits:0});r.visits++;r.last=out}
+function dealSell(x){
+ const c=S.cur,it=c.item;
+ if(S.money<x)return toast('금고에 돈이 부족해요');
+ if(S.inv.length>=cap())return toast('창고가 가득 찼어요');
+ S.money-=x;it.paid=x;S.inv.push(it);S.today.bought+=x;S.today.deals++;S.stats.deals++;S.rep+=1;
+ relNote(c,x<val(it,true)*.75?'steal':'fair');
+ gainXP(8+c.rounds*2+clamp((val(it,false)-x)/40,0,40));
+ finish('happy',pick(['거래 성사! 좋은 하루 되세요.','좋아요, 팔게요!','악수합시다.'])+pick(c.tic),`${fmt(x)}에 매입`);
+}
+function dealBuy(x){
+ const c=S.cur,it=curItem();
+ S.money+=x;S.inv=S.inv.filter(i=>i!==it);S.today.sold+=x;S.today.deals++;S.stats.deals++;S.rep+=1;S.stats.profit+=x-it.paid;
+ if(it.fake)S.scams.push({day:S.day,price:x,name:it.name});
+ relNote(c,it.fake?'scam':x>val(it,true)*1.25?'steal':'fair');
+ gainXP(8+c.rounds*2+clamp((x-it.paid)/40,0,40));
+ finish('happy',pick(['샀다! 감사합니다.','좋은 물건 고마워요.','기분 좋게 사갑니다.'])+pick(c.tic),`${fmt(x)}에 판매 (${x-it.paid>=0?'이익':'손해'} ${fmt(Math.abs(x-it.paid))})`);
+}
+function leave(msg,angry){const c=S.cur;c.pat=Math.max(0,c.pat);if(angry){S.rep=Math.max(0,S.rep-2);relNote(c,'angry')}finish(angry?'angry':'meh',msg,angry?'화내며 떠남 · 평판 -2':'손님이 돌아감')}
+function finish(mood,msg,res){const c=S.cur;c.gone=true;c.mood=mood;c.msg=msg;c.res=res;save();render()}
+function accuse(){
+ const c=S.cur,it=c.item;if(!it||c.accused)return;c.accused=true;
+ if(it.fake){const f=val(it,false);c.ask=r10(f*rnd(1.6,2.6));c.min=r10(f*.8);
+  c.msg=c.tr.includes('scammer')?`에이... 들켰네요. 그럼 ${fmt(c.ask)}만 주세요.`:`네? 가짜라고요? 몰랐어요... 그럼 ${fmt(c.ask)}이라도.`;hurt(c,10);it.known=true;draft=r10(c.min)}
+ else{hurt(c,40,'무슨 소리예요! 이거 진품이에요!');if(c.pat<=0)return leave('사기꾼 취급이라니, 갑니다!',true)}
+ render();
+}
+function appraise(it){const fee=apprFee(it);if(S.money<fee)return toast('감정비가 부족해요');S.money-=fee;it.known=true;toast(`돋보기 감정 완료 (${fmt(fee)})`);save();render()}
+
+/* ================= 하루 흐름 ================= */
+function startDay(){
+ S.today={bought:0,sold:0,deals:0,xp:0,bonus:0,start:S.money,sp:[]};
+ const T={},keys=Object.keys(CATS);for(const k of keys)T[k]=1+((S.trend[k]||1)-1)*.4;
+ const up=S.next||pick(keys);let dn=pick(keys);while(dn===up)dn=pick(keys);
+ T[up]*=rnd(1.25,1.5);T[dn]*=rnd(.65,.8);S.trend=T;S.next=pick(keys);
+ S.news={head:pick(HEAD),sub:[...SMALL].sort(()=>R()-.5).slice(0,2),up,dn};
+ if(S.day>S.auctionDay)S.auctionDay=S.day+ri(2,4);
+ S.auctionDone=false;
+ const ev=Object.keys(VIS).filter(k=>!VIS[k].cond||VIS[k].cond());
+ S.event=S.day>1&&R()<.35?pick(ev):null;
+ S.phase='morning';S.cur=null;S.receipt=null;save();render();showPaper();
+}
+function flipOpen(){
+ if(S.event){const vk=S.event,v=VIS[vk];S.event=null;
+  S.cur={visitor:true,vk,name:v.n,role:'불청객',L:v.L,msg:v.d,tr:[],seen:[],pat:1,maxPat:1,gone:false,mood:'ok'};
+  S.phase='visit';save();render();return}
+ openShop();
+}
+function openShop(){S.phase='open';
+ S.queue=Math.max(2,SHOPS[S.shop].cust+(has('clerk')?2:0)+Math.floor(S.rep/25)+S.today.bonus);
+ nextCustomer()}
+function nextCustomer(){if(S.queue<=0){S.cur=null;closeShop();return}S.queue--;S.cur=genCustomer();
+ if(S.cur.fakeCall){S.rep=Math.max(0,S.rep-3);S.cur.gone=true;S.cur.res='가품을 들킴 · 평판 -3';}
+ save();render()}
+function closeShop(){
+ S.phase='night';S.cur=null;const sh=SHOPS[S.shop],wages=S.staff.reduce((a,k)=>a+STAFF[k].w,0);
+ S.money-=sh.rent+wages;const notes=[];
+ S.inv.forEach(it=>{if(it.restoring){it.restoring=false;const up=R()<.2?2:1;it.c=Math.min(4,it.c+up);notes.push(`수리 완료: ${it.name} → ${CON[it.c].n}`)}});
+ if(!has('guard')&&S.inv.length&&R()<.12){const it=pick(S.inv);S.inv=S.inv.filter(x=>x!==it);notes.push(`밤도둑이 ${it.name}을(를) 훔쳐 감!`)}
+ S.scams=S.scams.filter(sc=>{if(R()<.3){const f=r10(sc.price*1.5);S.money-=f;S.rep=Math.max(0,S.rep-8);notes.push(`가품 판매 신고(${sc.name}): 벌금 ${fmt(f)}, 평판 -8`);return false}return S.day-sc.day<5});
+ S.receipt={day:S.day,deals:S.today.deals,bought:S.today.bought,sold:S.today.sold,rent:sh.rent,shop:sh.n,wages,d:S.money-S.today.start,xp:S.today.xp||0,notes};
+ save();render();showReceipt();
+}
+function showReceipt(){const r=S.receipt;if(!r)return;
+ modal(`<div class="sheet receipt"><div style="text-align:center"><b style="font:24px Do Hyeon">흥정왕 전당포</b><br>${r.shop} · ${r.day}일차 마감</div><hr>
+ <table><tr><td>거래</td><td>${r.deals}건</td></tr><tr><td>매입</td><td>${fmt(-r.bought)}</td></tr><tr><td>판매</td><td>${fmt(r.sold)}</td></tr>
+ <tr><td>임대료</td><td>${fmt(-r.rent)}</td></tr><tr><td>직원 급여</td><td>${fmt(-r.wages)}</td></tr>
+ <tr><td><b>현금 변화</b></td><td class="${r.d>=0?'pos':'neg'}"><b>${fmt(r.d)}</b></td></tr><tr><td>경험치</td><td>+${r.xp} XP</td></tr></table>
+ ${r.notes.length?`<p>${r.notes.map(esc).join('<br>')}</p>`:''}
+ <p class="note">*창고 물건은 현금이 아니라 재고입니다.</p>
+ <button class="btn" style="width:100%" data-act="nextday">${S.money<-3000?'결과 보기':'불 끄고 퇴근 → 다음 날'}</button></div>`)}
+function nextDay(){
+ if(S.money<-3000){modal(`<div class="sheet paper"><h2>파산!</h2><p>${S.day}일 동안 버텼습니다. 빚쟁이들이 셔터를 두드립니다.</p><button class="btn" style="width:100%" data-act="reset">새로 시작</button></div>`);return}
+ S.day++;closeModal();startDay();
+}
+
+/* ================= 경매 ================= */
+const aFee=()=>100*(S.shop+1);
+function startAuction(){
+ if(S.money<aFee())return toast('참가비가 부족해요');
+ S.money-=aFee();S.auctionDone=true;
+ A={lots:[genItem(.12,2),genItem(.12,2),genItem(.12,2)],i:0};startLot();
+}
+function startLot(){const it=A.lots[A.i];inspect(it);const g=val(it,true);
+ A.price=r10(g*.25);A.step=r10(Math.max(10,g*.06));A.leader=null;A.over=false;A.res='';
+ A.bid=NPCB.map(b=>({n:b.n,max:g*rnd(.45,1.05)}));A.log=[`경매사: 시작가 ${fmt(A.price)}!`];renderAuction()}
+function aBid(){
+ const np=A.leader?A.price+A.step:A.price;
+ if(S.money<np)return toast('돈이 부족해요');if(S.inv.length>=cap())return toast('창고가 가득 찼어요');
+ A.price=np;A.leader='me';A.log.unshift(`나: ${fmt(np)}`);
+ const c=A.bid.filter(b=>b.max>=A.price+A.step);
+ if(c.length&&R()<.9){const b=pick(c);A.price+=A.step;A.leader=b.n;A.log.unshift(`${b.n}: ${fmt(A.price)}!`)}
+ else endLot();
+ renderAuction();
+}
+function endLot(){const it=A.lots[A.i];A.over=true;
+ if(A.leader==='me'){S.money-=A.price;it.paid=A.price;S.inv.push(it);gainXP(15);A.res=`낙찰! ${it.name}을(를) ${fmt(A.price)}에 손에 넣었습니다.`}
+ else if(A.leader)A.res=`${A.leader}에게 ${fmt(A.price)}에 낙찰.`;
+ else{const b=A.bid.filter(b=>b.max>=A.price).sort((a,b)=>b.max-a.max)[0];A.res=b?`${b.n}에게 ${fmt(A.price)}에 낙찰.`:'아무도 입찰하지 않아 유찰.'}
+ save();renderAuction()}
+function renderAuction(){
+ const it=A.lots[A.i],[lo,hi]=est(it,!has('expert'));
+ const bidders=NPCB.map((b,i)=>{const x=70+i*130,lead=A.leader===b.n;
+  return`<g transform="translate(${x},170) scale(.42)"><g transform="translate(0,0)">${drawChar(b.L,lead?'happy':'ok')}</g></g>${lead?`<g transform="translate(${x+26},92) rotate(12)"><rect x="-4" y="0" width="8" height="40" fill="#6b4126"/><circle cy="-6" r="18" fill="#d9a441" stroke="#6b4a14" stroke-width="3"/><text y="0" text-anchor="middle" font-family="Do Hyeon" font-size="16" fill="#3a2108">${i+1}</text></g>`:''}<text x="${x}" y="268" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="17" fill="#f6e7d0">${b.n}</text>`}).join('');
+ modal(`<div class="sheet hall"><h2>시립 경매장 · ${A.i+1}/${A.lots.length}번 물건</h2>
+ <svg viewBox="0 0 400 280" role="img" aria-label="경매장 무대와 입찰자들"><defs><radialGradient id="spot" cx=".5" cy=".2" r=".7"><stop offset="0" stop-color="#fff3c4" stop-opacity=".5"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0"/></radialGradient></defs>
+ <rect width="400" height="280" fill="#3a1e24"/><path d="M0 0 Q60 40 40 160 L0 160Z M400 0 Q340 40 360 160 L400 160Z" fill="#8a1a2a"/><rect width="400" height="280" fill="url(#spot)"/>
+ <rect x="160" y="70" width="80" height="60" fill="#5a3a2a"/><rect x="150" y="62" width="100" height="12" fill="#7a4f2c"/>
+ <circle cx="200" cy="40" r="34" fill="${RAR[it.r].c}" opacity=".35"/><text x="200" y="56" text-anchor="middle" font-size="46">${it.e}</text>
+ ${bidders}<rect y="272" width="400" height="8" fill="#a8823a"/></svg>
+ <p style="margin:8px 0 0"><b style="font:22px Do Hyeon">${esc(it.name)}</b> · <span style="color:${RAR[it.r].c};font-weight:700">${RAR[it.r].n}</span> · ${has('expert')?CON[it.c].n:'상태 ?'}${it.suspect?' · <span class="neg">가품 의심</span>':''}<br><span class="note">추정가 ${fmt(lo)} ~ ${fmt(hi)} · 내 금고 ${fmt(S.money)} · 창고 ${S.inv.length}/${cap()}</span></p>
+ <div style="text-align:center;font:34px/1.1 Do Hyeon;margin-top:8px;color:#ffd77a">${fmt(A.price)}<div class="note" style="font:15px Noto Sans KR">${A.leader?(A.leader==='me'?'내가 최고가':A.leader+' 최고가'):'아직 입찰 없음'}</div></div>
+ ${A.over?`<p style="text-align:center"><b>${A.res}</b></p><button class="btn brass" style="width:100%" data-act="${A.i<A.lots.length-1?'nextlot':'leaveauc'}">${A.i<A.lots.length-1?'다음 물건':'경매장 나가기'}</button>`:
+ `<button class="paddle" data-act="abid">번호판 들기<br><span style="font-size:19px">${fmt(A.leader?A.price+A.step:A.price)}</span></button><div class="row"><button class="btn ghost" data-act="apass">이번 물건 포기</button></div>`}
+ <div class="log">${A.log.map(l=>`<div>${esc(l)}</div>`).join('')}</div></div>`);
+}
+
+/* ================= 캐릭터 그리기 ================= */
+function drawChar(L,mood,opt={}){
+ const sk=L.skin,hc=L.hc,has=a=>(L.acc||[]).includes(a);
+ const [rx,ry]={round:[46,50],oval:[42,56],square:[47,51],long:[40,59]}[L.head]||[46,50];
+ const w=64*L.bw,T=ry+12,B=222;
+ const dark='rgba(0,0,0,.2)';let s='';
+ // back hair
+ if(L.hair===1)s+=`<path d="M${-rx-6} -8 Q${-rx-8} ${-ry-12} 0 ${-ry-12} Q${rx+8} ${-ry-12} ${rx+6} -8 L${rx+12} ${ry+48} Q0 ${ry+60} ${-rx-12} ${ry+48}Z" fill="${hc}"/>`;
+ if(L.hair===6)s+=`<path d="M${-rx-9} 0 Q${-rx-11} ${-ry-10} 0 ${-ry-10} Q${rx+11} ${-ry-10} ${rx+9} 0 L${rx+9} ${ry*.65} Q${rx} ${ry*.8} ${rx-6} ${ry*.6} L${-rx+6} ${ry*.6} Q${-rx} ${ry*.8} ${-rx-9} ${ry*.65}Z" fill="${hc}"/>`;
+ if(L.hair===8)s+=`<path d="M${rx-8} ${-ry*.6} Q${rx+34} ${-ry*.5} ${rx+24} ${ry*.5} Q${rx+14} ${-ry*.05} ${rx-6} ${-ry*.25}Z" fill="${hc}"/>`;
+ {
+  // torso
+  s+=`<path d="M${-w} ${B} L${-w} ${T+38} Q${-w} ${T+2} ${-w*.42} ${T-4} L${w*.42} ${T-4} Q${w} ${T+2} ${w} ${T+38} L${w} ${B}Z" fill="${L.oc}"/>`;
+  s+=outfit(L,w,T,B);
+  s+=`<path d="M${w*.25} ${T-4} L${w*.42} ${T-4} Q${w} ${T+2} ${w} ${T+38} L${w} ${B} L${w*.35} ${B}Z" fill="#000" opacity=".1"/>`;
+  s+=`<path d="M${-w+18} ${T+40} Q${-w+14} ${B-40} ${-w+24} ${B-16} M${w-18} ${T+40} Q${w-14} ${B-40} ${w-24} ${B-16}" stroke="#000" stroke-opacity=".2" stroke-width="3" fill="none"/>`;
+  if(has('pearl'))s+=Array.from({length:9},(_,i)=>{const a=Math.PI*(.15+i*.0875);return`<circle cx="${(Math.cos(a)*24).toFixed(1)}" cy="${(T-2+Math.sin(a)*22).toFixed(1)}" r="4" fill="#f8f4ec" stroke="#cfc6b6"/>`}).join('');
+  if(has('chain'))s+=`<path d="M-22 ${T} Q0 ${T+34} 22 ${T}" fill="none" stroke="#f2c230" stroke-width="5" stroke-dasharray="4 3"/>`;
+  if(has('pins'))s+=`<circle cx="${-w*.5}" cy="${T+46}" r="7" fill="#ffd34d" stroke="#8a6a12" stroke-width="2"/><circle cx="${-w*.5+14}" cy="${T+62}" r="6" fill="#e05a5a" stroke="#7a1a1a" stroke-width="2"/><rect x="${-w*.5-6}" y="${T+70}" width="12" height="12" rx="2" fill="#5ab0e0" stroke="#1a5a7a" stroke-width="2"/>`;
+  if(has('patch'))s+=`<rect x="${w*.35}" y="${T+70}" width="22" height="20" fill="#d8c39a" stroke="#6b5636" stroke-width="2" stroke-dasharray="3 2" transform="rotate(-8 ${w*.35+11} ${T+80})"/>`;
+  if(has('flower'))s+=`<g transform="translate(${w*.3},${T+52})">${[0,72,144,216,288].map(a=>`<circle cx="${(Math.cos(a*Math.PI/180)*7).toFixed(1)}" cy="${(Math.sin(a*Math.PI/180)*7).toFixed(1)}" r="6" fill="#fff0f5"/>`).join('')}<circle r="5" fill="#f2c230"/></g>`;
+  s+=`<path d="M-14 ${ry-16} L-14 ${T+2} Q0 ${T+10} 14 ${T+2} L14 ${ry-16}Z" fill="${sk}"/><path d="M-14 ${ry-16} L14 ${ry-16} L14 ${ry-4} Q0 ${ry+4} -14 ${ry-4}Z" fill="#000" opacity=".15"/>`;
+  if(L.outfit==='turtle')s+=`<rect x="-20" y="${ry-8}" width="40" height="${T-ry+12}" rx="9" fill="${L.oc}"/><path d="M-18 ${ry-2} L18 ${ry-2} M-18 ${ry+6} L18 ${ry+6}" stroke="#000" stroke-opacity=".25" stroke-width="2"/>`;
+  if(L.outfit==='hoodie')s+=`<path d="M-14 ${T+4} L-12 ${T+44} M14 ${T+4} L12 ${T+44}" stroke="#f4efe6" stroke-width="3" stroke-linecap="round"/>`;
+  s+=[-1,1].map(d=>`<ellipse cx="${d*(w-22)}" cy="${B-6}" rx="16" ry="10" fill="${sk}" stroke="#000" stroke-opacity=".22" stroke-width="2"/><path d="M${d*(w-22)-8} ${B-12} L${d*(w-22)-8} ${B-4} M${d*(w-22)} ${B-14} L${d*(w-22)} ${B-4} M${d*(w-22)+8} ${B-12} L${d*(w-22)+8} ${B-4}" stroke="#000" stroke-opacity=".15" stroke-width="1.5"/>`).join('');
+ }
+ // ears
+ s+=`<circle cx="${-rx}" cy="4" r="10" fill="${sk}"/><circle cx="${rx}" cy="4" r="10" fill="${sk}"/><circle cx="${-rx}" cy="4" r="5" fill="#000" opacity=".1"/><circle cx="${rx}" cy="4" r="5" fill="#000" opacity=".1"/>`;
+ if(has('earring'))s+=`<circle cx="${-rx}" cy="16" r="4" fill="#f2c230"/><circle cx="${rx}" cy="16" r="4" fill="#f2c230"/>`;
+ // head
+ s+=L.head==='square'?`<rect x="${-rx}" y="${-ry}" width="${rx*2}" height="${ry*2}" rx="${rx*.62}" fill="${sk}"/>`:`<ellipse rx="${rx}" ry="${ry}" fill="${sk}"/>`;
+ s+=`<path d="M${rx*.5} ${-ry*.75} Q${rx*1.05} 0 ${rx*.45} ${ry*.88}" stroke="#000" stroke-opacity=".08" stroke-width="12" fill="none"/><ellipse cx="-12" cy="${-ry*.55}" rx="${rx*.42}" ry="${ry*.18}" fill="#fff" opacity=".2"/>`;
+ if(mood==='angry')s+=`<ellipse cy="6" rx="${rx-4}" ry="${ry-6}" fill="#e0402a" opacity=".32"/>`;
+ if(has('blush'))s+=`<ellipse cx="-27" cy="18" rx="9" ry="5" fill="#f07a7a" opacity=".5"/><ellipse cx="27" cy="18" rx="9" ry="5" fill="#f07a7a" opacity=".5"/>`;
+ if(has('wrinkles'))s+=`<path d="M-18 -30 Q0 -34 18 -30 M-14 -24 Q0 -27 14 -24 M-30 20 Q-26 30 -20 34 M30 20 Q26 30 20 34" stroke="#000" stroke-opacity=".18" stroke-width="2" fill="none"/>`;
+ if(has('scar'))s+=`<path d="M22 -12 L34 14" stroke="#9a5a4a" stroke-width="3"/><path d="M24 -4 L31 -7 M27 3 L34 0 M30 10 L37 7" stroke="#9a5a4a" stroke-width="2"/>`;
+ if(has('bandaid'))s+=`<g transform="translate(-24,-30) rotate(-25)"><rect x="-12" y="-4" width="24" height="9" rx="4" fill="#f0c9a0" stroke="#c49a70"/><rect x="-4" y="-4" width="8" height="9" fill="#e0b080"/></g>`;
+ if(L.fh===2)s+=`<path d="M${-rx+3} 6 Q${-rx+6} ${ry+12} 0 ${ry+16} Q${rx-6} ${ry+12} ${rx-3} 6 Q${rx*.55} 30 0 34 Q${-rx*.55} 30 ${-rx+3} 6Z" fill="${hc}"/>`;
+ if(L.fh===3)s+=`<ellipse cy="34" rx="${rx*.7}" ry="${ry*.38}" fill="${hc}" opacity=".18"/>`;
+ // eyes
+ const happy=mood==='happy',shock=mood==='shock';
+ let e='';
+ if(L.glasses===2)e='';
+ else if(happy&&L.eyes!=='big')e=`<path d="M-25 2 Q-17 -7 -9 2 M9 2 Q17 -7 25 2" stroke="#222" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+ else if(L.eyes==='big'||shock)e=[-17,17].map(x=>`<circle cx="${x}" cy="0" r="10" fill="#fff" stroke="#000" stroke-opacity=".2"/><circle cx="${x}" cy="1" r="6" fill="#222"/><circle cx="${x-2}" cy="-2" r="2.2" fill="#fff"/>`).join('');
+ else if(L.eyes==='sleepy')e=`<path d="M-25 1 Q-17 -4 -9 1 M9 1 Q17 -4 25 1" stroke="#222" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M-25 1 Q-17 6 -9 1 M9 1 Q17 6 25 1" stroke="#222" stroke-width="1.5" fill="none"/>`;
+ else if(L.eyes==='shifty')e=[-17,17].map(x=>`<ellipse cx="${x}" cy="0" rx="8" ry="5" fill="#fff"/><circle cx="${x-4}" cy="0" r="3.6" fill="#222"/>`).join('');
+ else e=`<ellipse cx="-17" cy="0" rx="4.6" ry="6" fill="#222"/><ellipse cx="17" cy="0" rx="4.6" ry="6" fill="#222"/><circle cx="-15.5" cy="-2" r="1.6" fill="#fff"/><circle cx="18.5" cy="-2" r="1.6" fill="#fff"/>`;
+ s+=`<g class="blink">${e}</g>`;
+ if(has('bags'))s+=`<path d="M-25 10 Q-17 14 -9 10 M9 10 Q17 14 25 10" stroke="#7a5a4a" stroke-width="2" fill="none"/>`;
+ // brows
+ const bc=['#c9c1b5','#e2b84a','#d9d4cc','#e8e4dc','#bfb8ad'].includes(hc)?'#7a6a50':hc;
+ const br=mood==='angry'?'M-28 -22 L-8 -13 M28 -22 L8 -13':mood==='meh'?'M-27 -17 L-9 -16 M27 -17 L9 -16':shock?'M-27 -24 Q-18 -30 -9 -24 M27 -24 Q18 -30 9 -24':L.brows==='proud'?'M-27 -17 Q-18 -21 -9 -17 M9 -23 Q18 -29 27 -25':'M-27 -16 Q-18 -22 -9 -17 M27 -16 Q18 -22 9 -17';
+ if(L.glasses!==2)s+=`<path d="${br}" stroke="${bc}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+ // nose
+ s+=L.nose==='long'?`<path d="M2 -2 Q-6 18 5 21" stroke="#000" stroke-opacity=".3" stroke-width="3" fill="none" stroke-linecap="round"/>`:L.nose==='round'?`<circle cx="0" cy="14" r="8" fill="${sk}" stroke="#000" stroke-opacity=".2" stroke-width="2"/>`:`<ellipse cx="0" cy="14" rx="6" ry="4.5" fill="#000" opacity=".14"/>`;
+ // mouth
+ const chat=has('chatty');
+ let mo='';
+ if(happy)mo=`<path d="M-16 25 Q0 47 16 25Z" fill="#6a2018"/><path d="M-9 36 Q0 43 9 36" fill="#e07a6a"/><path d="M-14 26 L14 26" stroke="#fff" stroke-width="3"/>`;
+ else if(shock)mo=`<ellipse cy="34" rx="7" ry="9" fill="#5a1a12"/>`;
+ else if(mood==='angry')mo=`<path d="M-15 38 Q0 24 15 38" stroke="#5a2a22" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+ else if(mood==='meh')mo=`<path d="M-11 33 L11 32" stroke="#5a2a22" stroke-width="4.5" stroke-linecap="round"/>`;
+ else mo=chat?`<path d="M-13 27 Q0 42 13 27Z" fill="#6a2018"/>`:`<path d="M-13 29 Q0 39 13 29" stroke="#5a2a22" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
+ s+=mo;
+ if(has('goldtooth')&&(happy||chat))s+=`<rect x="3" y="26" width="6" height="6" fill="#f2c230"/>`;
+ if(L.fh===1)s+=`<path d="M-18 23 Q-9 15 0 21 Q9 15 18 23 Q9 27 0 24 Q-9 27 -18 23Z" fill="${hc}"/>`;
+ if(L.fh===4)s+=`<path d="M0 21 Q-12 14 -22 21 Q-30 22 -27 13 M0 21 Q12 14 22 21 Q30 22 27 13" stroke="${hc}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+ // glasses
+ if(L.glasses===1)s+=`<circle cx="-17" cy="0" r="13" fill="#bfe3ff" fill-opacity=".18" stroke="#2a2a2a" stroke-width="3"/><circle cx="17" cy="0" r="13" fill="#bfe3ff" fill-opacity=".18" stroke="#2a2a2a" stroke-width="3"/><path d="M-4 -1 L4 -1 M-30 -2 L${-rx} -4 M30 -2 L${rx} -4" stroke="#2a2a2a" stroke-width="3"/>`;
+ if(L.glasses===4)s+=`<rect x="-31" y="-10" width="27" height="19" rx="4" fill="#bfe3ff" fill-opacity=".15" stroke="#2a2a2a" stroke-width="3.5"/><rect x="4" y="-10" width="27" height="19" rx="4" fill="#bfe3ff" fill-opacity=".15" stroke="#2a2a2a" stroke-width="3.5"/><path d="M-4 -2 L4 -2 M-31 -4 L${-rx} -6 M31 -4 L${rx} -6" stroke="#2a2a2a" stroke-width="3"/>`;
+ if(L.glasses===2)s+=`<path d="M-34 -10 L-3 -10 L-6 8 Q-18 14 -30 8Z M34 -10 L3 -10 L6 8 Q18 14 30 8Z" fill="#141414"/><path d="M-3 -6 L3 -6 M-34 -8 L${-rx} -8 M34 -8 L${rx} -8" stroke="#141414" stroke-width="3"/><path d="M-28 -6 L-20 -6" stroke="#fff" stroke-opacity=".5" stroke-width="3"/>${mood==='angry'?'<path d="M-30 -16 L-8 -11 M30 -16 L8 -11" stroke="#141414" stroke-width="5" stroke-linecap="round"/>':''}`;
+ if(L.glasses===3)s+=`<circle cx="17" cy="0" r="12" fill="#bfe3ff" fill-opacity=".2" stroke="#c9a227" stroke-width="3"/><path d="M28 6 Q34 40 22 70" stroke="#c9a227" stroke-width="1.5" fill="none"/>`;
+ // front hair
+ const H=[
+  `<path d="M${-rx-1} -4 Q${-rx-3} ${-ry-9} 0 ${-ry-9} Q${rx+3} ${-ry-9} ${rx+1} -4 Q${rx*.8} ${-ry*.56} 0 ${-ry*.62} Q${-rx*.8} ${-ry*.56} ${-rx-1} -4Z" fill="${hc}"/>`,
+  `<path d="M${-rx-3} 6 Q${-rx-5} ${-ry-11} 0 ${-ry-11} Q${rx+5} ${-ry-11} ${rx+3} 6 Q${rx*.7} ${-ry*.72} ${rx*.05} ${-ry*.5} Q${-rx*.55} ${-ry*.42} ${-rx-3} 6Z" fill="${hc}"/>`,
+  `<path d="M${-rx-2} 8 Q${-rx-4} -18 ${-rx+8} -28 L${-rx+7} 8Z M${rx+2} 8 Q${rx+4} -18 ${rx-8} -28 L${rx-7} 8Z" fill="${hc}"/><ellipse cx="-10" cy="${-ry*.7}" rx="12" ry="5" fill="#fff" opacity=".35"/>`,
+  Array.from({length:9},(_,i)=>{const a=Math.PI*(1.02+i*.12);return`<circle cx="${(Math.cos(a)*rx).toFixed(1)}" cy="${(Math.sin(a)*ry*.95-4).toFixed(1)}" r="15" fill="${hc}"/>`}).join(''),
+  `<path d="M${-rx} -2 L${-rx+4} ${-ry-4} L${-rx*.5} ${-ry*.8} L${-rx*.3} ${-ry-15} L0 ${-ry*.75} L${rx*.3} ${-ry-17} L${rx*.5} ${-ry*.8} L${rx-4} ${-ry-4} L${rx} -2 Q0 ${-ry*.6} ${-rx} -2Z" fill="${hc}"/>`,
+  `<circle cx="0" cy="${-ry-14}" r="19" fill="${hc}"/><path d="M-14 ${-ry-24} L14 ${-ry-4}" stroke="#a0522d" stroke-width="3"/><path d="M${-rx-1} -2 Q${-rx-2} ${-ry-6} 0 ${-ry-6} Q${rx+2} ${-ry-6} ${rx+1} -2 Q${rx*.7} ${-ry*.6} 0 ${-ry*.74} Q${-rx*.7} ${-ry*.6} ${-rx-1} -2Z" fill="${hc}"/>`,
+  `<path d="M${-rx-7} ${ry*.25} Q${-rx-9} ${-ry-9} 0 ${-ry-9} Q${rx+9} ${-ry-9} ${rx+7} ${ry*.25} L${rx-3} -12 Q0 ${-ry*.46} ${-rx+3} -12Z" fill="${hc}"/>`,
+  `<path d="M${-rx} -2 Q${-rx-4} ${-ry-4} ${-rx*.2} ${-ry-24} Q${rx*.7} ${-ry-32} ${rx+5} ${-ry-6} Q${rx+2} -10 ${rx} -2 Q${rx*.6} ${-ry*.6} 0 ${-ry*.62} Q${-rx*.6} ${-ry*.6} ${-rx} -2Z" fill="${hc}"/><path d="M${-rx*.1} ${-ry-18} Q${rx*.5} ${-ry-26} ${rx} ${-ry-6}" stroke="#fff" stroke-opacity=".25" stroke-width="3" fill="none"/>`,
+  `<path d="M${-rx-1} -4 Q${-rx-3} ${-ry-9} 0 ${-ry-9} Q${rx+3} ${-ry-9} ${rx+1} -4 Q${rx*.75} ${-ry*.5} ${rx*.1} ${-ry*.62} Q${-rx*.8} ${-ry*.5} ${-rx-1} -4Z" fill="${hc}"/><circle cx="${rx-2}" cy="${-ry*.45}" r="5" fill="#e05a8a"/>`,
+  `<path d="M${-rx} -8 Q${-rx-1} ${-ry-4} 0 ${-ry-4} Q${rx+1} ${-ry-4} ${rx} -8 Q${rx*.8} ${-ry*.66} 0 ${-ry*.72} Q${-rx*.8} ${-ry*.66} ${-rx} -8Z" fill="${hc}" opacity=".6"/>`
+ ];
+ s+=H[L.hair]||'';
+ // hats
+ const hat2=L.oc2&&L.oc2!=='#fff'?L.oc2:'#7a1a2a';
+ if(L.hat==='beret')s+=`<ellipse cx="-8" cy="${-ry+2}" rx="${rx+12}" ry="17" fill="#7a1a2a"/><ellipse cx="-8" cy="${-ry-2}" rx="${rx}" ry="10" fill="#fff" opacity=".1"/><circle cx="-8" cy="${-ry-15}" r="4" fill="#7a1a2a"/>`;
+ if(L.hat==='top')s+=`<rect x="-34" y="${-ry-64}" width="68" height="62" rx="4" fill="#161616"/><rect x="${-rx-14}" y="${-ry-6}" width="${rx*2+28}" height="11" rx="5" fill="#161616"/><rect x="-34" y="${-ry-22}" width="68" height="10" fill="#8a1a2a"/><rect x="-28" y="${-ry-60}" width="8" height="50" fill="#fff" opacity=".08"/>`;
+ if(L.hat==='cap')s+=`<path d="M${-rx-2} ${-ry*.32} Q${-rx} ${-ry-8} 0 ${-ry-8} Q${rx} ${-ry-8} ${rx+2} ${-ry*.32}Z" fill="#c4402a"/><path d="M${rx*.1} ${-ry*.34} L${rx+36} ${-ry*.28} Q${rx+30} ${-ry*.14} ${rx*.1} ${-ry*.2}Z" fill="#8a2a1a"/>`;
+ if(L.hat==='fedora')s+=`<path d="M${-rx-22} ${-ry*.42} Q0 ${-ry*.18} ${rx+22} ${-ry*.42} Q${rx+8} ${-ry*.6} ${rx-4} ${-ry*.6} L${rx-10} ${-ry-22} Q0 ${-ry-36} ${-rx+10} ${-ry-22} L${-rx+4} ${-ry*.6} Q${-rx-8} ${-ry*.6} ${-rx-22} ${-ry*.42}Z" fill="#2a2a2a"/><path d="M${-rx+5} ${-ry*.64} L${rx-5} ${-ry*.64} L${rx-6} ${-ry*.8} L${-rx+6} ${-ry*.8}Z" fill="#8a2a2a"/>`;
+ if(L.hat==='beanie')s+=`<path d="M${-rx-3} ${-ry*.3} Q${-rx-2} ${-ry-18} 0 ${-ry-18} Q${rx+2} ${-ry-18} ${rx+3} ${-ry*.3}Z" fill="${hat2}"/><rect x="${-rx-5}" y="${-ry*.44}" width="${rx*2+10}" height="14" rx="6" fill="${hat2}"/><rect x="${-rx-5}" y="${-ry*.44}" width="${rx*2+10}" height="14" rx="6" fill="#000" opacity=".15"/><circle cy="${-ry-20}" r="8" fill="${hat2}"/>`;
+ if(L.hat==='headband')s+=`<rect x="${-rx-1}" y="${-ry*.64}" width="${rx*2+2}" height="11" rx="4" fill="#d9483a"/>`;
+ if(has('sweat')||mood==='angry')s+=`<path d="M${rx-4} -30 Q${rx+3} -16 ${rx-4} -9 Q${rx-11} -16 ${rx-4} -30Z" fill="#7cc7f0" stroke="#3a8ab0" stroke-width="1.5"/>`;
+ if(mood==='angry')s+=`<g fill="#fff" opacity=".9"><circle class="steam" cx="${-rx+6}" cy="${-ry-6}" r="9"/><circle class="steam" cx="${rx-6}" cy="${-ry-6}" r="9" style="animation-delay:.6s"/></g>`;
+ return s;
+}
+function outfit(L,w,T,B){
+ const o=L.oc2;
+ switch(L.outfit){
+  case'suit':return`<path d="M${-w*.32} ${T-4} L0 ${T+74} L${w*.32} ${T-4}Z" fill="#f4f1ea"/><path d="M${-w*.42} ${T-4} L${-w*.05} ${T+74} L${-w*.3} ${T+14}Z M${w*.42} ${T-4} L${w*.05} ${T+74} L${w*.3} ${T+14}Z" fill="#000" opacity=".25"/><path d="M-6 ${T} L6 ${T} L4 ${T+10} L9 ${T+52} L0 ${T+64} L-9 ${T+52} L-4 ${T+10}Z" fill="${o}"/><circle cx="0" cy="${T+100}" r="3.5" fill="#000" opacity=".3"/><circle cx="0" cy="${T+124}" r="3.5" fill="#000" opacity=".3"/>`;
+  case'hoodie':return`<path d="M${-w*.6} ${T+8} Q0 ${T-32} ${w*.6} ${T+8} Q0 ${T+28} ${-w*.6} ${T+8}Z" fill="#000" opacity=".2"/><rect x="${-w*.48}" y="${B-62}" width="${w*.96}" height="42" rx="12" fill="#000" opacity=".1"/>`;
+  case'apron':return`<path d="M${-w*.52} ${T+28} L${w*.52} ${T+28} L${w*.58} ${B} L${-w*.58} ${B}Z" fill="${o}"/><path d="M${-w*.4} ${T+28} L${-w*.2} ${T-3} M${w*.4} ${T+28} L${w*.2} ${T-3}" stroke="${o}" stroke-width="7"/><rect x="${-w*.3}" y="${T+76}" width="${w*.6}" height="30" rx="5" fill="#000" opacity=".12"/>`;
+  case'coat':return`<path d="M${-w*.44} ${T-6} L-6 ${T+38} L${-w*.55} ${T+34}Z M${w*.44} ${T-6} L6 ${T+38} L${w*.55} ${T+34}Z" fill="#000" opacity=".22"/><path d="M0 ${T+30} L0 ${B}" stroke="#000" stroke-opacity=".25" stroke-width="2"/><rect x="${-w}" y="${T+108}" width="${w*2}" height="12" fill="${o}"/>${[0,1,2].map(i=>`<circle cx="-12" cy="${T+56+i*26}" r="4" fill="#000" opacity=".35"/><circle cx="12" cy="${T+56+i*26}" r="4" fill="#000" opacity=".35"/>`).join('')}`;
+  case'cardigan':return`<path d="M${-w*.24} ${T-4} L${w*.24} ${T-4} L${w*.22} ${B} L${-w*.22} ${B}Z" fill="${o}"/><path d="M${-w*.24} ${T-4} L${-w*.22} ${B} M${w*.24} ${T-4} L${w*.22} ${B}" stroke="#000" stroke-opacity=".25" stroke-width="3"/>${[0,1,2,3].map(i=>`<circle cx="${-w*.24-6}" cy="${T+30+i*32}" r="4" fill="#f4efe6"/>`).join('')}`;
+  case'hanbok':return`<path d="M${-w*.35} ${T-4} L${w*.12} ${T+56}" stroke="#f6f1e6" stroke-width="10"/><path d="M${w*.12} ${T+54} Q${w*.3} ${T+70} ${w*.18} ${T+130} M${w*.12} ${T+54} Q${w*.05} ${T+80} ${w*.08} ${T+118}" stroke="${o}" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+  case'track':return`<path d="M0 ${T} L0 ${B}" stroke="#fff" stroke-width="3"/><path d="M${-w+8} ${T+28} L${-w+10} ${B-30} M${w-8} ${T+28} L${w-10} ${B-30}" stroke="#fff" stroke-width="6"/>`;
+  case'tee':return`<circle cx="0" cy="${T+62}" r="20" fill="${o}" opacity=".85"/><path d="M0 ${T+48} L4 ${T+58} L14 ${T+59} L6 ${T+66} L9 ${T+76} L0 ${T+70} L-9 ${T+76} L-6 ${T+66} L-14 ${T+59} L-4 ${T+58}Z" fill="${L.oc}"/>`;
+  default:return'';
+ }
+}
+const portrait=(L,mood='ok')=>`<svg viewBox="-80 -100 160 175" aria-hidden="true">${drawChar(L,mood)}</svg>`;
+
+/* ================= 장면 ================= */
+function wrap(str,n){const out=[];let line='';for(const word of String(str).split(' ')){if((line+' '+word).trim().length>n&&line){out.push(line);line=word}else line=(line+' '+word).trim();while(line.length>n){out.push(line.slice(0,n));line=line.slice(n)}}if(line)out.push(line);return out}
+const T_=(x,y,txt,o='')=>`<text x="${x}" y="${y}" ${o}>${esc(txt)}</text>`;
+function hot(act,arg,inner,label,extra=''){return`<g class="hot" data-act="${act}"${arg!=null?` data-arg="${arg}"`:''} role="button" tabindex="0" aria-label="${esc(label)}" ${extra}>${inner}</g>`}
+function scene(){
+ const c=S.cur,sh=SHOPS[S.shop],it=curItem(),open=S.phase==='open'&&c&&!c.visitor;
+ const live=open&&!c.gone;
+ let s=`<svg id="stage" viewBox="0 0 400 820" preserveAspectRatio="xMidYMid meet" role="application" aria-label="전당포 카운터 화면">
+ <defs>
+  <pattern id="stripe" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="${sh.wall}"/><rect width="12" height="24" fill="#fff" opacity=".05"/><circle cx="18" cy="6" r="1.6" fill="#ffd77a" opacity=".25"/></pattern>
+  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5634"/><stop offset=".08" stop-color="#6b4126"/><stop offset="1" stop-color="#3e2414"/></linearGradient>
+  <radialGradient id="lamp" cx=".5" cy=".1" r=".75"><stop offset="0" stop-color="#ffe3a3" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>
+  <radialGradient id="felt" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="#2f6a52"/><stop offset="1" stop-color="#1a3f30"/></radialGradient>
+  <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe29a"/><stop offset=".5" stop-color="#d9a441"/><stop offset="1" stop-color="#8a6420"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfe8f0" stop-opacity=".5"/><stop offset=".5" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#cfe8f0" stop-opacity=".5"/></linearGradient>
+  <filter id="sh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-opacity=".45"/></filter>
+ </defs>
+ <rect width="400" height="480" fill="url(#stripe)"/>
+ <rect y="372" width="400" height="108" fill="#3e2416"/><rect y="368" width="400" height="8" fill="#7a4a2c"/>${[0,1,2,3].map(i=>`<rect x="${10+i*100}" y="386" width="80" height="76" rx="3" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3"/>`).join('')}
+ <rect width="400" height="480" fill="url(#lamp)"/>
+ <g transform="translate(200,0)"><path d="M0 0 L0 22" stroke="#222" stroke-width="2"/><path d="M-26 40 Q0 14 26 40Z" fill="#2a3a2a"/><ellipse cy="40" rx="12" ry="4" fill="#ffe9a8"/></g>`;
+ // 벽 장식: 액자 (손님 없을 때)
+ if(!c&&!(S.phase==='morning'&&S.day===S.auctionDay&&!S.auctionDone))s+=`<g filter="url(#sh)"><rect x="140" y="90" width="120" height="86" fill="#c9a227"/><rect x="148" y="98" width="104" height="70" fill="#2e4a5a"/><circle cx="222" cy="118" r="10" fill="#ffd77a"/><path d="M148 168 L180 130 L205 158 L222 140 L252 168Z" fill="#4a7a5a"/></g><text x="200" y="198" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="17" fill="#fbe7c9">창업 기념 · ${esc(sh.n)}</text>`;
+ // 달력
+ s+=`<g filter="url(#sh)"><rect x="10" y="12" width="82" height="68" rx="3" fill="#fffaf0"/><rect x="10" y="12" width="82" height="20" rx="3" fill="#c4402a"/><text x="51" y="27" text-anchor="middle" font-family="Do Hyeon" font-size="14" fill="#fff">${S.day}일차</text><text x="51" y="55" text-anchor="middle" font-family="Do Hyeon" font-size="22" fill="#1e1612">평판 ${S.rep}</text><text x="51" y="73" text-anchor="middle" font-family="Gaegu" font-size="14" font-weight="700" fill="#6b4126">Lv.${S.lv} 딜러</text></g>`;
+ // 성향 메모
+ if(c&&!c.visitor)s+=c.tr.map((k,i)=>{const sn=c.seen.includes(k);return hot('trait',k,`<g transform="rotate(${i?3:-3} 51 ${104+i*36})"><rect x="12" y="${88+i*36}" width="78" height="32" fill="${sn?'#fff6a8':'#f0e6c8'}" filter="url(#sh)"/><text x="51" y="${109+i*36}" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="17" fill="#2a1a0a">${sn?TR[k].n:'성향 ?'}</text></g>`,sn?`${TR[k].n}: ${TR[k].d}`:'아직 모르는 성향')}).join('');
+ // 창고 문
+ s+=hot('inv',null,`<rect x="8" y="164" width="84" height="308" fill="#5a3420"/><rect x="14" y="170" width="72" height="300" fill="#7a4a2c"/><rect x="22" y="182" width="56" height="70" fill="#2a3a44"/><rect x="22" y="182" width="56" height="70" fill="url(#glass)"/><rect x="22" y="268" width="56" height="80" rx="3" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3"/><rect x="22" y="362" width="56" height="96" rx="3" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3"/><circle cx="76" cy="330" r="6" fill="url(#brass)"/><g filter="url(#sh)"><rect x="20" y="274" width="60" height="40" rx="4" fill="#f6eedd"/><text x="50" y="293" text-anchor="middle" font-family="Do Hyeon" font-size="17" fill="#3a2010">창고</text><text x="50" y="309" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="15" fill="${S.inv.length>=cap()?'#c4402a':'#3a2010'}">${S.inv.length}/${cap()}</text></g>`,`창고 열기, ${S.inv.length}/${cap()}칸`);
+ // 코르크보드 (직원)
+ const hired=S.staff.slice(0,6);
+ s+=hot('staff',null,`<rect x="300" y="196" width="94" height="72" rx="3" fill="#6b4126" filter="url(#sh)"/><rect x="305" y="201" width="84" height="62" fill="#b98a55"/>${hired.map((k,i)=>{const x=309+(i%3)*27,y=205+Math.floor(i/3)*29;return`<rect x="${x}" y="${y}" width="24" height="26" fill="#fff"/><svg x="${x+2}" y="${y+2}" width="20" height="18" viewBox="-60 -80 120 110">${drawChar(STAFF[k].L,'ok')}</svg>`}).join('')}${hired.length?'':`<text x="347" y="236" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="15" fill="#3a2010">구인 중!</text>`}<rect x="318" y="254" width="58" height="18" rx="3" fill="#f6eedd"/><text x="347" y="268" text-anchor="middle" font-family="Do Hyeon" font-size="14" fill="#3a2010">직원</text>`,`직원 게시판, ${S.staff.length}명 고용 중`);
+ // 진열장
+ const shown=[...S.inv].slice(0,12);
+ s+=hot('inv',null,`<rect x="300" y="276" width="96" height="196" fill="#3a2214" filter="url(#sh)"/><rect x="305" y="281" width="86" height="186" fill="#1e120c"/>${[340,402,464].map(y=>`<rect x="303" y="${y}" width="90" height="6" fill="#6b4126"/>`).join('')}${shown.map((it,i)=>`<text x="${318+(i%4)*21}" y="${336+Math.floor(i/4)*62}" text-anchor="middle" font-size="19">${it.e}</text>`).join('')}<rect x="305" y="281" width="86" height="186" fill="url(#glass)" opacity=".5"/>`,'진열장 (창고 열기)');
+ // 손님
+ if(c){const mood=moodOf(c);s+=`<g class="${shakeNext?'shake':'bob'}" transform="translate(200,250)">${drawChar(c.L,mood)}</g>`;shakeNext=false}
+ // 모래시계 (인내심)
+ if(c&&!c.visitor){const m=clamp(c.pat/c.maxPat,0,1);
+  s+=`<g transform="translate(110,400)" filter="url(#sh)"><rect x="-2" y="0" width="36" height="6" rx="2" fill="url(#brass)"/><rect x="-2" y="62" width="36" height="6" rx="2" fill="url(#brass)"/><path d="M4 6 L28 6 Q28 26 18 34 Q28 42 28 62 L4 62 Q4 42 14 34 Q4 26 4 6Z" fill="#dff1f5" fill-opacity=".55" stroke="#9ab" stroke-width="1.5"/>
+  <path d="M${16-11*m} ${30-22*m} L${16+11*m} ${30-22*m} L17 32 L15 32Z" fill="${m>.33?'#e6b85a':'#d9483a'}"/><path d="M5 61 Q16 ${61-24*(1-m)} 27 61Z" fill="${m>.33?'#e6b85a':'#d9483a'}"/>${m>0&&!c.gone?'<path d="M16 34 L16 60" stroke="#e6b85a" stroke-width="1.5"/>':''}</g>
+  <text x="127" y="398" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="14" fill="#fbe7c9">${has('profiler')?`인내 ${Math.max(0,Math.round(c.pat))}`:'인내심'}</text>`}
+ // 말풍선
+ if(c){const lines=wrap(c.msg,19),fs=lines.length>6?13.5:15,lh=fs+5,h=lines.length*lh+18,y=Math.max(44,170-h);
+  s+=`<g class="pop" pointer-events="none"><rect x="100" y="${y}" width="292" height="${h}" rx="16" fill="#fffaf0" stroke="#2a1a10" stroke-width="3"/><path d="M180 ${y+h-2} L194 ${y+h+18} L206 ${y+h-2}Z" fill="#fffaf0" stroke="#2a1a10" stroke-width="3" stroke-linejoin="round"/><rect x="178" y="${y+h-6}" width="31" height="6" fill="#fffaf0"/>
+  <rect x="104" y="14" width="${Math.min(288,(c.name.length+c.role.length)*12+44)}" height="26" rx="6" fill="#2a1a10"/><text x="114" y="32" font-family="Do Hyeon" font-size="16" fill="#ffd77a">${esc(c.name)} <tspan fill="#d9c3a5" font-size="13">· ${esc(c.role)}${c.sk?' ★단골':''}</tspan></text>
+  <text font-family="Noto Sans KR" font-size="${fs}" fill="#1e1612">${lines.map((l,i)=>`<tspan x="114" y="${y+12+fs+i*lh}">${esc(l)}</tspan>`).join('')}</text></g>`}
+ // 카운터
+ s+=`<path d="M0 470 L400 470 L400 820 L0 820Z" fill="url(#wood)"/><rect y="466" width="400" height="10" fill="#a06a3d"/><rect y="476" width="400" height="3" fill="#000" opacity=".3"/>${[530,610,700,780].map(y=>`<path d="M0 ${y} Q120 ${y-6} 220 ${y+2} T400 ${y}" stroke="#000" stroke-opacity=".12" stroke-width="2" fill="none"/>`).join('')}`;
+ // 금전등록기 (장부/성장)
+ s+=hot('ledger',null,`<g filter="url(#sh)"><path d="M10 600 L14 520 L108 520 L112 600Z" fill="#8a2a22"/><rect x="18" y="490" width="86" height="36" rx="4" fill="#5a1a14"/><rect x="24" y="496" width="74" height="24" rx="2" fill="#0e2a1a"/><text x="61" y="514" text-anchor="middle" font-family="Do Hyeon" font-size="${String(Math.round(S.money)).length>7?13:16}" fill="${S.money<0?'#ff7a6a':'#7dffb0'}">${fmt(S.money)}</text>${[0,1,2].map(r=>[0,1,2,3].map(k=>`<rect x="${22+k*20}" y="${534+r*14}" width="16" height="10" rx="2" fill="#f0e4cc"/>`).join('')).join('')}<rect x="10" y="582" width="102" height="18" fill="#5a1a14"/><text x="61" y="596" text-anchor="middle" font-family="Do Hyeon" font-size="14" fill="#ffd77a">장부 · 성장</text></g>${S.sp?`<g transform="rotate(8 98 494)"><rect x="80" y="478" width="34" height="30" fill="#fff6a8" filter="url(#sh)"/><text x="97" y="499" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="15" fill="#c4402a">SP+${S.sp}</text></g>`:''}`,`금전등록기: 잔고 ${fmt(S.money)}, 장부와 성장 열기`);
+ // 펠트 매트 + 물건
+ s+=`<ellipse cx="184" cy="548" rx="66" ry="44" fill="url(#felt)" filter="url(#sh)"/><ellipse cx="184" cy="548" rx="58" ry="37" fill="none" stroke="#d9a441" stroke-opacity=".5" stroke-dasharray="4 4"/>`;
+ if(it){s+=`<circle cx="184" cy="540" r="34" fill="${RAR[it.r].c}" opacity=".35" class="${it.r>=2?'glow':''}"/><text x="184" y="562" text-anchor="middle" font-size="54">${it.e}</text>`;
+  if(it.known&&it.fake)s+=`<g transform="rotate(-14 184 548)"><rect x="140" y="530" width="88" height="34" rx="5" fill="none" stroke="#c4402a" stroke-width="4"/><text x="184" y="556" text-anchor="middle" font-family="Do Hyeon" font-size="24" fill="#c4402a">가품</text></g>`;
+  if(it.restoring)s+=`<text x="184" y="596" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="15" fill="#ffd77a">수리 중</text>`}
+ // 꼬리표
+ if(it){inspect(it);const[lo,hi]=est(it);const tr=trend(it.cat);
+  s+=`<path d="M232 528 Q246 510 262 506" stroke="#e8dcc0" stroke-width="2" fill="none"/>`+hot('tagset',null,`<g filter="url(#sh)"><path d="M260 490 L392 490 L392 600 L260 600 L252 545Z" fill="#f6eedd"/><circle cx="264" cy="545" r="4" fill="#7a4f2c"/>
+  <text x="274" y="512" font-family="Do Hyeon" font-size="${it.name.length>7?15:18}" fill="#1e1612">${esc(it.name)}</text>
+  <circle cx="279" cy="528" r="5" fill="${RAR[it.r].c}"/><text x="289" y="533" font-family="Noto Sans KR" font-size="13" fill="#1e1612">${RAR[it.r].n} · ${CON[it.c].n}${tr>1.12?' · ▲':tr<.88?' · ▼':''}</text>
+  <text x="274" y="552" font-family="Noto Sans KR" font-size="13" fill="#6b5a48">${it.known?'정밀 감정가':'추정가'}</text>
+  <text x="274" y="572" font-family="Do Hyeon" font-size="${it.known?20:17}" fill="#1f6a66">${it.known?fmt(val(it,false)):`${fmt(lo)}~${fmt(hi)}`}</text>
+  <text x="274" y="592" font-family="Gaegu" font-weight="700" font-size="14" fill="#8a6a4a">${it.paid?`매입가 ${fmt(it.paid)}`:'탭: 추정가 입력'}</text>
+  ${it.suspect&&!it.known?`<g transform="rotate(10 360 512)"><rect x="330" y="498" width="58" height="24" rx="4" fill="none" stroke="#c4402a" stroke-width="3"/><text x="359" y="516" text-anchor="middle" font-family="Do Hyeon" font-size="15" fill="#c4402a">가품?</text></g>`:''}</g>`,`꼬리표: ${it.name}, 탭하면 추정가를 계산기에 입력`)}
+ // 하단 영역
+ if(S.phase==='morning'){
+  s+=signBoard('flip','CLOSED','탭해서 영업 시작',`#2a1a10`,'#c4402a');
+  if(S.day===S.auctionDay&&!S.auctionDone)s+=hot('auction',null,`<g transform="rotate(-4 200 220)" filter="url(#sh)"><rect x="140" y="88" width="120" height="96" fill="#f3ead4"/><text x="200" y="116" text-anchor="middle" font-family="Do Hyeon" font-size="22" fill="#8a1a2a">오늘 경매!</text><text x="200" y="140" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="16" fill="#2a1a0a">시립 경매장</text><text x="200" y="162" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="16" fill="#2a1a0a">참가비 ${fmt(aFee())}</text><text x="200" y="178" text-anchor="middle" font-family="Noto Sans KR" font-size="12" fill="#6b4126">탭해서 참가</text></g>`,`경매 포스터, 참가비 ${fmt(aFee())}`);
+ }
+ if(S.phase==='night')s+=signBoard('receipt','영업 종료','탭해서 영수증 보기','#2a1a10','#3a5a8a');
+ if(S.phase==='visit'&&c){const v=VIS[c.vk];
+  if(!c.gone)s+=v.opts.map((o,i)=>hot('vpick',i,`<rect x="104" y="${616+i*66}" width="288" height="56" rx="14" fill="#1f8a86" stroke="#0e4a48" stroke-width="3" filter="url(#sh)"/><text x="248" y="${651+i*66}" text-anchor="middle" font-family="Do Hyeon" font-size="22" fill="#fff">"${esc(o[0])}"</text>`,o[0])).join('');
+  else s+=hot('openshop',null,`<rect x="104" y="616" width="288" height="64" rx="14" fill="#d9a441" stroke="#8a6420" stroke-width="3" filter="url(#sh)"/><text x="248" y="656" text-anchor="middle" font-family="Do Hyeon" font-size="24" fill="#2a1a0a">손님 맞이 시작 ▶</text>`,'손님 맞이 시작');
+ }
+ // 신문
+ s+=hot('paper',null,`<g transform="rotate(-6 350 650)" filter="url(#sh)"><rect x="306" y="612" width="86" height="72" fill="#efe6cf"/><rect x="312" y="618" width="74" height="12" fill="#2a2a2a"/><text x="349" y="628" text-anchor="middle" font-family="Do Hyeon" font-size="10" fill="#efe6cf">흥정 일보</text>${[640,650,660,670].map(y=>`<rect x="312" y="${y}" width="${y%20?74:44}" height="4" fill="#9a9080"/>`).join('')}</g><text x="349" y="702" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="16" fill="#fbe7c9">신문</text>${S.phase==='morning'?'<circle cx="388" cy="612" r="8" fill="#ffd77a" class="glow"/>':''}`,'신문 읽기');
+ // 돋보기 / 가품 지적
+ if(live&&it&&!it.known)s+=hot('appr',it.id,`<g filter="url(#sh)"><circle cx="336" cy="736" r="20" fill="#cfe8f0" fill-opacity=".5" stroke="url(#brass)" stroke-width="6"/><path d="M350 750 L366 768" stroke="#6b4126" stroke-width="9" stroke-linecap="round"/></g><text x="352" y="790" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="14" fill="#fbe7c9">정밀 감정 ${fmt(apprFee(it))}</text>`,`돋보기로 정밀 감정, ${fmt(apprFee(it))}`);
+ if(live&&!c.buy&&it&&(it.suspect||(it.known&&it.fake))&&!c.accused)s+=hot('accuse',null,`<g transform="rotate(-8 350 790)" filter="url(#sh)"><rect x="306" y="772" width="88" height="40" rx="6" fill="#c4402a"/><text x="350" y="799" text-anchor="middle" font-family="Do Hyeon" font-size="18" fill="#fff">가짜잖아요!</text></g>`,'가품이라고 지적하기');
+ // 왼쪽 행동 소품 + 계산기
+ if(open){
+  const their=c.buy?c.offer:c.ask;
+  s+=hot('final',null,`<g filter="url(#sh)" opacity="${live?1:.35}"><ellipse cx="50" cy="660" rx="34" ry="8" fill="#3a2214"/><path d="M22 658 Q22 622 50 620 Q78 622 78 658Z" fill="url(#brass)"/><rect x="46" y="608" width="8" height="12" rx="3" fill="#8a6420"/><circle cx="50" cy="607" r="6" fill="url(#brass)"/></g><text x="50" y="688" text-anchor="middle" font-family="Do Hyeon" font-size="16" fill="#ffd77a">최종 제안</text>`,'종 치기: 최종 제안');
+  s+=hot('accept',null,`<g filter="url(#sh)" opacity="${live?1:.35}"><rect x="10" y="698" width="80" height="50" rx="8" fill="#f6eedd"/><path d="M24 728 Q30 712 44 714 L60 712 Q72 714 76 724 L70 734 Q58 742 44 738 Q30 738 24 728Z" fill="#eac29a" stroke="#8a5a3a" stroke-width="2"/><path d="M44 714 L52 728 M52 713 L60 726" stroke="#8a5a3a" stroke-width="2"/></g><text x="50" y="766" text-anchor="middle" font-family="Do Hyeon" font-size="14" fill="#ffd77a">${fmt(their)} 수락</text>`,`악수: 손님 가격 ${fmt(their)} 수락`);
+  s+=hot('refuse',null,`<g filter="url(#sh)" opacity="${live?1:.35}"><rect x="14" y="774" width="72" height="34" rx="6" fill="#4a5a6a"/><text x="50" y="797" text-anchor="middle" font-family="Do Hyeon" font-size="17" fill="#fff">${c.buy?'안 팔아요':'안 사요'}</text></g>`,c.buy?'안 팔아요':'안 사요');
+  s+=calculator(c,their);
+ }
+ s+='</svg>';
+ return s;
+}
+function signBoard(act,big,small,bg,fg){
+ return hot(act,null,`<g class="pop"><path d="M150 590 L200 562 L250 590" stroke="#c9a227" stroke-width="3" fill="none"/><circle cx="200" cy="560" r="5" fill="url(#brass)"/><g filter="url(#sh)"><rect x="104" y="590" width="192" height="100" rx="10" fill="${bg}"/><rect x="112" y="598" width="176" height="84" rx="6" fill="none" stroke="${fg}" stroke-width="3"/><text x="200" y="640" text-anchor="middle" font-family="Do Hyeon" font-size="32" fill="${fg==='#c4402a'?'#ff8a6a':'#9ac4ff'}">${big}</text><text x="200" y="668" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="18" fill="#fbe7c9">${small}</text></g></g>`,`${big} 팻말: ${small}`);
+}
+function calculator(c,their){
+ let s=`<g filter="url(#sh)"><rect x="100" y="606" width="200" height="210" rx="14" fill="#2e3238"/><rect x="104" y="610" width="192" height="202" rx="11" fill="#3c424a"/></g>
+ <rect x="110" y="616" width="180" height="44" rx="5" fill="#b7c8a4"/><rect x="110" y="616" width="180" height="44" rx="5" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="2"/>`;
+ if(c.gone){
+  const ln=wrap(c.res,15);
+  s+=`<text font-family="Do Hyeon" font-size="15" fill="#1e2a14">${ln.slice(0,2).map((l,i)=>`<tspan x="118" y="${634+i*18}">${esc(l)}</tspan>`).join('')}</text>`;
+  s+=hot('next',null,`<rect x="110" y="668" width="180" height="140" rx="10" fill="#d9a441" stroke="#8a6420" stroke-width="3"/><text x="200" y="736" text-anchor="middle" font-family="Do Hyeon" font-size="26" fill="#2a1a0a">${S.queue>0?'다음 손님':'가게 문 닫기'}</text><text x="200" y="764" text-anchor="middle" font-family="Gaegu" font-weight="700" font-size="17" fill="#5a3a10">${S.queue>0?`대기 ${S.queue}명 ▶`:'오늘 장사 끝 ▶'}</text>`,S.queue>0?'다음 손님 부르기':'가게 문 닫기');
+  return s;
+ }
+ s+=`<text x="116" y="631" font-family="Noto Sans KR" font-size="12" fill="#3a4a2a">${c.buy?'손님 제시':'손님 요구'} ${fmt(their)}${c.last!=null?` · 내 직전 ${fmt(c.last)}`:''}</text>
+ <text x="284" y="655" text-anchor="end" font-family="Do Hyeon" font-size="26" fill="#14200c">${fmt(draft)}</text>`;
+ const K=[['7','8','9','⌫'],['4','5','6','-10%'],['1','2','3','+10%'],['0','00','C','제시']];
+ K.forEach((row,j)=>row.forEach((k,i)=>{
+  const x=110+i*46,y=666+j*37,isOk=k==='제시',isOp=i===3||k==='C';
+  s+=hot('key',k,`<rect x="${x}" y="${y}" width="42" height="33" rx="6" fill="${isOk?'#1f8a86':isOp?'#5a636e':'#e8e2d4'}"/><rect x="${x}" y="${y+28}" width="42" height="5" rx="2" fill="#000" opacity=".25"/><text x="${x+21}" y="${y+23}" text-anchor="middle" font-family="Do Hyeon" font-size="${k.length>2?15:19}" fill="${isOk||isOp?'#fff':'#1e1612'}">${k}</text>`,k==='제시'?`${fmt(draft)} 제안하기`:k==='⌫'?'한 자리 지우기':k)}));
+ return s;
+}
+
+/* ================= 오버레이 ================= */
+function paperHTML(){const n=S.news;if(!n)return'';const an=has('analyst');
+ const pct=k=>{const p=Math.round((trend(k)-1)*100);return`${p>0?'+':''}${p}%`};
+ return`<div class="mast"><b>흥정 일보</b><span>${S.day}일차 · 1부 $1 · 단골 할인 없음</span></div>
+ <div class="head">${esc(n.head)}</div>
+ <div class="cols"><div><b>시세 소식</b><p><span class="up">▲ ${CATS[n.up].n}</span> ${CATS[n.up].up}${an?` (${pct(n.up)})`:''}</p><p><span class="dn">▼ ${CATS[n.dn].n}</span> ${CATS[n.dn].dn}${an?` (${pct(n.dn)})`:''}</p>
+ ${an?`<p class="hand">분석가 메모: 내일은 ${CATS[S.next].n}이(가) 뜹니다!</p>`:''}</div>
+ <div><b>단신</b>${n.sub.map(s=>`<p>${esc(s)}</p>`).join('')}${S.day===S.auctionDay?`<p><b>[공고] 오늘 시립 경매장 경매. 참가비 ${fmt(aFee())}</b></p>`:`<p>다음 경매: ${S.auctionDay}일차</p>`}</div></div>`}
+function showPaper(){modal(`<div class="sheet paper"><button class="close" data-act="close" aria-label="닫기">×</button>${paperHTML()}<button class="btn" style="width:100%;margin-top:12px" data-act="close">신문 내려놓기</button></div>`)}
+function showInv(){
+ const sorted=[...S.inv].sort((a,b)=>val(b,true)-val(a,true));
+ modal(`<div class="sheet crate"><button class="close" data-act="close" aria-label="닫기" style="color:#fbefd9">×</button><h2>창고 ${S.inv.length}/${cap()}</h2><p class="note">사러 온 손님은 여기서 물건을 고릅니다. 도매상은 흥정 없이 바로 사 가지만 실제 가치의 절반만 쳐주고, 가품은 귀신같이 알아봅니다.</p>
+ ${sorted.length?`<div class="grid">${sorted.map(it=>{inspect(it);const[lo,hi]=est(it),rc=r10(val(it,true)*.12);
+ return`<div class="tag"><div class="nm"><span style="font-size:28px">${it.e}</span> ${esc(it.name)}</div><div style="font-size:14px;margin-top:4px"><b style="color:${RAR[it.r].c}">${RAR[it.r].n}</b> · ${CON[it.c].n} · ${CATS[it.cat].n}${trend(it.cat)>1.12?' <span class="up">▲</span>':trend(it.cat)<.88?' <span class="dn">▼</span>':''}${it.restoring?' · 수리 중':''}${(it.suspect||(it.known&&it.fake))?` · <b class="neg">${it.known?'가품 확정':'가품 의심'}</b>`:''}</div>
+ <div class="hand">${it.known?`감정가 ${fmt(val(it,false))}`:`추정 ${fmt(lo)}~${fmt(hi)}`}<br>매입 ${fmt(it.paid)}</div>
+ <div class="row" style="margin-top:6px">${!it.known?`<button class="stamp gold" data-act="appr" data-arg="${it.id}">감정 ${fmt(apprFee(it))}</button>`:''}${has('restorer')&&it.c<4&&!it.restoring?`<button class="stamp" data-act="restore" data-arg="${it.id}">수리 ${fmt(rc)}</button>`:''}<button class="stamp red" data-act="dump" data-arg="${it.id}" ${it.restoring?'disabled':''}>도매 처분</button></div></div>`}).join('')}</div>`:'<p class="hand" style="color:#fbefd9">텅 비었다... 손님에게 물건을 사들이자.</p>'}</div>`)}
+function showStaff(){const slots=1+S.shop;
+ modal(`<div class="sheet cork"><button class="close" data-act="close" aria-label="닫기">×</button><h2 style="background:#f6eedd;display:inline-block;padding:4px 10px;transform:rotate(-1deg)">직원 게시판</h2><p class="hand" style="background:#fff6a8;display:inline-block;padding:4px 10px;margin:6px 0 14px">자리 ${S.staff.length}/${slots} · 가게를 넓히면 자리가 늘어요</p>
+ <div class="grid">${Object.entries(STAFF).map(([k,s],i)=>`<div class="polar" style="--rot:${(i%3-1)*2}deg;position:relative"><span class="pin"></span>${portrait(s.L,has(k)?'happy':'ok')}<h3 style="margin-top:6px">${s.pn}</h3><div class="note">${s.n} · 일급 ${fmt(s.w)}</div><p style="font-size:14px;margin:4px 0">${s.d}</p><p class="hand" style="margin:0 0 6px">${s.q}</p>${has(k)?`<button class="stamp red" style="width:100%" data-act="fire" data-arg="${k}">해고</button>`:`<button class="stamp" style="width:100%" data-act="hire" data-arg="${k}" ${S.staff.length>=slots?'disabled':''}>고용</button>`}</div>`).join('')}</div></div>`)}
+const SK={haggle:['흥정','판매자는 더 싸게, 구매자는 더 비싸게'],appraise:['감정','추정가가 좁아지고 가품이 보임'],psych:['심리','손님 성향을 읽음 (1레벨 1개, 3레벨 전부)'],charm:['화술','손님 인내심 증가']};
+function showLedger(){const nx=SHOPS[S.shop+1];
+ modal(`<div class="sheet ledger"><button class="close" data-act="close" aria-label="닫기">×</button><h2>사장 장부</h2>
+ <p class="hand">Lv.${S.lv} 딜러 · 경험치 ${S.xp}/${S.lv*120} · 스킬 포인트 <b style="color:#c4402a">${S.sp}</b></p>
+ ${Object.entries(SK).map(([k,[n,d]])=>`<div class="skill"><div><b style="font:20px Do Hyeon">${n}</b> <span class="pips">${'●'.repeat(S.skills[k])}${'○'.repeat(5-S.skills[k])}</span><div class="note">${d}</div></div><button class="stamp" data-act="skill" data-arg="${k}" ${!S.sp||S.skills[k]>=5?'disabled':''}>+1</button></div>`).join('')}
+ <h3 style="margin-top:14px">가게</h3><p class="hand">지금: ${SHOPS[S.shop].n} · 임대료 ${fmt(SHOPS[S.shop].rent)}/일 · 창고 ${cap()}칸 · 손님 ${SHOPS[S.shop].cust}명</p>
+ ${nx?`<p class="note">다음: <b>${nx.n}</b> · 창고 ${nx.st}칸 · 손님 ${nx.cust}명 · 더 비싼 물건과 부자 손님 · 임대료 ${fmt(nx.rent)}/일</p><button class="btn brass" style="width:100%" data-act="move" ${S.money<nx.cost?'disabled':''}>${fmt(nx.cost)}에 이전 계약</button>`:'<p class="hand"><b>최고의 가게! 이 거리의 흥정왕입니다.</b></p>'}
+ <h3 style="margin-top:14px">단골 수첩</h3>${Object.keys(S.rel).length?Object.entries(S.rel).map(([k,r])=>`<p class="hand" style="margin:2px 0">${SP[k].n} — 방문 ${r.visits}회, 지난번: ${({steal:'내가 이득',fair:'공정 거래',angry:'화내고 떠남',scam:'가품을 팔았음'})[r.last]||'-'}</p>`).join(''):'<p class="note">아직 단골이 없습니다. ★단골 표시 손님은 지난 거래를 기억합니다.</p>'}
+ <p class="note" style="margin-top:12px">누적 거래 ${S.stats.deals}건 · 판매 차익 ${fmt(S.stats.profit)}</p>
+ <button class="btn ghost" style="width:100%;margin-top:6px;color:#c4402a" data-act="askreset">처음부터 다시 하기</button></div>`)}
+
+/* ================= 공통 ================= */
+function render(){$('#wrap').innerHTML=scene()}
+function modal(h){$('#modal').innerHTML=h;$('#modal').classList.remove('hidden')}
+function closeModal(){$('#modal').classList.add('hidden');$('#modal').innerHTML=''}
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2300)}
+const byId=id=>S.inv.find(i=>i.id===+id)||(S.cur&&S.cur.item&&S.cur.item.id===+id?S.cur.item:null);
+function refreshModal(fn){render();fn()}
+const ACT={
+ close:closeModal,paper:showPaper,inv:showInv,staff:showStaff,ledger:showLedger,receipt:showReceipt,
+ trait:k=>{const c=S.cur;toast(c&&c.seen.includes(k)?`${TR[k].n}: ${TR[k].d}`:'심리 스킬이나 프로파일러가 있으면 보입니다')},
+ flip:flipOpen,openshop:openShop,
+ vpick:i=>{const c=S.cur,v=VIS[c.vk];const[m,txt]=v.opts[+i][1]();c.mood=m;c.msg=txt;c.gone=true;save();render()},
+ auction:startAuction,abid:aBid,apass:()=>{if(A.leader==='me')return;endLot()},
+ nextlot:()=>{A.i++;startLot()},leaveauc:()=>{A=null;closeModal();render()},
+ key:k=>{const c=S.cur;if(!c||c.gone)return;const their=c.buy?c.offer:c.ask;
+  if(k==='제시')return propose(draft,false);
+  if(k==='⌫')draft=Math.floor(draft/10);else if(k==='C')draft=0;
+  else if(k==='-10%')draft=r10((draft||their)*.9);else if(k==='+10%')draft=r10((draft||their)*1.1);
+  else draft=Math.min(99999999,+(String(draft||'')+k));
+  render()},
+ tagset:()=>{const it=curItem(),c=S.cur;if(!it||!c||c.gone)return;const[lo,hi]=est(it);draft=it.known?r10(val(it,false)):c.buy?hi:lo;render()},
+ final:()=>propose(draft,true),
+ accept:()=>{const c=S.cur;if(!c||c.gone)return;c.buy?dealBuy(c.offer):dealSell(c.ask)},
+ refuse:()=>{if(S.cur&&!S.cur.gone)leave(S.cur.buy?'아쉽네요. 다음에 올게요.':'그럼 다른 데 가볼게요.',false)},
+ accuse,next:nextCustomer,nextday:nextDay,
+ appr:a=>{const it=byId(a);if(it){appraise(it);if(!$('#modal').classList.contains('hidden'))showInv()}},
+ restore:a=>{const it=byId(a),c=r10(val(it,true)*.12);if(S.money<c)return toast('돈이 부족해요');S.money-=c;it.restoring=true;toast('내일 아침까지 수리됩니다');save();refreshModal(showInv)},
+ dump:a=>{const it=byId(a);if(S.cur&&!S.cur.gone&&S.cur.itemId===it.id)return toast('손님이 보고 있는 물건이에요');const p=r10(val(it,false)*.5);S.money+=p;S.inv=S.inv.filter(i=>i!==it);S.stats.profit+=p-it.paid;toast(`도매상: "${it.name}? ${fmt(p)} 드리죠."`);save();refreshModal(showInv)},
+ hire:k=>{S.staff.push(k);toast(`${STAFF[k].pn}: ${STAFF[k].q}`);save();refreshModal(showStaff)},
+ fire:k=>{S.staff=S.staff.filter(x=>x!==k);save();refreshModal(showStaff)},
+ skill:k=>{if(!S.sp||S.skills[k]>=5)return;S.sp--;S.skills[k]++;save();refreshModal(showLedger)},
+ move:()=>{const nx=SHOPS[S.shop+1];if(!nx||S.money<nx.cost)return;S.money-=nx.cost;S.shop++;save();render();
+  if(S.shop===SHOPS.length-1&&!S.won){S.won=true;modal(`<div class="sheet paper"><div class="mast"><b>흥정 일보 호외</b></div><div class="head">"${SHOPS[S.shop].n}" 개업! ${S.day}일 만의 신화</div><p>동네 차고에서 시작한 사장, 마침내 흥정왕 등극. 장사는 계속됩니다.</p><button class="btn" style="width:100%" data-act="close">계속하기</button></div>`)}else{toast(`${nx.n}(으)로 이전!`);showLedger()}},
+ askreset:()=>modal(`<div class="sheet paper"><h2>처음부터 다시?</h2><p>지금 진행 상황이 사라집니다.</p><div class="row"><button class="btn" style="background:#c4402a" data-act="reset">다시 시작</button><button class="btn ghost" data-act="close">취소</button></div></div>`),
+ reset:()=>{S=newGame();A=null;closeModal();startDay()}
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=ACT[b.dataset.act];if(f)f(b.dataset.arg)});
+document.addEventListener('keydown',e=>{
+ const b=e.target.closest&&e.target.closest('g[data-act]');
+ if(b&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ACT[b.dataset.act]&&ACT[b.dataset.act](b.dataset.arg);return}
+ if(e.key==='Escape'&&!$('#modal').classList.contains('hidden')&&$('#modal [data-act=close]'))closeModal();
+ const c=S&&S.cur;if(!c||c.gone||c.visitor||S.phase!=='open'||!$('#modal').classList.contains('hidden'))return;
+ if(/^[0-9]$/.test(e.key))ACT.key(e.key);else if(e.key==='Backspace')ACT.key('⌫');else if(e.key==='Enter')ACT.key('제시');
+});
+
+S=load();
+if(!S||!S.skills){S=newGame();startDay()}
+else{if(S.cur&&!S.cur.gone&&!S.cur.visitor)draft=S.cur.buy?r10(S.cur.offer*1.5):r10(S.cur.ask*.6);render();if(S.phase==='morning')showPaper();else if(S.phase==='night')showReceipt()}
+}
+</script>
+</body>
+</html>

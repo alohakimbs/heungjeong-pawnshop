@@ -1,0 +1,152 @@
+{
+ "expert": {
+  "n": "감정사",
+  "pn": "노안경 영감",
+  "d": "감정 범위를 크게 좁히고 가품을 잘 잡아냅니다.",
+  "q": "\"이 나이 되면 눈 감고도 보이지.\"",
+  "w": 120,
+  "L": {
+   "skin": "#eac29a",
+   "head": "oval",
+   "hair": 2,
+   "hc": "#d9d4cc",
+   "outfit": "cardigan",
+   "oc": "#7a5a3a",
+   "oc2": "#e8e0d0",
+   "bw": 1,
+   "eyes": "dot",
+   "brows": "norm",
+   "nose": "long",
+   "fh": 1,
+   "hat": "none",
+   "glasses": 1,
+   "acc": [
+    "wrinkles"
+   ]
+  }
+ },
+ "restorer": {
+  "n": "수리공",
+  "pn": "멜빵 정 여사",
+  "d": "창고 물건을 하룻밤 사이 수리해 상태를 올립니다.",
+  "q": "\"고장? 그런 건 없어. 덜 고쳐진 것만 있지.\"",
+  "w": 100,
+  "L": {
+   "skin": "#d9a679",
+   "head": "round",
+   "hair": 8,
+   "hc": "#3a2418",
+   "outfit": "apron",
+   "oc": "#d0e0e8",
+   "oc2": "#3d6e8f",
+   "bw": 1,
+   "eyes": "dot",
+   "brows": "norm",
+   "nose": "button",
+   "fh": 0,
+   "hat": "headband",
+   "glasses": 0,
+   "acc": []
+  }
+ },
+ "profiler": {
+  "n": "프로파일러",
+  "pn": "요원 K",
+  "d": "손님 성향 전부와 정확한 인내심 수치를 보여줍니다.",
+  "q": "\"당신 지금 왼쪽 눈썹이 0.3mm 올라갔어.\"",
+  "w": 140,
+  "L": {
+   "skin": "#f0caa5",
+   "head": "long",
+   "hair": 7,
+   "hc": "#2b1b12",
+   "outfit": "coat",
+   "oc": "#2a2a2a",
+   "oc2": "#111",
+   "bw": 1,
+   "eyes": "dot",
+   "brows": "norm",
+   "nose": "button",
+   "fh": 0,
+   "hat": "none",
+   "glasses": 2,
+   "acc": []
+  }
+ },
+ "analyst": {
+  "n": "시장 분석가",
+  "pn": "엑셀 장인 최",
+  "d": "정확한 시세 변동률과 내일의 유망 품목을 알려줍니다.",
+  "q": "\"차트가 말해요. 저는 받아 적을 뿐.\"",
+  "w": 90,
+  "L": {
+   "skin": "#eac29a",
+   "head": "oval",
+   "hair": 6,
+   "hc": "#1d1d1d",
+   "outfit": "suit",
+   "oc": "#3a4a5a",
+   "oc2": "#d08a2c",
+   "bw": 1,
+   "eyes": "dot",
+   "brows": "norm",
+   "nose": "button",
+   "fh": 0,
+   "hat": "none",
+   "glasses": 4,
+   "acc": []
+  }
+ },
+ "clerk": {
+  "n": "점원",
+  "pn": "알바생 다온",
+  "d": "줄 관리를 해서 하루 손님이 2명 늘어납니다.",
+  "q": "\"번호표 뽑아 주세요~ 아 번호표 없구나.\"",
+  "w": 80,
+  "L": {
+   "skin": "#eac29a",
+   "head": "round",
+   "hair": 8,
+   "hc": "#a0522d",
+   "outfit": "hoodie",
+   "oc": "#d08a2c",
+   "oc2": "#fff",
+   "bw": 1,
+   "eyes": "big",
+   "brows": "norm",
+   "nose": "button",
+   "fh": 0,
+   "hat": "none",
+   "glasses": 0,
+   "acc": [
+    "blush"
+   ]
+  }
+ },
+ "guard": {
+  "n": "경비원",
+  "pn": "철벽 마동",
+  "d": "밤도둑과 수상한 보험 판매원을 막아줍니다.",
+  "q": "\"...(고개만 끄덕)\"",
+  "w": 70,
+  "L": {
+   "skin": "#c98e63",
+   "head": "square",
+   "hair": 9,
+   "hc": "#2b1b12",
+   "outfit": "tee",
+   "oc": "#2d2d33",
+   "oc2": "#555",
+   "bw": 1.4,
+   "eyes": "dot",
+   "brows": "proud",
+   "nose": "button",
+   "fh": 0,
+   "hat": "none",
+   "glasses": 0,
+   "acc": [
+    "scar"
+   ]
+  }
+ }
+}
