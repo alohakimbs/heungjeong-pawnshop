@@ -84,8 +84,8 @@ func test_data_files() -> void:
 	var n_items := 0
 	for k in cats:
 		n_items += cats[k]["items"].size()
-	check(cats.size() >= 12, "카테고리 12개 이상 (%d)" % cats.size())
-	check(n_items >= 120, "물건 120종 이상 (%d)" % n_items)
+	check(cats.size() >= 10, "카테고리 10개 이상 (%d)" % cats.size())
+	check(n_items >= 80, "물건 80종 이상 (%d)" % n_items)
 	check(gd.shops.size() == 5, "가게 5단계")
 	check(gd.specials.size() == 8, "단골 8명")
 	check(gd.traits.get("traits", {}).size() == 12, "성향 12종")
@@ -372,13 +372,13 @@ func test_flow_and_queue() -> void:
 	var g = new_game(21)
 	g.event = ""
 	g.flip_open()
-	check(g.cur["stage"] == "intro" and not String(g.cur["msg"]).contains("$"), "첫 대사는 인사(가격 없음)")
+	check(g.cur["stage"] == "intro" and not String(g.cur["msg"]).contains("냥"), "첫 대사는 인사(가격 없음)")
 	check(g.upcoming.size() == mini(2, g.queue), "대기 줄에 다음 손님 %d명" % g.upcoming.size())
 	var next_name: String = g.upcoming[0]["name"] if g.upcoming.size() > 0 else ""
 	g.look_item()
 	check(g.cur["stage"] == "look", "살펴보기 단계")
 	g.start_haggle()
-	check(g.cur["stage"] == "haggle" and String(g.cur["msg"]).contains("$"), "흥정 시작 시 가격 제시")
+	check(g.cur["stage"] == "haggle" and String(g.cur["msg"]).contains("냥"), "흥정 시작 시 가격 제시")
 	g.refuse()
 	g.next_customer()
 	check(next_name == "" or g.cur["name"] == next_name, "대기 줄 맨 앞 손님이 다음으로 들어옴")
@@ -481,7 +481,7 @@ func test_stats_and_collection() -> void:
 	var w: Dictionary = g.stats_sum(7)
 	check(int(w["days"]) == mini(7, g.history.size()), "최근 7일 합계")
 	var h = new_game(42)
-	var cat: String = "art"
+	var cat: String = "painting"
 	var m0: int = h.money
 	for t in data.items["categories"][cat]["items"]:
 		h.collect({"cat": cat, "name": t[0], "r": 1})

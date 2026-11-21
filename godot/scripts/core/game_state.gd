@@ -76,7 +76,7 @@ static func fmt(n: float) -> String:
 		c += 1
 		if c % 3 == 0 and i > 0:
 			out = "," + out
-	return ("-$" if n < 0 else "$") + out
+	return ("-" if n < 0 else "") + out + "냥"
 
 
 func toast(m: String) -> void:
@@ -193,7 +193,7 @@ func collect(it: Dictionary) -> void:
 	money += bonus
 	rep += 5
 	book("prize", bonus)
-	toast("도감 완성: %s! 수집가 협회 상금 %s, 평판 +5" % [D.items["categories"][cat]["n"], fmt(bonus)])
+	toast("도감 완성: %s! 은하 골동 동호회 상금 %s, 평판 +5" % [D.items["categories"][cat]["n"], fmt(bonus)])
 
 
 func collection_total() -> int:
