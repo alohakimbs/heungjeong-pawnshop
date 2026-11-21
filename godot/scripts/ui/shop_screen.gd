@@ -164,6 +164,9 @@ func _raster(key: String, body: String, vb: Array) -> Texture2D:
 
 
 func _icon(key: String) -> Texture2D:
+	var art := "res://assets/items/%s.png" % key
+	if ResourceLoader.exists(art):
+		return load(art)
 	return _raster("ic_" + key, ItemArt.svg(key), [0, 0, 100, 100])
 
 
@@ -258,7 +261,16 @@ func render() -> void:
 		return
 	for c in dyn.get_children():
 		c.queue_free()
-	back_tex.texture = _raster("back", _back_svg(), [0, 0, W, H])
+	var bg_path := "res://assets/bg/bg_%d.png" % g.shop
+	if ResourceLoader.exists(bg_path):
+		# 손그림 배경(2:3): 위쪽 540x810을 채우고 나머지는 어두운 바닥색
+		back_tex.texture = load(bg_path)
+		back_tex.size = Vector2(W, W * 1.5)
+		back_tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	else:
+		back_tex.texture = _raster("back", _back_svg(), [0, 0, W, H])
+		back_tex.size = Vector2(W, H)
+		back_tex.stretch_mode = TextureRect.STRETCH_SCALE
 	_render_queue()
 	_render_customer()
 	front_tex.texture = _raster("front", _front_svg(), [0, COUNTER_Y - 12, W, DESK_Y - COUNTER_Y + 12])
@@ -892,7 +904,7 @@ func sheet(bgc: Color, ink: Color, border := Color("#6b4126"), closable := true,
 	# 밝은 판은 한지, 어두운 판은 옻칠(검붉은 칠 + 금테)로 통일
 	var dark := bgc.get_luminance() < 0.4
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _box(LACQUER if dark else HANJI, 6, GOLD.darkened(0.1) if dark else Color("#5a3420"), 3, 16))
+	panel.add_theme_stylebox_override("panel", _tex_box("lacquer" if dark else "hanji", Color.WHITE if dark else HANJI.lerp(bgc, 0.35), 22))
 	panel.position = Vector2((vs.x - ww) / 2, 14)
 	panel.size = Vector2(ww, vs.y - 28)
 	modal.add_child(panel)
@@ -915,6 +927,63 @@ func sheet(bgc: Color, ink: Color, border := Color("#6b4126"), closable := true,
 		x.pressed.connect(close_modal)
 		v.add_child(x)
 	return v
+
+
+## 9분할 텍스처 판: hanji(한지) · lacquer(옻칠+금테)
+func _tex_box(kind: String, tint := Color.WHITE, pad := 16) -> StyleBoxTexture:
+	var k := "box_" + kind
+	var tex: Texture2D
+	if _cache.has(k):
+		tex = _cache[k]
+	else:
+		var body := ""
+		if kind == "lacquer":
+			body = '<rect x="3" y="3" width="154" height="154" rx="5" fill="#2b1d1f" stroke="#120a08" stroke-width="3"/>'
+			body += '<rect x="3" y="3" width="154" height="154" rx="5" fill="url(#g)" opacity="0.5"/>'
+			body += '<rect x="10" y="10" width="140" height="140" rx="3" fill="none" stroke="#c9963a" stroke-width="3"/>'
+			body += '<rect x="15" y="15" width="130" height="130" rx="2" fill="none" stroke="#c9963a" stroke-width="1" opacity="0.7"/>'
+			for c in [[10, 10, 1, 1], [150, 10, -1, 1], [10, 150, 1, -1], [150, 150, -1, -1]]:
+				body += '<path d="M%d,%d l%d,0 l0,%d l%d,0 l0,%d Z" fill="#d9a441"/>' % [c[0], c[1], 12 * c[2], 4 * c[3], -8 * c[2], 8 * c[3]]
+			body = '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a2a2a"/><stop offset="1" stop-color="#000"/></linearGradient></defs>' + body
+		else:
+			body = _slip_svg(Vector2(160, 160), "#ffffff", 11)
+		tex = SvgArt.rasterize(body, [0, 0, 160, 160], 1.0)
+		_cache[k] = tex
+	var b := StyleBoxTexture.new()
+	b.texture = tex
+	b.set_texture_margin_all(24)
+	if kind == "hanji":
+		b.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+		b.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	b.set_content_margin_all(pad)
+	b.modulate_color = tint
+	return b
+
+
+## 나무판 버튼: 색은 bg, 결무늬와 먹선 테두리
+func _plank_box(bg: Color, shade := Color.WHITE) -> StyleBoxTexture:
+	var k := "plank_" + bg.to_html(false)
+	var tex: Texture2D
+	if _cache.has(k):
+		tex = _cache[k]
+	else:
+		var body := '<rect x="1" y="4" width="118" height="44" rx="4" fill="#000" opacity="0.35"/>'
+		body += '<rect x="1" y="1" width="118" height="44" rx="4" fill="#%s" stroke="#1a0e08" stroke-width="2.5"/>' % bg.to_html(false)
+		for i in 4:
+			var yy := 9 + i * 9
+			body += '<path d="M6,%d C40,%d 80,%d 114,%d" stroke="#000" stroke-width="1" fill="none" opacity="0.14"/>' % [yy, yy - 3 + i % 2 * 5, yy + 3, yy]
+		body += '<rect x="5" y="5" width="110" height="36" rx="2" fill="none" stroke="#fff" stroke-width="1" opacity="0.18"/>'
+		tex = SvgArt.rasterize(body, [0, 0, 120, 50], 1.0)
+		_cache[k] = tex
+	var b := StyleBoxTexture.new()
+	b.texture = tex
+	b.texture_margin_left = 14
+	b.texture_margin_right = 14
+	b.texture_margin_top = 12
+	b.texture_margin_bottom = 14
+	b.set_content_margin_all(8)
+	b.modulate_color = shade
+	return b
 
 
 func t(v: Control, text: String, fs := 16, font: Font = null, color = null, align := HORIZONTAL_ALIGNMENT_LEFT) -> Label:
@@ -941,10 +1010,11 @@ func btn(parent: Control, text: String, cb: Callable, bg := Color("#6b4126"), fg
 	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
 		b.add_theme_color_override(st, fg)
 	b.add_theme_color_override("font_disabled_color", fg.darkened(0.4))
-	b.add_theme_stylebox_override("normal", _box(bg, 2, INK, 3, 6))
-	b.add_theme_stylebox_override("hover", _box(bg.lightened(0.08), 2, INK, 3, 6))
-	b.add_theme_stylebox_override("pressed", _box(bg.darkened(0.2), 2, INK, 3, 6))
-	b.add_theme_stylebox_override("disabled", _box(bg.darkened(0.3), 2, INK, 3, 6))
+	var wood := _plank_box(bg)
+	b.add_theme_stylebox_override("normal", wood)
+	b.add_theme_stylebox_override("hover", _plank_box(bg, Color(1.08, 1.08, 1.08)))
+	b.add_theme_stylebox_override("pressed", _plank_box(bg, Color(0.75, 0.75, 0.75)))
+	b.add_theme_stylebox_override("disabled", _plank_box(bg, Color(0.55, 0.55, 0.55)))
 	b.pressed.connect(func():
 		cb.call()
 		g.save_game()
@@ -1306,7 +1376,16 @@ func show_auction() -> void:
 	for b in D.text["auction_npcs"]:
 		var cv := _vbox(bh, Color("#f6e7d0"))
 		var lead: bool = a["leader"] == b["n"]
-		cv.add_child(_portrait("npc_" + b["n"] + str(lead), b["L"], "happy" if lead else "ok", Vector2(90, 98)))
+		var npc_art := _char_tex(String(b.get("art", "")), "happy" if lead else "ok")
+		if npc_art != null:
+			var np := TextureRect.new()
+			np.texture = npc_art
+			np.custom_minimum_size = Vector2(90, 120)
+			np.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			np.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			cv.add_child(np)
+		else:
+			cv.add_child(_portrait("npc_" + b["n"] + str(lead), b["L"], "happy" if lead else "ok", Vector2(90, 98)))
 		t(cv, ("▲ " if lead else "") + b["n"], 12, font_b, Color("#ffd77a") if lead else null, HORIZONTAL_ALIGNMENT_CENTER)
 	t(right, GameState.fmt(a["price"]), 40, font_k, Color("#ffd77a"), HORIZONTAL_ALIGNMENT_CENTER)
 	t(right, ("내가 최고가" if a["leader"] == "me" else a["leader"] + " 최고가") if a["leader"] != "" else "아직 입찰 없음", 15, null, null, HORIZONTAL_ALIGNMENT_CENTER)
