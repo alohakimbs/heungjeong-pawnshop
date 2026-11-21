@@ -17,6 +17,9 @@
 - 테스트 APK: main 푸시 → CI가 GitHub 릴리스 `test-latest`에 `heungjeong-test.apk` 갱신. 내려받기: `curl -sSL -o x.apk https://github.com/alohakimbs/heungjeong-pawnshop/releases/download/test-latest/heungjeong-test.apk` (Actions 아티팩트 저장소는 작업 공간에서 차단됨). 릴리스 조회는 `gh api repos/alohakimbs/heungjeong-pawnshop/releases/tags/test-latest` (GraphQL 차단).
 - 화면 스크린샷: `xvfb-run -a -s "-screen 0 800x1640x24" godot --path godot --rendering-driver opengl3 --resolution 400x820 -s res://tests/_shots.gd` → /tmp/shot_*.png
 - 드라이브 업로드: 큰 파일(APK 60MB)은 파일 참조 업로드가 안 됨 → 링크만 문서로 남긴다. 작은 이미지는 작업 폴더(/home/claude 아래)에 두고 sha256 참조로 업로드.
+- 출시용 AAB: Actions 「출시용 AAB」 수동 실행(`gh api -X POST repos/alohakimbs/heungjeong-pawnshop/actions/workflows/release.yml/dispatches -f ref=main`) → 릴리스 `aab-latest`. 업로드 키 Secrets 4개가 있으면 정식 서명.
+- 스토어 문서: `docs/store/`, 아이콘·그래픽 생성: `tools/store_art.gd` (xvfb 필요)
+- 개인정보처리방침 페이지(비공개 상태): https://claude.ai/artifact/2Jq7oLhZK2Nk3Y7jEGd7c6
 - 웹 프로토타입 v0.2(참고): `web/index.html`, https://claude.ai/artifact/Nk7PV3mSaa26BNdmLksho7
 
 ## 구글 드라이브 (폴더 ID)
@@ -26,11 +29,18 @@
 - 03_빌드: 1DsEfCHNQDot8wRVm_UP80NnQ_Hgi7emI
 - 04_백업: 1RDWaCyc3hwj5GowVLpxpVm_FEId9goG2
 - 05_일일 보고: 1AijXmoMFZrzYpKGvHk3JC-Sw7F5knT-S
+- 06_출시 준비: 1DCH_r_2H5V64TbfNQeAeKUpTKpQK_BO6 (등록정보·설문·업로드 키 안내·그래픽)
 
 ## 사용자 요청 목록 (사용자만 할 수 있는 일)
 - [ ] 저장소 공개 범위를 비공개로 전환 (권장)
 - [ ] (휴대폰) 테스트 APK 설치 후 플레이 감각 피드백: https://github.com/alohakimbs/heungjeong-pawnshop/releases/tag/test-latest
-- [ ] (M1 후반, PC) 업로드 키스토어 생성 → GitHub Secrets 등록
+- [ ] (PC) 업로드 키 생성 → GitHub Secrets 4개 등록 — 드라이브 06_출시 준비의 안내 문서 참고
+- [ ] 게임 이름 확정 (가제 「흥정왕 전당포」, 상표 검색)
+- [ ] 개인정보처리방침 공개 URL 준비 (아티팩트 공개 공유 또는 다른 공개 주소) + 개발자 이메일
 - [ ] (M2) 아트 공급 방식 결정: 외주 / 이미지 생성 / 직접
 - [ ] (M4) 수익 모델 결정: 유료 / 광고 / 인앱
 새로 생기면 여기에 추가하고 일일 보고에도 적는다.
+
+## 사용자 결정 대기 중일 때 할 일
+결정이 필요한 항목(아트·수익 모델·이름)에 막혀도 멈추지 말고 다음을 한다:
+화면 다듬기(애니메이션·전환·가독성), 버그 수정, 밸런스(봇 시뮬레이션), 콘텐츠(물건·이벤트·단골 사연·대사), 접근성(글자 크기·색 대비), 테스트 보강.
