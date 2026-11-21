@@ -16,7 +16,7 @@ var failed := 0
 
 func _init() -> void:
 	data = GameDataScript.new()
-	for scr in [GameState, Bots, Negotiation, load("res://scripts/ui/svg_art.gd"), load("res://scripts/ui/shop_screen.gd"), load("res://scripts/ui/sfx.gd")]:
+	for scr in [GameState, Bots, Negotiation, load("res://scripts/ui/svg_art.gd"), load("res://scripts/ui/item_art.gd"), load("res://scripts/ui/shop_screen.gd"), load("res://scripts/ui/sfx.gd")]:
 		if not scr.can_instantiate():
 			print("✗ 스크립트 컴파일 실패: ", scr.resource_path)
 			quit(1)
@@ -328,7 +328,7 @@ func test_sim_smart() -> void:
 
 
 func test_ui_smoke() -> void:
-	print("[화면: 가로 메인 장면·흐름·오버레이]")
+	print("[화면: 세로 메인 장면·흐름·오버레이]")
 	var main = _main
 	var ok: bool = ("g" in main) and main.g != null and main.stage != null
 	check(ok, "메인 장면 생성 (화면 스크립트 컴파일 포함)")
@@ -346,13 +346,18 @@ func test_ui_smoke() -> void:
 	main.close_modal()
 	main._choices()[0][1].call()
 	main.render()
-	check(g.cur["stage"] == "haggle", "거래합시다 → 칠판 흥정")
+	check(g.cur["stage"] == "haggle", "흥정해 봅시다 → 흥정 시작")
+	var stamps := 0
+	for c in main.dyn.get_children():
+		if c is Button and c.text in ["제안", "최종 제안", "거절"]:
+			stamps += 1
+	check(stamps == 3, "흥정 중에만 도장 3개(제안·최종·거절)가 책상에 나옴 (%d)" % stamps)
 	var before: int = g.neg.rounds
 	g.draft = int(g.their_price() * 0.7)
 	g.propose(g.draft)
 	check(g.neg.rounds == before + 1 or g.cur["gone"], "가격표 ✓로 제안 반영")
 	var opened := true
-	for f in ["show_inv", "show_staff", "show_ledger", "show_traits", "show_keypad"]:
+	for f in ["show_menu", "show_inv", "show_staff", "show_ledger", "show_traits", "show_keypad"]:
 		main.call(f)
 		opened = opened and main.modal.visible
 		main.close_modal()
@@ -365,6 +370,13 @@ func test_ui_smoke() -> void:
 	check(opened and main.modal.visible, "도감·통계 화면이 열림")
 	main.close_modal()
 	check(main.sfx != null and main.sfx.bank.size() == 6, "효과음 6종 합성")
+	var missing: Array = []
+	for ck in main.D.items["categories"]:
+		for it in main.D.items["categories"][ck]["items"]:
+			if not ItemArt.MAP.has(it[1]):
+				missing.append(it[1])
+	check(missing.is_empty(), "모든 물건에 그림 아이콘이 있음 %s" % str(missing))
+	check(int(ProjectSettings.get_setting("display/window/size/viewport_width")) < int(ProjectSettings.get_setting("display/window/size/viewport_height")) and int(ProjectSettings.get_setting("display/window/handheld/orientation")) == 1, "세로 화면 설정")
 
 
 func test_flow_and_queue() -> void:

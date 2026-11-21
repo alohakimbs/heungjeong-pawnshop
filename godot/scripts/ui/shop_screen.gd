@@ -1,24 +1,32 @@
 extends Control
-## 메인 화면 (가로 1170x540 설계 좌표). 딜러스라이프2와 같은 화면 구성·흐름:
-##   왼쪽 위 대화창 + 선택지 / 가운데 손님 / 오른쪽 뒤 대기 줄 / 흥정 중 오른쪽 칠판
-##   카운터: 태블릿(창고) · 펠트 매트 위 물건 · 나무 가격표 + ✓/✗ + 망치(최종 제안)
-##   오른쪽 위 돈·달력. 아침엔 신문 + 「열기」 팻말.
+## 메인 화면 (세로 540x1170 설계 좌표). 딜러스라이프2의 흐름을 세로로 옮긴 「동양풍 우주 전당포」.
+##   위: 대들보(장부 버튼 · 날짜 · 돈) → 말풍선 → 달문 창(우주) 앞의 손님 → 카운터(보자기 위 물건, 궤짝 창고)
+##   아래 책상: 평소엔 선택지만. 흥정 중에만 물건 두루마리 · 가격 명패 · 도장(제안/최종/거절)이 나온다.
+##   아침엔 「은하 일보」 방문(榜文) + 「문 열기」 현판. 메뉴는 「장부」 하나로 합쳤다.
 ## 그림·이름·대사는 전부 자체 제작. 게임 규칙은 GameState에 있고 여기는 그리기·입력만.
 
 const GameState := preload("res://scripts/core/game_state.gd")
 const SvgArt := preload("res://scripts/ui/svg_art.gd")
+const ItemArt := preload("res://scripts/ui/item_art.gd")
 const SfxScript := preload("res://scripts/ui/sfx.gd")
-const W := 1170.0
-const H := 540.0
+const W := 540.0
+const H := 1170.0
 const INK := Color("#2a1a10")
-const CREAM := Color("#f6efdc")
-const PRICE_POS := Vector2(830, 404)
+const CREAM := Color("#f3e8cc")
+const HANJI := Color("#f1e6cb")
+const LACQUER := Color("#2b1d1f")
+const GOLD := Color("#d9a441")
+const SEAL := Color("#b8322a")
+const PRICE_POS := Vector2(110, 912)
+const COUNTER_Y := 640.0
+const DESK_Y := 800.0
 
 var g: GameState
 var D
 var font_r: Font = preload("res://assets/fonts/NotoSansKR-Regular.otf")
-var font_b: Font = preload("res://assets/fonts/NotoSansKR-Bold.otf")
-var font_k: Font = preload("res://assets/fonts/NotoSansKR-Black.otf")
+var font_b: Font = preload("res://assets/fonts/NotoSerifKR-Bold.otf")
+var font_k: Font = preload("res://assets/fonts/NotoSerifKR-Black.otf")
+var font_sb: Font = preload("res://assets/fonts/NotoSansKR-Bold.otf")
 
 var stage: Control
 var back_tex: TextureRect
@@ -65,7 +73,7 @@ func _notification(what: int) -> void:
 # ================================================================ 뼈대
 func _build() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color("#1a0e0a")
+	bg.color = Color("#120c14")
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	stage = Control.new()
@@ -74,9 +82,9 @@ func _build() -> void:
 	add_child(stage)
 	back_tex = _tex_rect(Vector2(0, 0), Vector2(W, H))
 	for i in 2:
-		queue_tex.append(_tex_rect(Vector2.ZERO, Vector2(121, 259)))
-	cust_tex = _tex_rect(Vector2(459, 18), Vector2(253, 408))
-	front_tex = _tex_rect(Vector2(0, 380), Vector2(W, 160))
+		queue_tex.append(_tex_rect(Vector2.ZERO, Vector2(100, 214)))
+	cust_tex = _tex_rect(Vector2(120, 170), Vector2(300, 484))
+	front_tex = _tex_rect(Vector2(0, COUNTER_Y - 12), Vector2(W, DESK_Y - COUNTER_Y + 12))
 	dyn = Control.new()
 	dyn.size = Vector2(W, H)
 	dyn.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -87,9 +95,9 @@ func _build() -> void:
 	add_child(modal)
 	toast_lbl = Label.new()
 	toast_lbl.add_theme_font_override("font", font_b)
-	toast_lbl.add_theme_font_size_override("font_size", 18)
+	toast_lbl.add_theme_font_size_override("font_size", 17)
 	toast_lbl.add_theme_color_override("font_color", INK)
-	toast_lbl.add_theme_stylebox_override("normal", _box(Color("#fff6a8"), 2, INK, 8, 10))
+	toast_lbl.add_theme_stylebox_override("normal", _box(Color("#f6e7b8"), 3, Color("#6a3a22"), 4, 12))
 	toast_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	toast_lbl.visible = false
@@ -120,8 +128,8 @@ func _layout() -> void:
 		_px = px
 		_cache.clear()
 		render()
-	toast_lbl.position = Vector2(vs.x * 0.3, 12)
-	toast_lbl.size = Vector2(vs.x * 0.4, 0)
+	toast_lbl.position = Vector2(vs.x * 0.08, vs.y * 0.075)
+	toast_lbl.size = Vector2(vs.x * 0.84, 0)
 
 
 func _box(c: Color, border := 0, bc := Color.BLACK, radius := 8, pad := 8) -> StyleBoxFlat:
@@ -134,15 +142,29 @@ func _box(c: Color, border := 0, bc := Color.BLACK, radius := 8, pad := 8) -> St
 	return b
 
 
+## 한지 판: 각진 모서리 + 먹선 테두리 + 아래쪽 그림자 (웹 카드처럼 둥글지 않게)
+func _hanji(c := HANJI, bc := INK, border := 3, pad := 10) -> StyleBoxFlat:
+	var b := _box(c, border, bc, 2, pad)
+	b.shadow_color = Color(0, 0, 0, 0.35)
+	b.shadow_size = 0
+	b.shadow_offset = Vector2(0, 4)
+	b.shadow_size = 1
+	return b
+
+
 func _raster(key: String, body: String, vb: Array) -> Texture2D:
 	var k := "%s|%s|%s" % [key, body.hash(), _px]
 	if _cache.has(k):
 		return _cache[k]
-	if _cache.size() > 40:
+	if _cache.size() > 60:
 		_cache.clear()
 	var t := SvgArt.rasterize(body, vb, _px)
 	_cache[k] = t
 	return t
+
+
+func _icon(key: String) -> Texture2D:
+	return _raster("ic_" + key, ItemArt.svg(key), [0, 0, 100, 100])
 
 
 func lbl(text: String, pos: Vector2, size: Vector2, fs := 16, color := INK, font: Font = null, align := HORIZONTAL_ALIGNMENT_LEFT, rot := 0.0) -> Label:
@@ -161,6 +183,18 @@ func lbl(text: String, pos: Vector2, size: Vector2, fs := 16, color := INK, font
 	return l
 
 
+func pic(tex: Texture2D, pos: Vector2, size: Vector2) -> TextureRect:
+	var r := TextureRect.new()
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	r.texture = tex
+	r.position = pos
+	r.size = size
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dyn.add_child(r)
+	return r
+
+
 func hot(rect: Rect2, label: String, cb: Callable, enabled := true) -> Button:
 	var b := Button.new()
 	b.position = rect.position
@@ -172,7 +206,7 @@ func hot(rect: Rect2, label: String, cb: Callable, enabled := true) -> Button:
 	var empty := StyleBoxEmpty.new()
 	for st in ["normal", "hover", "disabled", "focus"]:
 		b.add_theme_stylebox_override(st, empty)
-	b.add_theme_stylebox_override("pressed", _box(Color(1, 1, 1, 0.15), 0, Color.BLACK, 10))
+	b.add_theme_stylebox_override("pressed", _box(Color(1, 1, 1, 0.15), 0, Color.BLACK, 6))
 	b.pressed.connect(func(): _act(cb))
 	dyn.add_child(b)
 	return b
@@ -227,7 +261,7 @@ func render() -> void:
 	back_tex.texture = _raster("back", _back_svg(), [0, 0, W, H])
 	_render_queue()
 	_render_customer()
-	front_tex.texture = _raster("front", _front_svg(), [0, 380, W, 160])
+	front_tex.texture = _raster("front", _front_svg(), [0, COUNTER_Y - 12, W, DESK_Y - COUNTER_Y + 12])
 	_render_counter()
 	match g.phase:
 		"morning":
@@ -237,8 +271,6 @@ func render() -> void:
 		_:
 			if not g.cur.is_empty():
 				_render_dialog()
-				if g.cur.get("stage", "") == "haggle":
-					_render_chalkboard()
 	_render_hud()
 	_flush_toasts()
 
@@ -246,18 +278,19 @@ func render() -> void:
 func _look_of(c: Dictionary) -> Dictionary:
 	if c.has("look"):
 		return SvgArt.look(c["look"])
-	return SvgArt.customer_look(c.get("arch", "student"), c.get("tr", []), int(c.get("look_seed", 1)))
+	return SvgArt.customer_look2(c.get("arch", "seonbi"), c.get("tr", []), int(c.get("look_seed", 1)))
 
 
 func _render_queue() -> void:
 	var waiting: Array = g.upcoming if g.phase == "open" else []
+	var spots := [Vector2(434, 418), Vector2(6, 418)]
 	for i in 2:
 		var t: TextureRect = queue_tex[i]
 		if i < waiting.size():
 			t.texture = _raster("q%d" % i, SvgArt.draw_char(_look_of(waiting[i]), "ok", true), SvgArt.STAND_VB)
-			t.position = Vector2(905 + i * 120, 132)
-			t.size = Vector2(121, 259)
-			t.modulate = Color(0.9, 0.88, 0.85)
+			t.position = spots[i]
+			t.size = Vector2(100, 214)
+			t.modulate = Color(0.62, 0.6, 0.78)
 			t.visible = true
 		else:
 			t.visible = false
@@ -265,7 +298,7 @@ func _render_queue() -> void:
 
 func _render_customer() -> void:
 	var c := g.cur
-	if c.is_empty():
+	if c.is_empty() or g.phase != "open":
 		cust_tex.visible = false
 		if bob_tween:
 			bob_tween.kill()
@@ -275,134 +308,129 @@ func _render_customer() -> void:
 	cust_tex.visible = true
 	if bob_tween:
 		bob_tween.kill()
-	cust_tex.position = Vector2(459, 18)
+	cust_tex.position = Vector2(120, 170)
 	bob_tween = create_tween().set_loops()
 	if md == "angry" and not c.get("gone", false):
-		bob_tween.tween_property(cust_tex, "position:x", 452.0, 0.06)
-		bob_tween.tween_property(cust_tex, "position:x", 466.0, 0.12)
-		bob_tween.tween_property(cust_tex, "position:x", 459.0, 0.06)
+		bob_tween.tween_property(cust_tex, "position:x", 112.0, 0.06)
+		bob_tween.tween_property(cust_tex, "position:x", 128.0, 0.12)
+		bob_tween.tween_property(cust_tex, "position:x", 120.0, 0.06)
 		bob_tween.tween_interval(1.6)
 	else:
-		bob_tween.tween_property(cust_tex, "position:y", 22.0, 1.7).set_trans(Tween.TRANS_SINE)
-		bob_tween.tween_property(cust_tex, "position:y", 18.0, 1.7).set_trans(Tween.TRANS_SINE)
+		bob_tween.tween_property(cust_tex, "position:y", 175.0, 1.7).set_trans(Tween.TRANS_SINE)
+		bob_tween.tween_property(cust_tex, "position:y", 170.0, 1.7).set_trans(Tween.TRANS_SINE)
 	if not c.get("visitor", false):
-		hot(Rect2(500, 40, 170, 340), "손님 성향 보기", func(): show_traits())
+		hot(Rect2(160, 300, 220, 320), "손님 성향 보기", func(): show_traits())
 
 
+## 뒷배경: 한옥 전당포 안쪽. 가운데 달문(둥근 창) 너머로 우주가 보이고, 양옆은 창호지 문과 기둥.
 func _back_svg() -> String:
-	var wall: String = g.shop_info().get("wall", "#6a4a3a")
-	var s := '<defs><linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6a4c"/><stop offset="1" stop-color="#5a3e2a"/></linearGradient><radialGradient id="lamp" cx=".5" cy=".15" r=".8"><stop offset="0" stop-color="#ffe3a3" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d8eef5"/><stop offset="1" stop-color="#9ccbd9"/></linearGradient></defs>'
-	s += '<rect width="1170" height="330" fill="%s"/>' % wall
-	for i in 40:
-		s += '<rect x="%d" y="0" width="2" height="330" fill="#000" opacity=".18"/>' % (i * 30)
-	s += '<rect width="1170" height="14" fill="#000" opacity=".25"/><rect y="318" width="1170" height="14" fill="#3a2416"/>'
-	s += '<path d="M0 330 L1170 330 L1170 540 L0 540Z" fill="url(#fl)"/>'
-	for i in range(-6, 14):
-		s += '<path d="M%d 330 L%d 540" stroke="#000" stroke-opacity=".15" stroke-width="2"/>' % [585 + i * 70, 585 + i * 130]
-	s += '<ellipse cx="760" cy="372" rx="120" ry="20" fill="#c9b38a" opacity=".55"/>'
-	s += '<rect x="955" y="50" width="180" height="170" fill="#4a3020"/><rect x="965" y="60" width="160" height="150" fill="url(#gl)"/><path d="M1045 60 L1045 210 M965 135 L1125 135" stroke="#4a3020" stroke-width="7"/><rect x="950" y="216" width="190" height="12" fill="#5a3a24"/>'
-	s += '<rect x="770" y="80" width="120" height="250" fill="#5a3a24"/><rect x="780" y="90" width="100" height="240" fill="#7a5034"/><circle cx="866" cy="215" r="6" fill="#d9a441"/><rect x="795" y="105" width="70" height="60" rx="4" fill="#3a2a20" opacity=".4"/>'
-	s += '<rect x="560" y="40" width="80" height="62" fill="#c9a227"/><rect x="566" y="46" width="68" height="50" fill="#2e4a5a"/><circle cx="615" cy="60" r="7" fill="#ffd77a"/><path d="M566 96 L590 70 L606 86 L618 76 L634 96Z" fill="#4a7a5a"/>'
-	s += '<rect x="670" y="50" width="62" height="50" fill="#c9a227"/><rect x="675" y="55" width="52" height="40" fill="#5a2e3a"/><path d="M690 90 L700 62 L712 90Z" fill="#e6c870"/>'
-	s += '<rect x="40" y="120" width="300" height="10" fill="#4a2e1c"/><rect x="40" y="210" width="300" height="10" fill="#4a2e1c"/>'
-	var cols := ["#c8a070", "#a08060", "#d9b080", "#8a6a4a", "#b89060"]
-	for i in 6:
-		s += '<rect x="%d" y="%d" width="38" height="%d" fill="%s" stroke="#5a3e2a" stroke-width="2"/>' % [55 + i * 46, 80 + (i % 2) * 8, 40 - (i % 2) * 8, cols[i % cols.size()]]
-		s += '<rect x="%d" y="%d" width="34" height="%d" fill="%s" stroke="#5a3e2a" stroke-width="2"/>' % [60 + i * 45, 172 + (i % 3) * 6, 38 - (i % 3) * 6, cols[(i + 2) % cols.size()]]
-	s += '<rect x="20" y="270" width="110" height="90" fill="#b08a5a" stroke="#6a4a2a" stroke-width="3"/><rect x="60" y="225" width="80" height="50" fill="#c89a6a" stroke="#6a4a2a" stroke-width="3"/>'
-	s += '<rect width="1170" height="540" fill="url(#lamp)"/>'
+	var wall: String = g.shop_info().get("wall", "#3a3458")
+	var s := '<defs>'
+	s += '<radialGradient id="sky" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#4a3a8a"/><stop offset=".55" stop-color="#1e1a48"/><stop offset="1" stop-color="#0a0a1c"/></radialGradient>'
+	s += '<radialGradient id="neb" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e86aa8" stop-opacity=".55"/><stop offset="1" stop-color="#e86aa8" stop-opacity="0"/></radialGradient>'
+	s += '<radialGradient id="neb2" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#5ad8e8" stop-opacity=".45"/><stop offset="1" stop-color="#5ad8e8" stop-opacity="0"/></radialGradient>'
+	s += '<linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6dca0"/><stop offset="1" stop-color="#d9a868"/></linearGradient>'
+	s += '<linearGradient id="wood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4a2a1a"/><stop offset=".5" stop-color="#6a3e26"/><stop offset="1" stop-color="#3a2014"/></linearGradient>'
+	s += '<linearGradient id="desk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3420"/><stop offset="1" stop-color="#2e1a10"/></linearGradient>'
+	s += '<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd890" stop-opacity=".55"/><stop offset="1" stop-color="#ffd890" stop-opacity="0"/></radialGradient>'
+	s += '</defs>'
+	# 벽
+	s += '<rect width="540" height="%d" fill="%s"/>' % [int(DESK_Y), wall]
+	# 창호지 문 (양옆)
+	for x in [0, 430]:
+		s += '<rect x="%d" y="96" width="110" height="560" fill="url(#paper)"/>' % x
+		for i in 7:
+			s += '<path d="M%d %d L%d %d" stroke="#5a3420" stroke-width="4"/>' % [x, 96 + i * 80, x + 110, 96 + i * 80]
+		for j in 3:
+			s += '<path d="M%d 96 L%d 656" stroke="#5a3420" stroke-width="4"/>' % [x + 10 + j * 45, x + 10 + j * 45]
+	# 대기 손님이 서는 문틈(어두운 틈)
+	s += '<rect x="440" y="400" width="90" height="250" fill="#1a1020" opacity=".55"/><rect x="10" y="400" width="90" height="250" fill="#1a1020" opacity=".55"/>'
+	# 달문(둥근 창) 너머 우주
+	s += '<circle cx="270" cy="360" r="196" fill="#3a2014"/><circle cx="270" cy="360" r="184" fill="url(#sky)"/>'
+	s += '<ellipse cx="200" cy="300" rx="150" ry="80" fill="url(#neb)" transform="rotate(-20 200 300)"/><ellipse cx="350" cy="420" rx="120" ry="70" fill="url(#neb2)"/>'
+	var r := RandomNumberGenerator.new()
+	r.seed = 77
+	for i in 70:
+		var a := r.randf() * TAU
+		var d := sqrt(r.randf()) * 178.0
+		s += '<circle cx="%s" cy="%s" r="%s" fill="#fff" opacity="%s"/>' % [SvgArt.n(270 + cos(a) * d), SvgArt.n(360 + sin(a) * d), SvgArt.n(r.randf_range(0.6, 2.2)), SvgArt.n(r.randf_range(0.4, 1.0))]
+	# 고리 행성 + 작은 달 + 떠다니는 등롱
+	s += '<circle cx="372" cy="250" r="38" fill="#e8a060"/><path d="M340 240 Q372 230 404 248" stroke="#c87840" stroke-width="5" fill="none" opacity=".6"/><ellipse cx="372" cy="254" rx="66" ry="14" fill="none" stroke="#f6d8a0" stroke-width="5" transform="rotate(-14 372 254)"/>'
+	s += '<circle cx="160" cy="240" r="14" fill="#d8d8e8"/><circle cx="155" cy="236" r="3" fill="#a8a8c0"/>'
+	for p in [[205, 420], [330, 470], [140, 470]]:
+		s += '<g transform="translate(%d,%d)"><circle r="22" fill="url(#glow)"/><rect x="-6" y="-10" width="12" height="18" rx="5" fill="#e8503a"/><rect x="-6" y="-1" width="12" height="3" fill="#2a1a14"/></g>' % p
+	# 달문 창살 테두리
+	s += '<circle cx="270" cy="360" r="184" fill="none" stroke="#5a3420" stroke-width="10"/><circle cx="270" cy="360" r="196" fill="none" stroke="#2a1a14" stroke-width="4"/>'
+	# 기둥과 대들보
+	s += '<rect x="108" y="60" width="22" height="600" fill="url(#wood)"/><rect x="410" y="60" width="22" height="600" fill="url(#wood)"/>'
+	s += '<rect x="0" y="60" width="540" height="36" fill="url(#wood)"/><path d="M0 96 L540 96" stroke="#2a1a14" stroke-width="4"/>'
+	for x in [40, 150, 270, 390, 500]:
+		s += '<rect x="%d" y="66" width="22" height="24" fill="#2a6a5a"/><rect x="%d" y="70" width="14" height="16" fill="#d8a840"/>' % [x - 11, x - 7]
+	# 처마 등롱 (양옆 위)
+	for x in [60, 480]:
+		s += '<path d="M%d 96 L%d 118" stroke="#2a1a14" stroke-width="3"/><circle cx="%d" cy="150" r="46" fill="url(#glow)"/><rect x="%d" y="118" width="40" height="56" rx="18" fill="#d8402e" stroke="#2a1a14" stroke-width="3"/><path d="M%d 134 L%d 134 M%d 158 L%d 158" stroke="#2a1a14" stroke-width="3"/><path d="M%d 174 L%d 190" stroke="#e0b040" stroke-width="4"/>' % [x, x, x, x - 20, x - 20, x + 20, x - 20, x + 20, x, x]
+	# 아래 책상(손님 앞 작업대)
+	s += '<rect y="%d" width="540" height="%d" fill="url(#desk)"/>' % [int(DESK_Y), int(H - DESK_Y)]
+	for i in 9:
+		s += '<path d="M0 %d Q270 %d 540 %d" stroke="#1e1008" stroke-opacity=".35" stroke-width="2" fill="none"/>' % [int(DESK_Y) + 30 + i * 40, int(DESK_Y) + 20 + i * 40 + (i % 3) * 8, int(DESK_Y) + 34 + i * 40]
 	return s
 
 
+## 카운터(손님 아랫몸을 가림): 짙은 나무 + 놋쇠 장식 + 가운데 보자기
 func _front_svg() -> String:
 	var it := g.cur_item()
-	var s := '<defs><linearGradient id="ct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a3a2a"/><stop offset="1" stop-color="#4a2018"/></linearGradient><linearGradient id="wd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a0704a"/><stop offset="1" stop-color="#6a4426"/></linearGradient><radialGradient id="felt" cx=".5" cy=".4" r=".65"><stop offset="0" stop-color="#4a8a5a"/><stop offset="1" stop-color="#2a5a3a"/></radialGradient></defs>'
-	s += '<path d="M0 398 L1170 398 L1170 540 L0 540Z" fill="url(#ct)"/><path d="M0 392 L1170 392 L1170 404 L0 404Z" fill="#2a120c"/>'
-	s += '<g transform="rotate(-4 150 470)"><rect x="80" y="420" width="150" height="104" rx="12" fill="#2a2a2e"/><rect x="90" y="430" width="130" height="84" rx="6" fill="#4a4e58"/><circle cx="224" cy="472" r="3" fill="#c4402a"/></g>'
-	s += '<path d="M300 410 L790 410 L770 530 L320 530Z" fill="url(#felt)"/><path d="M300 410 L790 410" stroke="#d9c070" stroke-width="3"/>'
-	if not it.is_empty():
-		s += '<ellipse cx="545" cy="470" rx="70" ry="22" fill="%s" opacity=".35"/>' % D.items["rarity"][int(it["r"])]["c"]
-	var haggling: bool = g.is_haggling() and g.cur.get("stage", "") == "haggle"
-	s += '<g opacity="%s"><rect x="830" y="404" width="230" height="44" rx="6" fill="url(#wd)" stroke="#4a2a14" stroke-width="3"/>' % ("1" if haggling else ".55")
-	s += '<rect x="830" y="458" width="100" height="70" rx="6" fill="#8a5a36" stroke="#4a2a14" stroke-width="3"/><path d="M858 492 L874 508 L904 474" stroke="#2f8a4a" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-	s += '<rect x="944" y="458" width="100" height="70" rx="6" fill="#8a5a36" stroke="#4a2a14" stroke-width="3"/><path d="M974 474 L1014 512 M1014 474 L974 512" stroke="#c4402a" stroke-width="10" stroke-linecap="round"/>'
-	s += '<g transform="rotate(-30 1100 490)"><rect x="1094" y="452" width="12" height="70" rx="4" fill="#a0704a"/><rect x="1072" y="440" width="56" height="26" rx="6" fill="#6a6a72"/></g></g>'
+	var y0 := COUNTER_Y
+	var s := '<defs><linearGradient id="ct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4426"/><stop offset="1" stop-color="#3a1e10"/></linearGradient></defs>'
+	s += '<rect y="%s" width="540" height="18" fill="#9a5a32" stroke="#2a1a14" stroke-width="3"/>' % SvgArt.n(y0 - 10)
+	s += '<rect y="%s" width="540" height="160" fill="url(#ct)"/>' % SvgArt.n(y0 + 8)
+	for x in [20, 520]:
+		s += '<rect x="%d" y="%s" width="10" height="150" fill="#2a1a14" opacity=".4"/>' % [x - 5, SvgArt.n(y0 + 8)]
+	for x in [150, 390]:
+		s += '<circle cx="%d" cy="%s" r="9" fill="#d8a840" stroke="#2a1a14" stroke-width="2"/>' % [x, SvgArt.n(y0 + 90)]
+	# 보자기
+	var cloth := "#2a4a8a" if it.is_empty() else str(D.items["rarity"][int(it["r"])]["c"])
+	s += '<path d="M190 %s L350 %s L370 %s L170 %s Z" fill="%s" stroke="#2a1a14" stroke-width="3"/>' % [SvgArt.n(y0 - 8), SvgArt.n(y0 - 8), SvgArt.n(y0 + 70), SvgArt.n(y0 + 70), cloth]
+	s += '<path d="M200 %s L340 %s" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-dasharray="6 5"/>' % [SvgArt.n(y0 + 8), SvgArt.n(y0 + 8)]
+	# 궤짝(창고)
+	s += '<rect x="22" y="%s" width="120" height="96" rx="4" fill="#6a3a1e" stroke="#2a1a14" stroke-width="3"/><path d="M22 %s L142 %s" stroke="#2a1a14" stroke-width="3"/><rect x="70" y="%s" width="24" height="18" rx="3" fill="#d8a840" stroke="#2a1a14" stroke-width="2"/>' % [SvgArt.n(y0 + 20), SvgArt.n(y0 + 46), SvgArt.n(y0 + 46), SvgArt.n(y0 + 38)]
+	# 주판(장식)
+	s += '<g transform="translate(400,%s)"><rect width="118" height="60" rx="4" fill="none" stroke="#5a3420" stroke-width="6"/>' % SvgArt.n(y0 + 30)
+	for c in 7:
+		s += '<path d="M%d 0 L%d 60" stroke="#2a1a14" stroke-width="2"/><circle cx="%d" cy="12" r="5" fill="#d8402e"/><circle cx="%d" cy="%d" r="5" fill="#e8d8b0"/>' % [12 + c * 16, 12 + c * 16, 12 + c * 16, 12 + c * 16, 34 + (c % 3) * 7]
+	s += '</g>'
 	return s
 
 
 func _render_hud() -> void:
-	var money := PanelContainer.new()
-	money.add_theme_stylebox_override("panel", _box(Color("#efe2a0"), 3, Color("#5a4a1a"), 18, 4))
-	money.position = Vector2(860, 8)
-	money.custom_minimum_size = Vector2(190, 38)
-	var ml := Label.new()
-	ml.text = "  " + GameState.fmt(g.money)
-	ml.add_theme_font_override("font", font_k)
-	ml.add_theme_font_size_override("font_size", 22)
-	ml.add_theme_color_override("font_color", Color("#c4402a") if g.money < 0 else INK)
-	money.add_child(ml)
-	dyn.add_child(money)
-	var cal := PanelContainer.new()
-	cal.add_theme_stylebox_override("panel", _box(Color("#3a4aa0"), 2, Color("#1a2060"), 4, 2))
-	cal.position = Vector2(1060, 4)
-	cal.custom_minimum_size = Vector2(100, 48)
-	var cv := VBoxContainer.new()
-	cv.add_theme_constant_override("separation", -4)
-	cal.add_child(cv)
-	for pair in [["%d일차" % g.day, true], [g.shop_info()["n"], false]]:
-		var l := Label.new()
-		l.text = pair[0]
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.add_theme_font_override("font", font_k if pair[1] else font_b)
-		l.add_theme_font_size_override("font_size", 18 if pair[1] else 11)
-		l.add_theme_color_override("font_color", Color.WHITE)
-		cv.add_child(l)
-	dyn.add_child(cal)
-	_round_button(Vector2(510, 27), "도감", func(): show_collection())
-	_round_button(Vector2(600, 27), "통계", func(): show_stats("today"))
-	_round_button(Vector2(690, 27), "장부" + (" ●" if g.sp > 0 else ""), func(): show_ledger())
-	_round_button(Vector2(780, 27), "직원", func(): show_staff())
-
-
-func _round_button(center: Vector2, text: String, cb: Callable) -> void:
-	var b := Button.new()
-	b.text = text
-	b.size = Vector2(80, 40)
-	b.position = center - Vector2(40, 20)
-	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_override("font", font_k)
-	b.add_theme_font_size_override("font_size", 15)
-	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
-		b.add_theme_color_override(st, INK)
-	b.add_theme_stylebox_override("normal", _box(CREAM, 3, INK, 20, 4))
-	b.add_theme_stylebox_override("hover", _box(CREAM.lightened(0.2), 3, INK, 20, 4))
-	b.add_theme_stylebox_override("pressed", _box(CREAM.darkened(0.15), 3, INK, 20, 4))
-	b.pressed.connect(func(): cb.call())
-	dyn.add_child(b)
+	# 대들보 위: [장부] · 날짜/가게 · 돈
+	var top := ColorRect.new()
+	top.color = Color("#1e1218")
+	top.position = Vector2.ZERO
+	top.size = Vector2(W, 60)
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dyn.add_child(top)
+	var line := ColorRect.new()
+	line.color = GOLD.darkened(0.3)
+	line.position = Vector2(0, 58)
+	line.size = Vector2(W, 2)
+	dyn.add_child(line)
+	_stamp(Rect2(10, 6, 96, 48), "장부" + (" ●" if g.sp > 0 else ""), SEAL, func(): pass, 19)
+	(dyn.get_child(dyn.get_child_count() - 1) as Button).pressed.connect(func(): show_menu())
+	lbl("%d일째" % g.day, Vector2(150, 4), Vector2(170, 30), 21, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	lbl(g.shop_info()["n"], Vector2(130, 32), Vector2(210, 22), 13, GOLD, font_b, HORIZONTAL_ALIGNMENT_CENTER)
+	pic(_icon("coins"), Vector2(352, 10), Vector2(40, 40))
+	lbl(GameState.fmt(g.money), Vector2(392, 10), Vector2(140, 40), 21, Color("#ff8a6a") if g.money < 0 else Color("#ffe2a0"), font_k, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _render_counter() -> void:
 	var it := g.cur_item()
-	lbl("창고", Vector2(92, 432), Vector2(126, 28), 16, Color("#d8dce6"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
-	lbl("%d/%d" % [g.inv.size(), g.cap()], Vector2(92, 458), Vector2(126, 44), 30, Color("#ff9a7a") if g.inv.size() >= g.cap() else Color.WHITE, font_k, HORIZONTAL_ALIGNMENT_CENTER)
-	hot(Rect2(76, 414, 160, 116), "창고 열기", func(): show_inv())
-	if not it.is_empty():
-		lbl(it["e"], Vector2(470, 412), Vector2(150, 100), 64, Color.WHITE, null, HORIZONTAL_ALIGNMENT_CENTER)
+	lbl("창고 %d/%d" % [g.inv.size(), g.cap()], Vector2(22, COUNTER_Y + 70), Vector2(120, 40), 16, Color("#ff9a7a") if g.inv.size() >= g.cap() else HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	hot(Rect2(16, COUNTER_Y + 10, 132, 120), "창고 열기", func(): show_inv())
+	if not it.is_empty() and g.phase == "open":
+		pic(_icon(it["e"]), Vector2(200, COUNTER_Y - 70), Vector2(140, 140))
 		if it["known"] and it["fake"]:
-			lbl("가품", Vector2(500, 440), Vector2(90, 40), 24, Color("#ff5a4a"), font_k, HORIZONTAL_ALIGNMENT_CENTER, -14)
-		hot(Rect2(420, 410, 250, 120), "물건 살펴보기", func(): show_inspect(it))
-	var haggling: bool = g.is_haggling() and g.cur.get("stage", "") == "haggle"
-	lbl(GameState.fmt(g.draft) if haggling else "$ ---", PRICE_POS, Vector2(230, 44), 24, Color("#2a1408"), font_k, HORIZONTAL_ALIGNMENT_CENTER)
-	if haggling:
-		var price_btn := hot(Rect2(830, 400, 230, 52), "가격표: 좌우로 끌어 조정, 눌러서 직접 입력", func(): show_keypad())
-		price_btn.gui_input.connect(_on_sign_drag)
-		hot(Rect2(830, 456, 100, 74), "제안하기 ✓", func(): g.propose(g.draft))
-		hot(Rect2(944, 456, 100, 74), "거절 ✗", func(): g.refuse())
-		hot(Rect2(1062, 436, 80, 96), "망치: 최종 제안", func():
-			sfx.play("bell")
-			g.propose(g.draft, true))
-		lbl("최종", Vector2(1066, 512), Vector2(70, 22), 13, Color("#ffd77a"), font_k, HORIZONTAL_ALIGNMENT_CENTER)
-		lbl("◀ 끌어서 조정 · 눌러서 입력 ▶", Vector2(830, 446), Vector2(230, 14), 11, Color("#ffd77a"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
+			lbl("가품", Vector2(220, COUNTER_Y - 30), Vector2(100, 44), 28, SEAL, font_k, HORIZONTAL_ALIGNMENT_CENTER, -14)
+		hot(Rect2(180, COUNTER_Y - 80, 180, 160), "물건 살펴보기", func(): show_inspect(it))
 
 
 func _on_sign_drag(ev: InputEvent) -> void:
@@ -417,59 +445,71 @@ func _on_sign_drag(ev: InputEvent) -> void:
 		return
 	var step := maxf(10.0, g.their_price() * 0.005)
 	g.draft = maxi(10, GameState.r10(g.draft + dx * step / 2.0))
+	_refresh_price()
+
+
+func _refresh_price() -> void:
 	for c in dyn.get_children():
 		if c is Label and c.position == PRICE_POS:
 			c.text = GameState.fmt(g.draft)
 
 
-# ---------------------------------------------------------------- 대화창
+# ---------------------------------------------------------------- 말풍선 + 아래 책상
 func _tag_style() -> Array:
 	var c := g.cur
 	if c.get("visitor", false):
-		return ["방문객 · " + c["name"], Color("#e6c06a")]
+		return ["손님 · " + c["name"], Color("#d9a441")]
 	if c.get("pawn", false):
-		return ["전당포 의뢰인 · " + c["name"], Color("#e6c06a")]
+		return ["전당 · " + c["name"], Color("#d9a441")]
 	if c.get("sk", "") != "":
-		return ["단골 · " + c["name"], Color("#b49ae0")]
-	return [("구매자 · " if c["buy"] else "판매자 · ") + c["name"], Color("#9cc878") if c["buy"] else Color("#e08a7a")]
+		return ["단골 · " + c["name"], Color("#9a7ad8")]
+	return [("사러 옴 · " if c["buy"] else "팔러 옴 · ") + c["name"], Color("#6aa85a") if c["buy"] else Color("#c8604a")]
 
 
 func _render_dialog() -> void:
 	var c := g.cur
 	var ts := _tag_style()
+	# 말풍선 (한지 + 먹선, 아래로 꼬리)
 	var box := PanelContainer.new()
-	box.add_theme_stylebox_override("panel", _box(CREAM, 4, ts[1].darkened(0.35), 14, 14))
-	box.position = Vector2(40, 30)
-	box.custom_minimum_size = Vector2(380, 150)
+	box.add_theme_stylebox_override("panel", _hanji(HANJI, INK, 3, 12))
+	box.position = Vector2(18, 72)
+	box.size = Vector2(504, 0)
+	box.custom_minimum_size = Vector2(504, 92)
 	var bl := Label.new()
 	bl.text = c["msg"]
 	bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	bl.custom_minimum_size = Vector2(350, 120)
+	bl.custom_minimum_size = Vector2(478, 66)
 	bl.add_theme_font_override("font", font_b)
-	bl.add_theme_font_size_override("font_size", 17)
+	bl.add_theme_font_size_override("font_size", 18)
 	bl.add_theme_color_override("font_color", INK)
 	box.add_child(bl)
 	dyn.add_child(box)
+	var tail := Polygon2D.new()
+	tail.polygon = PackedVector2Array([Vector2(250, 0), Vector2(290, 0), Vector2(268, 22)])
+	tail.color = HANJI
+	dyn.add_child(tail)
+	box.resized.connect(func(): tail.position = Vector2(0, box.position.y + box.size.y - 3))
+	tail.position = Vector2(0, 72 + 92 - 3)
+	# 이름표 (말풍선 왼쪽 위에 걸친 붉은 띠)
 	var tag := PanelContainer.new()
-	tag.add_theme_stylebox_override("panel", _box(ts[1], 3, ts[1].darkened(0.4), 14, 4))
-	tag.position = Vector2(110, 12)
-	tag.custom_minimum_size = Vector2(240, 30)
+	tag.add_theme_stylebox_override("panel", _box(ts[1], 2, INK, 2, 3))
+	tag.position = Vector2(30, 60)
 	var tl := Label.new()
-	tl.text = ts[0]
-	tl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tl.text = "  %s  " % ts[0]
 	tl.add_theme_font_override("font", font_k)
-	tl.add_theme_font_size_override("font_size", 15)
-	tl.add_theme_color_override("font_color", INK)
+	tl.add_theme_font_size_override("font_size", 14)
+	tl.add_theme_color_override("font_color", Color("#fff8e8"))
 	tag.add_child(tl)
 	dyn.add_child(tag)
-	var y := 196.0
-	var opts := _choices()
-	var step := 46.0 if opts.size() <= 4 else 38.0
-	for o in opts:
-		_choice(Vector2(40, y), o[0], o[1], o.size() > 2 and o[2])
-		y += step
+	if c.get("stage", "") == "haggle" and not c["gone"] and not c.get("visitor", false):
+		_render_haggle_desk()
+	else:
+		var y := DESK_Y + 34.0
+		for o in _choices():
+			_choice(Rect2(40, y, 460, 58), o[0], o[1], o.size() > 2 and o[2])
+			y += 70.0
 
 
 ## [표시 문구, 동작, 특수 선택지 여부]
@@ -483,182 +523,298 @@ func _choices() -> Array:
 			out.append([c["opts"][i], func(): g.visit_pick(i)])
 		return out
 	if c["gone"]:
-		return [["계속", func(): g.next_customer()]]
+		return [["다음 손님", func(): g.next_customer()]]
 	match c.get("stage", "intro"):
 		"intro":
-			return [["한 번 볼게요…", func():
+			return [["한번 봅시다", func():
 				g.look_item()
-				show_inspect(g.cur_item())], ["관심 없어요.", func(): g.refuse()]]
+				show_inspect(g.cur_item())], ["관심 없소", func(): g.refuse()]]
 		"look":
-			return [["거래합시다!", func(): g.start_haggle()], ["관심 없어요.", func(): g.refuse()]]
+			return [["흥정해 봅시다!", func(): g.start_haggle()], ["관심 없소", func(): g.refuse()]]
 		_:
-			var out: Array = [[("%s 빌려드릴게요." if c.get("pawn", false) else "%s에 할게요.") % GameState.fmt(g.their_price()), func(): g.accept()]]
+			var out: Array = [[("%s 빌려드리리다" if c.get("pawn", false) else "%s에 하리다") % GameState.fmt(g.their_price()), func(): g.accept()]]
 			var it := g.cur_item()
 			if not c["buy"] and not it.is_empty() and (it["suspect"] or (it["known"] and it["fake"])) and not c["accused"]:
-				out.append(["[감정] 이거 가짜 같은데요?", func(): g.accuse(), true])
+				out.append(["가짜 같은데?", func(): g.accuse(), true])
 			for sp in g.special_options():
 				var sid: String = sp[0]
 				out.append([sp[1], func(): g.use_special(sid), true])
-			out.append(["관심 없어요.", func(): g.refuse()])
+			out.append(["관심 없소", func(): g.refuse()])
 			return out
 
 
-func _choice(pos: Vector2, text: String, cb: Callable, special := false) -> void:
+func _choice(rect: Rect2, text: String, cb: Callable, special := false, fs := 19) -> void:
+	var paper := "#dfe6f2" if special else "#f1e6cb"
+	var skin := pic(_raster("slip", _slip_svg(rect.size, paper, text.hash()), [0, 0, rect.size.x, rect.size.y]), rect.position, rect.size)
+	var b := _skinned_button(rect, text, cb, skin, font_b, fs, Color("#23306a") if special else INK)
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+
+## 그림 위에 투명 버튼을 얹는다. 누르면 그림이 살짝 눌린다.
+func _skinned_button(rect: Rect2, text: String, cb: Callable, skin: TextureRect, font: Font, fs: int, fg: Color, raw := false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.position = pos
-	b.size = Vector2(380, 36)
+	b.position = rect.position
+	b.size = rect.size
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_override("font", font_b)
-	b.add_theme_font_size_override("font_size", 16)
-	var bg := Color("#c9d4f0") if special else CREAM
+	b.add_theme_font_override("font", font)
+	b.add_theme_font_size_override("font_size", fs)
 	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
-		b.add_theme_color_override(st, Color("#2a3a7a") if special else INK)
-	b.add_theme_stylebox_override("normal", _box(bg, 3, INK, 14, 4))
-	b.add_theme_stylebox_override("hover", _box(bg.lightened(0.15), 3, INK, 14, 4))
-	b.add_theme_stylebox_override("pressed", _box(bg.darkened(0.15), 3, INK, 14, 4))
-	b.pressed.connect(func(): _act(cb))
+		b.add_theme_color_override(st, fg)
+	var empty := StyleBoxEmpty.new()
+	for st in ["normal", "hover", "pressed", "disabled", "focus"]:
+		b.add_theme_stylebox_override(st, empty)
+	b.button_down.connect(func():
+		skin.modulate = Color(0.82, 0.82, 0.82)
+		skin.position.y += 2)
+	b.button_up.connect(func():
+		skin.modulate = Color.WHITE
+		skin.position.y = rect.position.y)
+	if raw:
+		b.pressed.connect(cb)
+	else:
+		b.pressed.connect(func(): _act(cb))
 	dyn.add_child(b)
+	return b
 
 
-# ---------------------------------------------------------------- 칠판
-func _render_chalkboard() -> void:
+## 결이 있는 한지 쪽지: 들쭉날쭉한 가장자리, 붓 테두리, 섬유 무늬
+func _slip_svg(sz: Vector2, paper: String, seed_v: int) -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_v
+	var w := sz.x
+	var h := sz.y
+	var pts: Array = []
+	var step := 14.0
+	var x := 2.0
+	while x < w - 2:
+		pts.append([x, 2 + rng.randf_range(-1.2, 1.6)])
+		x += step
+	pts.append([w - 2, 2.5])
+	var y := 2.0
+	while y < h - 2:
+		pts.append([w - 2 + rng.randf_range(-1.4, 0.8), y])
+		y += step
+	pts.append([w - 2.5, h - 4])
+	x = w - 2
+	while x > 2:
+		pts.append([x, h - 4 + rng.randf_range(-1.2, 1.4)])
+		x -= step
+	pts.append([2.5, h - 4])
+	y = h - 4
+	while y > 2:
+		pts.append([2 + rng.randf_range(-0.8, 1.4), y])
+		y -= step
+	var d := "M"
+	for p in pts:
+		d += "%s,%s " % [SvgArt.n(p[0]), SvgArt.n(p[1])]
+	d += "Z"
+	var out := '<path d="%s" transform="translate(1.5,3)" fill="#000" opacity="0.32"/>' % d
+	out += '<path d="%s" fill="%s"/>' % [d, paper]
+	for i in int(w / 18):
+		var fx := rng.randf_range(6, w - 6)
+		var fy := rng.randf_range(6, h - 8)
+		out += '<path d="M%s,%s q%s,%s %s,%s" stroke="#a08a60" stroke-width="0.7" fill="none" opacity="0.35"/>' % [SvgArt.n(fx), SvgArt.n(fy), SvgArt.n(rng.randf_range(3, 8)), SvgArt.n(rng.randf_range(-3, 3)), SvgArt.n(rng.randf_range(8, 16)), SvgArt.n(rng.randf_range(-2, 2))]
+	out += '<path d="%s" fill="none" stroke="#2a1a10" stroke-width="2.6" stroke-linejoin="round" opacity="0.9"/>' % d
+	out += '<rect x="7" y="7" width="%s" height="%s" fill="none" stroke="#8a6a40" stroke-width="0.8" opacity="0.5"/>' % [SvgArt.n(w - 14), SvgArt.n(h - 17)]
+	return out
+
+
+## 인주 도장: 거친 테두리, 안쪽 이중선, 인주가 덜 묻은 얼룩
+func _seal_svg(sz: Vector2, col: String, seed_v: int) -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_v
+	var w := sz.x
+	var h := sz.y
+	var d := "M%s,%s L%s,%s L%s,%s L%s,%s Z" % [SvgArt.n(3 + rng.randf()), SvgArt.n(3 + rng.randf()), SvgArt.n(w - 3 - rng.randf()), SvgArt.n(3 + rng.randf()), SvgArt.n(w - 3 - rng.randf()), SvgArt.n(h - 6 - rng.randf()), SvgArt.n(3 + rng.randf()), SvgArt.n(h - 6 - rng.randf())]
+	var out := '<path d="%s" transform="translate(1,4)" fill="#000" opacity="0.4"/>' % d
+	out += '<path d="%s" fill="%s" stroke="#1a0e08" stroke-width="2" stroke-linejoin="round"/>' % [d, col]
+	out += '<rect x="8" y="8" width="%s" height="%s" rx="2" fill="none" stroke="#fff1d8" stroke-width="2.2" opacity="0.85"/>' % [SvgArt.n(w - 16), SvgArt.n(h - 20)]
+	out += '<rect x="12" y="12" width="%s" height="%s" rx="1" fill="none" stroke="#fff1d8" stroke-width="0.9" opacity="0.6"/>' % [SvgArt.n(w - 24), SvgArt.n(h - 28)]
+	for i in int(w * h / 900.0):
+		out += '<circle cx="%s" cy="%s" r="%s" fill="#fff1d8" opacity="%s"/>' % [SvgArt.n(rng.randf_range(6, w - 6)), SvgArt.n(rng.randf_range(6, h - 10)), SvgArt.n(rng.randf_range(0.6, 2.2)), SvgArt.n(rng.randf_range(0.12, 0.3))]
+	out += '<path d="M10,%s h%s" stroke="#000" stroke-width="3" opacity="0.15"/>' % [SvgArt.n(h - 12), SvgArt.n(w - 20)]
+	return out
+
+
+## 나무 현판: 결무늬 + 금박 테두리
+func _board_svg(sz: Vector2, wood: String, rim: String) -> String:
+	var w := sz.x
+	var h := sz.y
+	var out := '<rect x="3" y="7" width="%s" height="%s" rx="6" fill="#000" opacity="0.45"/>' % [SvgArt.n(w - 4), SvgArt.n(h - 8)]
+	out += '<rect x="2" y="2" width="%s" height="%s" rx="6" fill="%s" stroke="#120a06" stroke-width="3"/>' % [SvgArt.n(w - 4), SvgArt.n(h - 8), wood]
+	for i in 7:
+		var yy := 10.0 + i * (h - 20) / 7.0
+		out += '<path d="M10,%s C%s,%s %s,%s %s,%s" stroke="#000" stroke-width="1" fill="none" opacity="0.18"/>' % [SvgArt.n(yy), SvgArt.n(w * 0.3), SvgArt.n(yy - 4 + i % 3 * 3), SvgArt.n(w * 0.6), SvgArt.n(yy + 5), SvgArt.n(w - 10), SvgArt.n(yy + 1)]
+	out += '<rect x="9" y="9" width="%s" height="%s" rx="3" fill="none" stroke="%s" stroke-width="3"/>' % [SvgArt.n(w - 18), SvgArt.n(h - 22), rim]
+	for c in [[14, 14], [w - 14, 14], [14, h - 19], [w - 14, h - 19]]:
+		out += '<circle cx="%s" cy="%s" r="3" fill="%s"/>' % [SvgArt.n(c[0]), SvgArt.n(c[1]), rim]
+	return out
+
+
+## 흥정 중 아래 책상: 두루마리(물건 정보) · 가격 명패 · 도장 세 개 · 수 선택지
+func _render_haggle_desk() -> void:
 	var it := g.cur_item()
 	if it.is_empty() or g.neg == null:
 		return
-	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", _box(Color("#2c302c"), 10, Color("#7a4a26"), 8, 14))
-	frame.position = Vector2(840, 70)
-	frame.custom_minimum_size = Vector2(300, 250)
-	dyn.add_child(frame)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 0)
-	frame.add_child(v)
+	var pawn: bool = g.cur.get("pawn", false)
+	# 두루마리
+	pic(_raster("scroll", _slip_svg(Vector2(508, 100), "#f1e6cb", 7), [0, 0, 508, 100]), Vector2(16, DESK_Y + 4), Vector2(508, 100))
+	for x in [8.0, 524.0]:
+		var rod := ColorRect.new()
+		rod.color = Color("#5a3420")
+		rod.position = Vector2(x, DESK_Y + 2)
+		rod.size = Vector2(8, 104)
+		dyn.add_child(rod)
 	var rar: Dictionary = D.items["rarity"][int(it["r"])]
 	var e := g.est(it)
-	var chalk := Color("#ecebe4")
-	var rows := [["희귀도", rar["n"], Color(rar["c"]).lightened(0.3)], ["상태", D.items["condition"][int(it["c"])]["n"], Color("#f0a090") if int(it["c"]) <= 1 else Color("#a0e0a0")], ["종류", D.items["categories"][it["cat"]]["n"], chalk], ["견적액", GameState.fmt(g.val(it, false)) if it["known"] else "%s~%s" % [GameState.fmt(e[0]), GameState.fmt(e[1])], chalk]]
-	if int(it["paid"]) > 0:
-		rows.append(["지불액", GameState.fmt(it["paid"]), chalk])
+	var est_s: String = GameState.fmt(g.val(it, false)) if it["known"] else "%s~%s" % [GameState.fmt(e[0]), GameState.fmt(e[1])]
+	lbl(it["name"], Vector2(34, DESK_Y + 14), Vector2(260, 26), 17, INK, font_k)
+	lbl("%s · %s" % [rar["n"], D.items["condition"][int(it["c"])]["n"]], Vector2(34, DESK_Y + 40), Vector2(260, 22), 14, Color(rar["c"]).darkened(0.25), font_sb)
+	var extra := ""
 	if g.cur.has("read"):
-		rows.append(["속마음", "%s~%s" % [GameState.fmt(g.cur["read"][0]), GameState.fmt(g.cur["read"][1])], Color("#9ac4ff")])
-	if g.cur.get("pawn", false):
-		rows.append(["맡기는 기간", "%d일 · 상환액은 대출금의 %d%%" % [g.cur["days"], int(round((1.1 + 0.03 * g.cur["days"]) * 100))], Color("#ffd77a")])
-	for r in rows:
-		var l := Label.new()
-		l.text = "%s: %s" % [r[0], r[1]]
-		l.add_theme_font_override("font", font_b)
-		l.add_theme_font_size_override("font_size", 16)
-		l.add_theme_color_override("font_color", r[2])
-		v.add_child(l)
-	var curl := Label.new()
-	curl.text = ("대출 요청: %s" if g.cur.get("pawn", false) else "현재: %s") % GameState.fmt(g.their_price())
-	curl.add_theme_font_override("font", font_k)
-	curl.add_theme_font_size_override("font_size", 30)
-	curl.add_theme_color_override("font_color", Color.WHITE)
-	v.add_child(curl)
+		extra = "  속마음 %s~%s" % [GameState.fmt(g.cur["read"][0]), GameState.fmt(g.cur["read"][1])]
+	if pawn:
+		extra = "  %d일 · 상환 %d%%" % [g.cur["days"], int(round((1.1 + 0.03 * g.cur["days"]) * 100))]
+	lbl("견적 %s%s" % [est_s, extra], Vector2(34, DESK_Y + 64), Vector2(470, 24), 14, Color("#1f5a56"), font_sb)
+	lbl("빌려 달라는 돈" if pawn else ("손님 부른 값"), Vector2(300, DESK_Y + 12), Vector2(206, 20), 12, Color("#6a5a4a"), font_sb, HORIZONTAL_ALIGNMENT_RIGHT)
+	lbl(GameState.fmt(g.their_price()), Vector2(290, DESK_Y + 30), Vector2(216, 34), 24, SEAL, font_k, HORIZONTAL_ALIGNMENT_RIGHT)
+	# 인내심: 타들어 가는 향
 	var m := g.neg.patience_ratio()
-	var bar := ProgressBar.new()
-	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(0, 10)
-	bar.max_value = 1.0
-	bar.value = m
-	bar.add_theme_stylebox_override("background", _box(Color("#4a4e48"), 0, Color.BLACK, 5, 0))
-	bar.add_theme_stylebox_override("fill", _box(Color("#7ac47a") if m > 0.66 else (Color("#e6b85a") if m > 0.33 else Color("#e0604a")), 0, Color.BLACK, 5, 0))
-	v.add_child(bar)
-	var pl := Label.new()
-	pl.text = ("인내심 %d/%d" % [maxi(0, int(g.neg.patience)), int(g.neg.max_patience)]) if g.has_staff("profiler") else "인내심"
-	pl.add_theme_font_override("font", font_r)
-	pl.add_theme_font_size_override("font_size", 12)
-	pl.add_theme_color_override("font_color", Color("#b8b8b0"))
-	v.add_child(pl)
+	var stick := ColorRect.new()
+	stick.color = Color("#7a5a3a")
+	stick.position = Vector2(34, DESK_Y + 88)
+	stick.size = Vector2(472, 5)
+	dyn.add_child(stick)
+	var burn := ColorRect.new()
+	burn.color = Color("#6aa85a") if m > 0.66 else (Color("#d9a441") if m > 0.33 else Color("#d8402e"))
+	burn.position = Vector2(34, DESK_Y + 88)
+	burn.size = Vector2(472 * clampf(m, 0, 1), 5)
+	dyn.add_child(burn)
+	if g.has_staff("profiler"):
+		lbl("인내심 %d/%d" % [maxi(0, int(g.neg.patience)), int(g.neg.max_patience)], Vector2(380, DESK_Y + 64), Vector2(126, 24), 12, Color("#6a5a4a"), font_sb, HORIZONTAL_ALIGNMENT_RIGHT)
+	# 가격 명패: [-] 명패 [+]
+	var py := DESK_Y + 112.0
+	_stamp(Rect2(16, py, 84, 60), "−", Color("#5a3420"), func():
+		g.draft = maxi(10, GameState.r10(g.draft - maxf(10.0, g.their_price() * 0.05))), 30)
+	_stamp(Rect2(440, py, 84, 60), "+", Color("#5a3420"), func():
+		g.draft = GameState.r10(g.draft + maxf(10.0, g.their_price() * 0.05)), 30)
+	var plate := PanelContainer.new()
+	plate.add_theme_stylebox_override("panel", _box(Color("#e8c890"), 4, INK, 3, 2))
+	plate.position = Vector2(108, py)
+	plate.custom_minimum_size = Vector2(324, 60)
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dyn.add_child(plate)
+	lbl(GameState.fmt(g.draft), PRICE_POS, Vector2(320, 58), 30, INK, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	var pb := hot(Rect2(108, py, 324, 60), "내 제시 가격: 좌우로 끌어 조정, 눌러서 직접 입력", func(): show_keypad())
+	pb.gui_input.connect(_on_sign_drag)
+	lbl("내 제시 값 · 끌거나 눌러서 입력", Vector2(108, py + 60), Vector2(324, 18), 11, Color("#e8c890"), font_sb, HORIZONTAL_ALIGNMENT_CENTER)
+	# 도장 세 개
+	var sy := py + 84.0
+	_stamp(Rect2(16, sy, 160, 72), "제안", SEAL, func(): g.propose(g.draft))
+	_stamp(Rect2(190, sy, 160, 72), "최종 제안", Color("#8a6a1a"), func():
+		sfx.play("bell")
+		g.propose(g.draft, true))
+	_stamp(Rect2(364, sy, 160, 72), "거절", Color("#2a2a34"), func(): g.refuse())
+	# 수(특수 선택지 + 손님 값 수락) — 2열
+	var opts := _choices().filter(func(o): return o[0] != "관심 없소")
+	var oy := sy + 86.0
+	var rows := int(ceil(opts.size() / 2.0))
+	var hgt := clampf((H - 8 - oy) / maxf(1, rows) - 8, 34, 54)
+	for i in opts.size():
+		var o: Array = opts[i]
+		_choice(Rect2(16 + (i % 2) * 258, oy + (i / 2) * (hgt + 8), 250, hgt), o[0], o[1], o.size() > 2 and o[2], 15)
+
+
+## 도장 모양 버튼 (인주 그림 위에 글자)
+func _stamp(rect: Rect2, text: String, c: Color, cb: Callable, fs := 22) -> void:
+	var skin := pic(_raster("seal", _seal_svg(rect.size, "#" + c.to_html(false), text.hash()), [0, 0, rect.size.x, rect.size.y]), rect.position, rect.size)
+	var b := _skinned_button(rect, text, cb, skin, font_k, fs, Color("#fff4dc"))
+	b.add_theme_constant_override("outline_size", 3)
+	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.35))
+
+
+## 나무 현판 버튼 (문 열기 · 마감)
+func _board(rect: Rect2, text: String, cb: Callable, fs := 40, raw := false) -> Button:
+	var skin := pic(_raster("board", _board_svg(rect.size, "#3a2418", "#d9a441"), [0, 0, rect.size.x, rect.size.y]), rect.position, rect.size)
+	var b := _skinned_button(rect, text, cb, skin, font_k, fs, Color("#f6d27a"), raw)
+	b.add_theme_constant_override("outline_size", 4)
+	b.add_theme_color_override("font_outline_color", Color("#120a06"))
+	return b
 
 
 # ---------------------------------------------------------------- 아침·밤
 func _render_morning() -> void:
-	var sb := Button.new()
-	sb.text = "열기"
-	sb.position = Vector2(70, 150)
-	sb.size = Vector2(190, 150)
-	sb.rotation_degrees = -3
-	sb.focus_mode = Control.FOCUS_NONE
-	sb.add_theme_font_override("font", font_k)
-	sb.add_theme_font_size_override("font_size", 56)
-	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
-		sb.add_theme_color_override(st, Color("#fbefd9"))
-	sb.add_theme_stylebox_override("normal", _box(Color("#9a6434"), 6, Color("#4a2a14"), 18, 8))
-	sb.add_theme_stylebox_override("hover", _box(Color("#a8703c"), 6, Color("#4a2a14"), 18, 8))
-	sb.add_theme_stylebox_override("pressed", _box(Color("#7a4a24"), 6, Color("#4a2a14"), 18, 8))
-	sb.pressed.connect(func(): _act(func(): g.flip_open()))
-	dyn.add_child(sb)
-	lbl("가게 문 열기", Vector2(70, 306), Vector2(190, 24), 15, Color("#fbefd9"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
 	_render_newspaper()
+	_board(Rect2(110, DESK_Y + 150, 320, 116), "문 열기", func(): g.flip_open(), 44)
+	lbl("현판을 눌러 가게 문을 엽니다", Vector2(60, DESK_Y + 268), Vector2(420, 24), 14, HANJI, font_b, HORIZONTAL_ALIGNMENT_CENTER)
 
 
+## 아침 방문(榜文): 「은하 일보」. 시세·경매·구인·팁을 붙인 종이 쪽지.
 func _render_newspaper() -> void:
 	var n := g.news
 	var paper := PanelContainer.new()
-	paper.add_theme_stylebox_override("panel", _box(Color("#efe6cf"), 3, Color("#3a3428"), 4, 14))
-	paper.position = Vector2(300, 60)
-	paper.custom_minimum_size = Vector2(740, 330)
-	paper.rotation_degrees = -1.2
+	paper.add_theme_stylebox_override("panel", _hanji(Color("#efe2c2"), INK, 4, 12))
+	paper.position = Vector2(24, 108)
+	paper.custom_minimum_size = Vector2(492, 0)
 	dyn.add_child(paper)
 	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 4)
+	v.add_theme_constant_override("separation", 6)
 	paper.add_child(v)
 	var mast := Label.new()
-	mast.text = "흥정 일보"
+	mast.text = "은하 일보"
 	mast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mast.add_theme_font_override("font", font_k)
-	mast.add_theme_font_size_override("font_size", 38)
+	mast.add_theme_font_size_override("font_size", 36)
 	mast.add_theme_color_override("font_color", Color("#1d1915"))
 	v.add_child(mast)
 	var sub := Label.new()
-	sub.text = "%d일차 ─ %s" % [g.day, n.get("head", "")]
+	sub.text = "%d일째 ─ %s" % [g.day, n.get("head", "")]
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sub.custom_minimum_size = Vector2(460, 0)
 	sub.add_theme_font_override("font", font_b)
 	sub.add_theme_font_size_override("font_size", 16)
 	sub.add_theme_color_override("font_color", Color("#1d1915"))
 	v.add_child(sub)
 	var grid := GridContainer.new()
-	grid.columns = 4
+	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	v.add_child(grid)
 	var cats: Dictionary = D.items["categories"]
 	var items: Array = []
 	if n.has("up"):
-		items.append(["▲ %s" % cats[n["up"]]["n"], cats[n["up"]]["up"], func(): g.toast("%s 시세 상승! 이 종류는 비싸게 팔 수 있어요." % cats[n["up"]]["n"]), Color("#1d7a3a"), false])
-		items.append(["▼ %s" % cats[n["dn"]]["n"], cats[n["dn"]]["dn"], func(): g.toast("%s 시세 하락. 싸게 사 두기 좋은 날일지도." % cats[n["dn"]]["n"]), Color("#b0301e"), false])
+		items.append(["▲ %s" % cats[n["up"]]["n"], cats[n["up"]]["up"], func(): g.toast("%s 시세 상승! 이 종류는 비싸게 팔 수 있어요." % cats[n["up"]]["n"]), Color("#1d6a3a"), false])
+		items.append(["▼ %s" % cats[n["dn"]]["n"], cats[n["dn"]]["dn"], func(): g.toast("%s 시세 하락. 싸게 사 두기 좋은 날일지도." % cats[n["dn"]]["n"]), Color("#a0301e"), false])
 	if g.is_auction_today():
-		items.append(["경매 공고", "오늘 시립 경매장 · 참가비 %s" % GameState.fmt(g.auction_fee()), func(): _open_auction(), Color("#8a1a2a"), true])
+		items.append(["경매 방", "오늘 은하 경매장 · 참가비 %s" % GameState.fmt(g.auction_fee()), func(): _open_auction(), Color("#8a1a2a"), true])
 	if g.has_staff("analyst"):
-		items.append(["분석가 메모", "내일은 %s이(가) 뜹니다" % cats[g.next_up]["n"], func(): pass, Color("#6b4126"), false])
-	for k in D.staff:
-		if not g.has_staff(k):
-			items.append(["%s 구함" % D.staff[k]["n"], "%s · 일급 %s" % [D.staff[k]["pn"], GameState.fmt(D.staff[k]["w"])], func(): show_hire(k), Color("#2a6a5a"), true])
+		items.append(["시세꾼 쪽지", "내일은 %s이(가) 뜹니다" % cats[g.next_up]["n"], func(): pass, Color("#6b4126"), false])
+	var ads: Array = D.staff.keys().filter(func(k): return not g.has_staff(k))
+	for ai in mini(2, ads.size()):
+		var k: String = ads[(g.day + ai) % ads.size()]
+		if true:
+			items.append(["%s 구함" % D.staff[k]["n"], "%s · 일급 %s" % [D.staff[k]["pn"], GameState.fmt(D.staff[k]["w"])], func(): show_hire(k), Color("#2a5a6a"), true])
 	if D.tips.size() > 0:
 		var tip_i: int = int(n.get("tip", 0)) % D.tips.size()
-		items.append(["오늘의 팁 #%d" % (tip_i + 1), "눌러서 읽기", func(): g.toast(D.tips[tip_i]), Color("#5a3a9a"), true])
-	for s in n.get("sub", []):
-		items.append(["단신", s, func(): pass, Color("#3a3428"), false])
-	for i in mini(items.size(), 12):
+		items.append(["오늘의 비결 #%d" % (tip_i + 1), "눌러서 읽기", func(): g.toast(D.tips[tip_i]), Color("#5a3a8a"), true])
+	for i in mini(items.size(), 6):
 		var it: Array = items[i]
 		var b := Button.new()
 		b.text = "%s\n%s" % [it[0], it[1]]
-		b.custom_minimum_size = Vector2(172, 64)
+		b.custom_minimum_size = Vector2(230, 84)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.focus_mode = Control.FOCUS_NONE
 		b.add_theme_font_override("font", font_b)
-		b.add_theme_font_size_override("font_size", 12)
+		b.add_theme_font_size_override("font_size", 15)
 		for st in ["font_color", "font_pressed_color", "font_hover_color"]:
 			b.add_theme_color_override(st, it[3])
 		var ad: bool = it[4]
-		var bc := Color("#3aa08a") if ad else Color("#b8ad94")
-		b.add_theme_stylebox_override("normal", _box(Color("#efe6cf"), 3 if ad else 1, bc, 30 if ad else 2, 4))
-		b.add_theme_stylebox_override("hover", _box(Color("#f6efdc"), 3 if ad else 1, bc, 30 if ad else 2, 4))
-		b.add_theme_stylebox_override("pressed", _box(Color("#e0d6bc"), 3 if ad else 1, bc, 30 if ad else 2, 4))
+		var bc := SEAL if ad else Color("#b8ad94")
+		b.add_theme_stylebox_override("normal", _box(Color("#efe2c2"), 3 if ad else 1, bc, 2, 4))
+		b.add_theme_stylebox_override("hover", _box(Color("#f6ecd4"), 3 if ad else 1, bc, 2, 4))
+		b.add_theme_stylebox_override("pressed", _box(Color("#e0d2b0"), 3 if ad else 1, bc, 2, 4))
 		var cb: Callable = it[2]
 		b.pressed.connect(func():
 			cb.call()
@@ -668,20 +824,18 @@ func _render_newspaper() -> void:
 
 
 func _render_night() -> void:
-	var sb := Button.new()
-	sb.text = "영업 종료\n영수증 보기"
-	sb.position = Vector2(440, 150)
-	sb.size = Vector2(290, 150)
-	sb.focus_mode = Control.FOCUS_NONE
-	sb.add_theme_font_override("font", font_k)
-	sb.add_theme_font_size_override("font_size", 28)
-	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
-		sb.add_theme_color_override(st, Color("#9ac4ff"))
-	sb.add_theme_stylebox_override("normal", _box(INK, 6, Color("#3a5a8a"), 18, 8))
-	sb.add_theme_stylebox_override("pressed", _box(INK.lightened(0.1), 6, Color("#3a5a8a"), 18, 8))
-	sb.add_theme_stylebox_override("hover", _box(INK.lightened(0.05), 6, Color("#3a5a8a"), 18, 8))
-	sb.pressed.connect(func(): show_receipt())
-	dyn.add_child(sb)
+	lbl("오늘 장사는 여기까지", Vector2(40, 300), Vector2(460, 60), 30, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	_board(Rect2(70, DESK_Y + 120, 400, 106), "마감 · 영수증 보기", func(): show_receipt(), 28, true)
+
+
+## 장부: 모든 메뉴를 한곳에
+func show_menu() -> void:
+	var v := sheet(HANJI, INK, INK, true, 500)
+	t(v, "장부", 30, font_k, null, HORIZONTAL_ALIGNMENT_CENTER)
+	t(v, "Lv.%d · 평판 %d · 금고 %s" % [g.lv, g.rep, GameState.fmt(g.money)], 15, font_b, null, HORIZONTAL_ALIGNMENT_CENTER)
+	for e in [["창고", "사들인 물건 · 감정 · 수리 · 도매 처분", func(): show_inv()], ["사장 수첩", "기술 올리기 · 가게 이전 · 단골 · 설정" + (" ●" if g.sp > 0 else ""), func(): show_ledger()], ["셈판", "오늘 · 최근 7일 · 전체 수입과 지출", func(): show_stats("today")], ["보물 도감", "모은 물건 %d/%d" % [g.collection.size(), g.collection_total()], func(): show_collection()], ["일꾼", "고용한 직원 %d/%d" % [g.staff.size(), g.staff_slots()], func(): show_staff()]]:
+		var b := btn(v, "%s\n%s" % [e[0], e[1]], e[2], Color("#3a2430"), HANJI)
+		b.custom_minimum_size = Vector2(0, 74)
 
 
 # ================================================================ 오버레이
@@ -701,9 +855,11 @@ func sheet(bgc: Color, ink: Color, border := Color("#6b4126"), closable := true,
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	modal.add_child(dim)
 	var vs := get_viewport_rect().size
-	var ww := minf(vs.x - 40, wdt)
+	var ww := minf(vs.x - 24, wdt)
+	# 밝은 판은 한지, 어두운 판은 옻칠(검붉은 칠 + 금테)로 통일
+	var dark := bgc.get_luminance() < 0.4
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", _box(bgc, 6, border, 12, 16))
+	panel.add_theme_stylebox_override("panel", _box(LACQUER if dark else HANJI, 6, GOLD.darkened(0.1) if dark else Color("#5a3420"), 3, 16))
 	panel.position = Vector2((vs.x - ww) / 2, 14)
 	panel.size = Vector2(ww, vs.y - 28)
 	modal.add_child(panel)
@@ -752,10 +908,10 @@ func btn(parent: Control, text: String, cb: Callable, bg := Color("#6b4126"), fg
 	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
 		b.add_theme_color_override(st, fg)
 	b.add_theme_color_override("font_disabled_color", fg.darkened(0.4))
-	b.add_theme_stylebox_override("normal", _box(bg, 0, Color.BLACK, 10, 6))
-	b.add_theme_stylebox_override("hover", _box(bg.lightened(0.08), 0, Color.BLACK, 10, 6))
-	b.add_theme_stylebox_override("pressed", _box(bg.darkened(0.2), 0, Color.BLACK, 10, 6))
-	b.add_theme_stylebox_override("disabled", _box(bg.darkened(0.3), 0, Color.BLACK, 10, 6))
+	b.add_theme_stylebox_override("normal", _box(bg, 2, INK, 3, 6))
+	b.add_theme_stylebox_override("hover", _box(bg.lightened(0.08), 2, INK, 3, 6))
+	b.add_theme_stylebox_override("pressed", _box(bg.darkened(0.2), 2, INK, 3, 6))
+	b.add_theme_stylebox_override("disabled", _box(bg.darkened(0.3), 2, INK, 3, 6))
 	b.pressed.connect(func():
 		cb.call()
 		g.save_game()
@@ -795,17 +951,16 @@ func show_inspect(it: Dictionary) -> void:
 		return
 	g.inspect(it)
 	var v := sheet(Color("#26262a"), Color("#f6efdc"), Color("#4a4a52"), true, 900)
-	var h := row(v)
+	var h := v
 	var left := _vbox(h, Color("#f6efdc"))
 	var spot := PanelContainer.new()
-	spot.add_theme_stylebox_override("panel", _box(Color("#3a3a40"), 0, Color.BLACK, 10, 10))
-	spot.custom_minimum_size = Vector2(300, 250)
+	spot.add_theme_stylebox_override("panel", _box(Color("#1a1224"), 2, GOLD.darkened(0.3), 3, 10))
+	spot.custom_minimum_size = Vector2(0, 220)
 	left.add_child(spot)
-	var em := Label.new()
-	em.text = it["e"]
-	em.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	em.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	em.add_theme_font_size_override("font_size", 130)
+	var em := TextureRect.new()
+	em.texture = _icon(it["e"])
+	em.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	em.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	spot.add_child(em)
 	t(left, it["name"], 28, font_k, Color("#e09a7a"), HORIZONTAL_ALIGNMENT_CENTER)
 	var card := PanelContainer.new()
@@ -834,7 +989,7 @@ func show_inspect(it: Dictionary) -> void:
 		t(cv, "감정사 메모: 가품이 의심됩니다", 16, font_b, Color("#c4402a"), HORIZONTAL_ALIGNMENT_CENTER)
 	if not it["known"]:
 		var id = it["id"]
-		btn(cv, "🔍 정밀 감정  %s" % GameState.fmt(g.appr_fee(it)), func():
+		btn(cv, "정밀 감정  %s" % GameState.fmt(g.appr_fee(it)), func():
 			g.appraise(id)
 			show_inspect(g.find_item(id)), Color("#2a6a5a"))
 	btn(v, "확인", close_modal)
@@ -965,7 +1120,7 @@ func show_inv() -> void:
 	var items := g.inv.duplicate()
 	items.sort_custom(func(a, b): return g.val(a, true) > g.val(b, true))
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 1
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	v.add_child(grid)
@@ -980,7 +1135,14 @@ func show_inv() -> void:
 		cv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.add_child(cv)
 		var rar: Dictionary = D.items["rarity"][int(it["r"])]
-		t(cv, "%s  %s" % [it["e"], it["name"]], 18, font_k)
+		var hd := row(cv)
+		var icn := TextureRect.new()
+		icn.texture = _icon(it["e"])
+		icn.custom_minimum_size = Vector2(56, 56)
+		icn.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icn.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		hd.add_child(icn)
+		t(hd, it["name"], 18, font_k).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var flags := ""
 		if it["restoring"]:
 			flags += " · 수리 중"
@@ -988,7 +1150,7 @@ func show_inv() -> void:
 			flags += " · 가품 확정" if it["known"] else " · 가품 의심"
 		t(cv, "%s · %s · %s%s" % [rar["n"], D.items["condition"][int(it["c"])]["n"], D.items["categories"][it["cat"]]["n"], flags], 14, null, Color(rar["c"]).darkened(0.2))
 		if g.is_pawned(it):
-			t(cv, "🔒 담보 — %s님 · %d일차까지 · 상환 %s" % [it["pawn"]["owner"], int(it["pawn"]["due"]), GameState.fmt(it["pawn"]["repay"])], 14, font_b, Color("#8a5a10"))
+			t(cv, "담보 — %s님 · %d일차까지 · 상환 %s" % [it["pawn"]["owner"], int(it["pawn"]["due"]), GameState.fmt(it["pawn"]["repay"])], 14, font_b, Color("#8a5a10"))
 		var e := g.est(it)
 		t(cv, ("감정가 %s · 지불 %s" % [GameState.fmt(g.val(it, false)), GameState.fmt(it["paid"])]) if it["known"] else "견적 %s~%s · 지불 %s" % [GameState.fmt(e[0]), GameState.fmt(e[1]), GameState.fmt(it["paid"])], 15, font_b, Color("#1f6a66"))
 		var h := row(cv)
@@ -1091,10 +1253,15 @@ func show_auction() -> void:
 	var v := sheet(Color("#24161a"), Color("#f6e7d0"), Color("#a8823a"), false, 900)
 	var it := g.lot()
 	var a := g.auction
-	t(v, "시립 경매장 · %d/%d번 물건" % [int(a["i"]) + 1, a["lots"].size()], 24, font_k)
-	var top := row(v)
+	t(v, "은하 경매장 · %d/%d번 물건" % [int(a["i"]) + 1, a["lots"].size()], 24, font_k)
+	var top := v
 	var left := _vbox(top, Color("#f6e7d0"))
-	t(left, it["e"], 90, null, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
+	var aic := TextureRect.new()
+	aic.texture = _icon(it["e"])
+	aic.custom_minimum_size = Vector2(130, 130)
+	aic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	aic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	left.add_child(aic)
 	var rar: Dictionary = D.items["rarity"][int(it["r"])]
 	var e := g.est(it, not g.has_staff("expert"))
 	t(left, it["name"], 22, font_k, null, HORIZONTAL_ALIGNMENT_CENTER)
@@ -1106,7 +1273,7 @@ func show_auction() -> void:
 		var cv := _vbox(bh, Color("#f6e7d0"))
 		var lead: bool = a["leader"] == b["n"]
 		cv.add_child(_portrait("npc_" + b["n"] + str(lead), b["L"], "happy" if lead else "ok", Vector2(90, 98)))
-		t(cv, ("✋ " if lead else "") + b["n"], 12, font_b, Color("#ffd77a") if lead else null, HORIZONTAL_ALIGNMENT_CENTER)
+		t(cv, ("▲ " if lead else "") + b["n"], 12, font_b, Color("#ffd77a") if lead else null, HORIZONTAL_ALIGNMENT_CENTER)
 	t(right, GameState.fmt(a["price"]), 40, font_k, Color("#ffd77a"), HORIZONTAL_ALIGNMENT_CENTER)
 	t(right, ("내가 최고가" if a["leader"] == "me" else a["leader"] + " 최고가") if a["leader"] != "" else "아직 입찰 없음", 15, null, null, HORIZONTAL_ALIGNMENT_CENTER)
 	t(right, "내 금고 %s · 창고 %d/%d" % [GameState.fmt(g.money), g.inv.size(), g.cap()], 14, null, null, HORIZONTAL_ALIGNMENT_CENTER)
@@ -1165,7 +1332,7 @@ func show_stats(mode: String) -> void:
 func show_collection() -> void:
 	var v := sheet(Color("#2a2a3a"), Color("#eceaf6"), Color("#4a4a6a"))
 	t(v, "아이템 도감  %d / %d" % [g.collection.size(), g.collection_total()], 26, font_k)
-	t(v, "한 번이라도 손에 넣은 물건이 기록됩니다. 한 종류를 모두 모으면 수집가 협회 상금과 평판을 받습니다.", 14)
+	t(v, "한 번이라도 손에 넣은 물건이 기록됩니다. 한 종류를 모두 모으면 은하 골동 동호회 상금과 평판을 받습니다.", 14)
 	var cats: Dictionary = D.items["categories"]
 	for ck in cats:
 		var done: bool = g.col_done.has(ck)
@@ -1176,7 +1343,7 @@ func show_collection() -> void:
 				have += 1
 		t(v, "%s  %d/%d%s" % [cats[ck]["n"], have, items.size(), "  ★ 완성" if done else ""], 18, font_k, Color("#ffd77a") if done else null)
 		var grid := GridContainer.new()
-		grid.columns = 6
+		grid.columns = 4
 		grid.add_theme_constant_override("h_separation", 8)
 		grid.add_theme_constant_override("v_separation", 8)
 		v.add_child(grid)
@@ -1186,10 +1353,16 @@ func show_collection() -> void:
 			var card := PanelContainer.new()
 			var rc := Color(D.items["rarity"][int(g.collection[key])]["c"]) if owned else Color("#4a4a5a")
 			card.add_theme_stylebox_override("panel", _box(Color("#3a3a4e") if owned else Color("#2e2e3c"), 3, rc, 10, 6))
-			card.custom_minimum_size = Vector2(100, 92)
+			card.custom_minimum_size = Vector2(96, 96)
 			grid.add_child(card)
 			var cv := VBoxContainer.new()
 			cv.set_meta("ink", Color("#eceaf6"))
 			card.add_child(cv)
-			t(cv, it[1] if owned else "?", 30, null, Color.WHITE if owned else Color("#6a6a80"), HORIZONTAL_ALIGNMENT_CENTER)
+			var cic := TextureRect.new()
+			cic.texture = _icon(it[1])
+			cic.custom_minimum_size = Vector2(56, 56)
+			cic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			cic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			cic.modulate = Color.WHITE if owned else Color(0, 0, 0, 0.55)
+			cv.add_child(cic)
 			t(cv, it[0] if owned else "???", 11, font_b, null, HORIZONTAL_ALIGNMENT_CENTER)

@@ -1,5 +1,5 @@
 extends SceneTree
-## 화면 스크린샷 (xvfb + opengl3). 사용: xvfb-run -a -s "-screen 0 2340x1080x24" godot --path . --rendering-driver opengl3 --resolution 1170x540 -s res://tests/_shots.gd
+## 화면 스크린샷 (xvfb + opengl3). 사용: xvfb-run -a -s "-screen 0 1080x2340x24" godot --path . --rendering-driver opengl3 --resolution 540x1170 -s res://tests/_shots.gd
 var main
 var step := 0
 func _init():
@@ -45,5 +45,9 @@ func _process(_d):
 			g.phase = "morning"; g.cur = {}; g.auction_day = g.day; g.auction_done = false; g.money = 20000
 			main._open_auction()
 		70: shot("7_auction")
-		71: quit()
+		71:
+			main.close_modal()
+			main.show_menu()
+		80: shot("8_menu")
+		81: quit()
 	return false

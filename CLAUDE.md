@@ -15,7 +15,7 @@
   → 별도 폴더에 압축 해제 → `--headless --path godot --import` → `--headless --path godot -s res://tests/run_tests.gd`
 - CI: `.github/workflows/ci.yml` (푸시마다 헤드리스 테스트). 푸시 후 `gh run list -R alohakimbs/heungjeong-pawnshop`로 결과 확인.
 - 테스트 APK: main 푸시 → CI가 GitHub 릴리스 `test-latest`에 `heungjeong-test.apk` 갱신. 내려받기: `curl -sSL -o x.apk https://github.com/alohakimbs/heungjeong-pawnshop/releases/download/test-latest/heungjeong-test.apk` (Actions 아티팩트 저장소는 작업 공간에서 차단됨). 릴리스 조회는 `gh api repos/alohakimbs/heungjeong-pawnshop/releases/tags/test-latest` (GraphQL 차단).
-- 화면 스크린샷: `xvfb-run -a -s "-screen 0 800x1640x24" godot --path godot --rendering-driver opengl3 --resolution 400x820 -s res://tests/_shots.gd` → /tmp/shot_*.png
+- 화면 스크린샷: `xvfb-run -a -s "-screen 0 540x1170x24" godot --path godot --rendering-driver opengl3 --resolution 540x1170 -s res://tests/_shots.gd` → /tmp/shot_*.png
 - 드라이브 업로드: 큰 파일(APK 60MB)은 파일 참조 업로드가 안 됨 → 링크만 문서로 남긴다. 작은 이미지는 작업 폴더(/home/claude 아래)에 두고 sha256 참조로 업로드.
 - 출시용 AAB: Actions 「출시용 AAB」 수동 실행(`gh api -X POST repos/alohakimbs/heungjeong-pawnshop/actions/workflows/release.yml/dispatches -f ref=main`) → 릴리스 `aab-latest`. 업로드 키 Secrets 4개가 있으면 정식 서명.
 - 스토어 문서: `docs/store/`, 아이콘·그래픽 생성: `tools/store_art.gd` (xvfb 필요)
