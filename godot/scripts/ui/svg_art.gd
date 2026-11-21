@@ -5,6 +5,7 @@ extends RefCounted
 ## M2에서 일러스트 파츠로 교체할 때까지의 임시 그래픽이다.
 
 const SKINS := ["#f6d3b3", "#eac29a", "#d9a679", "#b97f55", "#8d5a3b"]
+const INK := ' stroke="#2a1a14" stroke-width="4" stroke-linejoin="round"'
 const HAIRS := ["#2b1b12", "#5b3a1e", "#a0522d", "#1d1d1d", "#e2b84a"]
 
 
@@ -103,10 +104,13 @@ static func draw_char(L: Dictionary, mood: String, legs := false) -> String:
 		s += '<path d="M%s -8 Q%s %s 0 %s Q%s %s %s -8 L%s %s Q0 %s %s %s Z" fill="%s"/>' % [n(-rx - 6), n(-rx - 8), n(-ry - 12), n(-ry - 12), n(rx + 8), n(-ry - 12), n(rx + 6), n(rx + 12), n(ry + 48), n(ry + 60), n(-rx - 12), n(ry + 48), hc]
 	if hair == 6:
 		s += '<path d="M%s 0 Q%s %s 0 %s Q%s %s %s 0 L%s %s Q%s %s %s %s L%s %s Q%s %s %s %s Z" fill="%s"/>' % [n(-rx - 9), n(-rx - 11), n(-ry - 10), n(-ry - 10), n(rx + 11), n(-ry - 10), n(rx + 9), n(rx + 9), n(ry * 0.65), n(rx), n(ry * 0.8), n(rx - 6), n(ry * 0.6), n(-rx + 6), n(ry * 0.6), n(-rx), n(ry * 0.8), n(-rx - 9), n(ry * 0.65), hc]
+	if hair == 11:
+		s += '<path d="M%s %s L%s %s" stroke="#e0c060" stroke-width="6" stroke-linecap="round"%s/><ellipse cx="%s" cy="%s" rx="20" ry="15" fill="%s"%s/>' % [n(rx - 4), n(ry * 0.05), n(rx + 40), n(ry * 0.05 - 14), "", n(rx * 0.72), n(ry * 0.12), hc, INK]
 	if hair == 8:
 		s += '<path d="M%s %s Q%s %s %s %s Q%s %s %s %s Z" fill="%s"/>' % [n(rx - 8), n(-ry * 0.6), n(rx + 34), n(-ry * 0.5), n(rx + 24), n(ry * 0.5), n(rx + 14), n(-ry * 0.05), n(rx - 6), n(-ry * 0.25), hc]
 	# 몸통
 	s += '<path d="M%s %s L%s %s Q%s %s %s %s L%s %s Q%s %s %s %s L%s %s Z" fill="%s"/>' % [n(-w), n(B), n(-w), n(T + 38), n(-w), n(T + 2), n(-w * 0.42), n(T - 4), n(w * 0.42), n(T - 4), n(w), n(T + 2), n(w), n(T + 38), n(w), n(B), L["oc"]]
+	s = s.replace('" fill="%s"/>' % L["oc"], '" fill="%s"%s/>' % [L["oc"], INK])
 	s += _outfit(L, w, T, B)
 	s += '<path d="M%s %s L%s %s Q%s %s %s %s L%s %s L%s %s Z" fill="#000" opacity=".1"/>' % [n(w * 0.25), n(T - 4), n(w * 0.42), n(T - 4), n(w), n(T + 2), n(w), n(T + 38), n(w), n(B), n(w * 0.35), n(B)]
 	s += '<path d="M%s %s Q%s %s %s %s M%s %s Q%s %s %s %s" stroke="#000" stroke-opacity=".2" stroke-width="3" fill="none"/>' % [n(-w + 18), n(T + 40), n(-w + 14), n(B - 40), n(-w + 24), n(B - 16), n(w - 18), n(T + 40), n(w - 14), n(B - 40), n(w - 24), n(B - 16)]
@@ -137,15 +141,19 @@ static func draw_char(L: Dictionary, mood: String, legs := false) -> String:
 	# 손
 	for d in ([] if legs else [-1, 1]):
 		var hx: float = d * (w - 22)
-		s += '<ellipse cx="%s" cy="%s" rx="16" ry="10" fill="%s" stroke="#000" stroke-opacity=".22" stroke-width="2"/>' % [n(hx), n(B - 6), sk]
+		s += '<ellipse cx="%s" cy="%s" rx="16" ry="10" fill="%s"%s/>' % [n(hx), n(B - 6), sk, INK]
 	# 귀·머리
-	s += '<circle cx="%s" cy="4" r="10" fill="%s"/><circle cx="%s" cy="4" r="10" fill="%s"/>' % [n(-rx), sk, n(rx), sk]
+	s += _species_back(acc, rx, ry, hc, sk)
+	if not (acc.has("rabbit_ears") or acc.has("fox_ears")):
+		s += '<circle cx="%s" cy="4" r="10" fill="%s"%s/><circle cx="%s" cy="4" r="10" fill="%s"%s/>' % [n(-rx), sk, INK, n(rx), sk, INK]
 	if acc.has("earring"):
 		s += '<circle cx="%s" cy="16" r="4" fill="#f2c230"/><circle cx="%s" cy="16" r="4" fill="#f2c230"/>' % [n(-rx), n(rx)]
 	if L["head"] == "square":
-		s += '<rect x="%s" y="%s" width="%s" height="%s" rx="%s" fill="%s"/>' % [n(-rx), n(-ry), n(rx * 2), n(ry * 2), n(rx * 0.62), sk]
+		s += '<rect x="%s" y="%s" width="%s" height="%s" rx="%s" fill="%s"%s/>' % [n(-rx), n(-ry), n(rx * 2), n(ry * 2), n(rx * 0.62), sk, INK]
 	else:
-		s += '<ellipse rx="%s" ry="%s" fill="%s"/>' % [n(rx), n(ry), sk]
+		s += '<ellipse rx="%s" ry="%s" fill="%s"%s/>' % [n(rx), n(ry), sk, INK]
+	if acc.has("robot"):
+		s += '<path d="M%s -10 L-30 -10 M30 -10 L%s -10 M0 %s L0 %s" stroke="#5a6878" stroke-width="2" opacity=".6"/><circle cx="%s" cy="-%s" r="4" fill="#ff6a4a"/>' % [n(-rx), n(rx), n(-ry), n(-ry * 0.7), n(rx * 0.55), n(ry * 0.5)]
 	s += '<path d="M%s %s Q%s 0 %s %s" stroke="#000" stroke-opacity=".08" stroke-width="12" fill="none"/><ellipse cx="-12" cy="%s" rx="%s" ry="%s" fill="#fff" opacity=".2"/>' % [n(rx * 0.5), n(-ry * 0.75), n(rx * 1.05), n(rx * 0.45), n(ry * 0.88), n(-ry * 0.55), n(rx * 0.42), n(ry * 0.18)]
 	if mood == "angry":
 		s += '<ellipse cy="6" rx="%s" ry="%s" fill="#e0402a" opacity=".32"/>' % [n(rx - 4), n(ry - 6)]
@@ -251,7 +259,10 @@ static func draw_char(L: Dictionary, mood: String, legs := false) -> String:
 		"beanie":
 			s += '<path d="M%s %s Q%s %s 0 %s Q%s %s %s %s Z" fill="%s"/><rect x="%s" y="%s" width="%s" height="14" rx="6" fill="%s"/><circle cy="%s" r="8" fill="%s"/>' % [n(-rx - 3), n(-ry * 0.3), n(-rx - 2), n(-ry - 18), n(-ry - 18), n(rx + 2), n(-ry - 18), n(rx + 3), n(-ry * 0.3), hat2, n(-rx - 5), n(-ry * 0.44), n(rx * 2 + 10), hat2, n(-ry - 20), hat2]
 		"headband":
-			s += '<rect x="%s" y="%s" width="%s" height="11" rx="4" fill="#d9483a"/>' % [n(-rx - 1), n(-ry * 0.64), n(rx * 2 + 2)]
+			s += '<rect x="%s" y="%s" width="%s" height="11" rx="4" fill="#d9483a"%s/>' % [n(-rx - 1), n(-ry * 0.64), n(rx * 2 + 2), INK]
+		_:
+			s += _oriental_hat(L["hat"], rx, ry, hat2)
+	s += _species_front(acc, rx, ry, hc)
 	if acc.has("sweat") or mood == "angry":
 		s += '<path d="M%s -30 Q%s -16 %s -9 Q%s -16 %s -30 Z" fill="#7cc7f0" stroke="#3a8ab0" stroke-width="1.5"/>' % [n(rx - 4), n(rx + 3), n(rx - 4), n(rx - 11), n(rx - 4)]
 	return s
@@ -281,6 +292,14 @@ static func _front_hair(hair: int, rx: float, ry: float, hc: String) -> String:
 			return '<path d="M%s -2 Q%s %s %s %s Q%s %s %s %s Q%s -10 %s -2 Q%s %s 0 %s Q%s %s %s -2 Z" fill="%s"/>' % [n(-rx), n(-rx - 4), n(-ry - 4), n(-rx * 0.2), n(-ry - 24), n(rx * 0.7), n(-ry - 32), n(rx + 5), n(-ry - 6), n(rx + 2), n(rx), n(rx * 0.6), n(-ry * 0.6), n(-ry * 0.62), n(-rx * 0.6), n(-ry * 0.6), n(-rx), hc]
 		8:
 			return '<path d="M%s -4 Q%s %s 0 %s Q%s %s %s -4 Q%s %s %s %s Q%s %s %s -4 Z" fill="%s"/><circle cx="%s" cy="%s" r="5" fill="#e05a8a"/>' % [n(-rx - 1), n(-rx - 3), n(-ry - 9), n(-ry - 9), n(rx + 3), n(-ry - 9), n(rx + 1), n(rx * 0.75), n(-ry * 0.5), n(rx * 0.1), n(-ry * 0.62), n(-rx * 0.8), n(-ry * 0.5), n(-rx - 1), hc, n(rx - 2), n(-ry * 0.45)]
+		10:
+			return _topknot(rx, ry, hc)
+		11:
+			return _bun(rx, ry, hc)
+		12:
+			return _braid(rx, ry, hc)
+		13:
+			return '<path d="M%s 10 Q%s %s 0 %s Q%s %s %s 10 Q%s %s 0 %s Q%s %s %s 10 Z" fill="%s"/>' % [n(-rx - 8), n(-rx - 6), n(-ry - 6), n(-ry - 6), n(rx + 6), n(-ry - 6), n(rx + 8), n(rx * 0.6), n(-ry * 0.4), n(-ry * 0.55), n(-rx * 0.6), n(-ry * 0.4), n(-rx - 8), hc]
 		9:
 			return '<path d="M%s -8 Q%s %s 0 %s Q%s %s %s -8 Q%s %s 0 %s Q%s %s %s -8 Z" fill="%s" opacity=".6"/>' % [n(-rx), n(-rx - 1), n(-ry - 4), n(-ry - 4), n(rx + 1), n(-ry - 4), n(rx), n(rx * 0.8), n(-ry * 0.66), n(-ry * 0.72), n(-rx * 0.8), n(-ry * 0.66), n(-rx), hc]
 	return ""
@@ -311,6 +330,10 @@ static func _outfit(L: Dictionary, w: float, T: float, B: float) -> String:
 			return '<path d="M0 %s L0 %s" stroke="#fff" stroke-width="3"/><path d="M%s %s L%s %s M%s %s L%s %s" stroke="#fff" stroke-width="6"/>' % [n(T), n(B), n(-w + 8), n(T + 28), n(-w + 10), n(B - 30), n(w - 8), n(T + 28), n(w - 10), n(B - 30)]
 		"tee":
 			return '<circle cx="0" cy="%s" r="20" fill="%s" opacity=".85"/>' % [n(T + 62), o]
+		"durumagi", "dangui":
+			return _robe(L, w, T, B, o)
+		"jeogori", "jeogori_m", "vest":
+			return _jeogori(L, w, T, B, o)
 	return ""
 
 
@@ -334,3 +357,136 @@ const STAND_VB := [-110, -130, 220, 470]
 
 static func char_texture(L: Dictionary, mood: String, scale: float) -> ImageTexture:
 	return rasterize(draw_char(L, mood), CHAR_VB, scale)
+
+
+# ───────── 동양풍 우주 파츠 ─────────
+
+static func _topknot(rx: float, ry: float, hc: String) -> String:
+	# 상투 + 망건 라인
+	return '<path d="M%s -6 Q%s %s 0 %s Q%s %s %s -6 Q%s %s 0 %s Q%s %s %s -6 Z" fill="%s"/><ellipse cy="%s" rx="11" ry="14" fill="%s"%s/><path d="M%s %s L%s %s" stroke="#1a1410" stroke-width="7"/>' % [n(-rx - 1), n(-rx - 2), n(-ry - 6), n(-ry - 6), n(rx + 2), n(-ry - 6), n(rx + 1), n(rx * 0.8), n(-ry * 0.6), n(-ry * 0.66), n(-rx * 0.8), n(-ry * 0.6), n(-rx - 1), hc, n(-ry - 14), hc, INK, n(-rx + 2), n(-ry * 0.55), n(rx - 2), n(-ry * 0.55)]
+
+
+static func _bun(rx: float, ry: float, hc: String) -> String:
+	# 쪽진머리 앞모습: 가운데 가르마, 귀 위로 넘긴 머리 (쪽과 비녀는 뒤쪽 레이어)
+	return '<path d="M%s 6 Q%s %s 0 %s Q%s %s %s 6 Q%s %s 2 %s Q-2 %s %s %s Q%s %s %s 6 Z" fill="%s"/>' % [n(-rx - 2), n(-rx - 3), n(-ry - 8), n(-ry - 8), n(rx + 3), n(-ry - 8), n(rx + 2), n(rx * 0.8), n(-ry * 0.4), n(-ry * 0.84), n(-ry * 0.84), n(-rx * 0.8), n(-ry * 0.4), n(-rx * 0.8), n(-ry * 0.4), n(-rx - 2), hc]
+
+
+static func _braid(rx: float, ry: float, hc: String) -> String:
+	# 댕기머리: 가르마 + 옆으로 늘어진 땋은 머리 + 붉은 댕기
+	var s := '<path d="M%s 4 Q%s %s 0 %s Q%s %s %s 4 Q%s %s 3 %s Q-3 %s %s %s Q%s %s %s 4 Z" fill="%s"/>' % [n(-rx - 2), n(-rx - 3), n(-ry - 8), n(-ry - 8), n(rx + 3), n(-ry - 8), n(rx + 2), n(rx * 0.75), n(-ry * 0.45), n(-ry * 0.82), n(-ry * 0.82), n(-rx * 0.75), n(-ry * 0.45), n(-rx * 0.75), n(-ry * 0.45), n(-rx - 2), hc]
+	for i in 4:
+		s += '<ellipse cx="%s" cy="%s" rx="8" ry="10" fill="%s"%s/>' % [n(rx + 4), n(ry * 0.2 + i * 16), hc, INK]
+	s += '<path d="M%s %s l-8 22 l10 -4 l8 6 Z" fill="#c8323a"%s/>' % [n(rx + 4), n(ry * 0.2 + 66), INK]
+	return s
+
+
+static func _oriental_hat(hat: String, rx: float, ry: float, c2: String) -> String:
+	match hat:
+		"gat":
+			# 흑립: 넓은 반투명 챙 + 높은 원통 모자 + 갓끈
+			return '<ellipse cy="%s" rx="%s" ry="14" fill="#1a1612" fill-opacity=".78"%s/><path d="M%s %s L%s %s Q0 %s %s %s L%s %s Z" fill="#1a1612"%s/><path d="M%s %s Q%s %s %s %s M%s %s Q%s %s %s %s" stroke="#1a1612" stroke-width="2" fill="none"/>' % [n(-ry * 0.62), n(rx + 46), INK, n(-rx * 0.52), n(-ry * 0.66), n(-rx * 0.46), n(-ry - 40), n(-ry - 46), n(rx * 0.46), n(-ry - 40), n(rx * 0.52), n(-ry * 0.66), INK, n(-rx + 4), n(-ry * 0.6), n(-rx - 6), n(ry * 0.5), n(-rx * 0.4), n(ry + 18), n(rx - 4), n(-ry * 0.6), n(rx + 6), n(ry * 0.5), n(rx * 0.4), n(ry + 18)]
+		"tanggeon":
+			return '<path d="M%s %s L%s %s L%s %s L%s %s Z" fill="#1d1a18"%s/><path d="M%s %s L%s %s" stroke="#4a4038" stroke-width="2"/>' % [n(-rx - 2), n(-ry * 0.45), n(-rx * 0.8), n(-ry - 24), n(rx * 0.8), n(-ry - 24), n(rx + 2), n(-ry * 0.45), INK, n(-rx * 0.8), n(-ry - 8), n(rx * 0.8), n(-ry - 8)]
+		"jeonrip":
+			# 전립(벙거지) + 깃털 + 붉은 술
+			return '<ellipse cy="%s" rx="%s" ry="11" fill="#2a2420"%s/><path d="M%s %s Q0 %s %s %s Z" fill="#2a2420"%s/><path d="M%s %s Q%s %s %s %s" stroke="#d8c068" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="0" cy="%s" r="7" fill="#d23a2a"%s/>' % [n(-ry * 0.55), n(rx + 24), INK, n(-rx * 0.8), n(-ry * 0.6), n(-ry - 40), n(rx * 0.8), n(-ry * 0.6), INK, n(rx * 0.3), n(-ry - 18), n(rx + 30), n(-ry - 46), n(rx + 40), n(-ry - 20), n(-ry - 26), INK]
+		"satgat":
+			return '<path d="M%s %s L0 %s L%s %s Q0 %s %s %s Z" fill="#c9a86a"%s/><path d="M%s %s L0 %s L%s %s" stroke="#8a6a3a" stroke-width="2" fill="none"/>' % [n(-rx - 40), n(-ry * 0.3), n(-ry - 42), n(rx + 40), n(-ry * 0.3), n(-ry * 0.1), n(-rx - 40), n(-ry * 0.3), INK, n(-rx * 0.6), n(-ry * 0.5), n(-ry - 30), n(rx * 0.6), n(-ry * 0.5)]
+		"jobawi":
+			return '<path d="M%s %s Q0 %s %s %s L%s %s Q0 %s %s %s Z" fill="#3a2440"%s/><circle cy="%s" r="5" fill="%s"/>' % [n(-rx - 4), n(-ry * 0.2), n(-ry - 26), n(rx + 4), n(-ry * 0.2), n(rx - 4), n(-ry * 0.1), n(-ry * 0.6), n(-rx + 4), n(-ry * 0.1), INK, n(-ry - 4), c2]
+		"helmet":
+			# 우주 헬멧(유리 돔)
+			return '<circle r="%s" fill="#bfe3ff" fill-opacity=".16" stroke="#e8f4ff" stroke-width="4"/><path d="M%s %s Q%s %s %s %s" stroke="#fff" stroke-opacity=".7" stroke-width="5" fill="none" stroke-linecap="round"/>' % [n(ry + 22), n(-rx * 0.8), n(-ry * 0.5), n(-rx * 0.5), n(-ry - 4), n(-rx * 0.1), n(-ry - 14)]
+	return ""
+
+
+static func _species_back(acc: Array, rx: float, ry: float, hc: String, sk: String) -> String:
+	var s := ""
+	if acc.has("rabbit_ears"):
+		for d in [-1, 1]:
+			s += '<g transform="translate(%s,%s) rotate(%d)"><ellipse cy="-40" rx="14" ry="44" fill="#f4efe8"%s/><ellipse cy="-38" rx="6" ry="32" fill="#f0a8b8"/></g>' % [n(d * rx * 0.45), n(-ry + 6), d * 12, INK]
+	if acc.has("fox_ears"):
+		for d in [-1, 1]:
+			s += '<path d="M%s %s L%s %s L%s %s Z" fill="#e07a30"%s/><path d="M%s %s L%s %s L%s %s Z" fill="#fff0e0"/>' % [n(d * rx * 0.25), n(-ry + 8), n(d * rx * 0.95), n(-ry - 34), n(d * rx), n(-ry * 0.2), INK, n(d * rx * 0.45), n(-ry + 6), n(d * rx * 0.88), n(-ry - 20), n(d * rx * 0.88), n(-ry * 0.4)]
+	return s
+
+
+static func _species_front(acc: Array, rx: float, ry: float, _hc: String) -> String:
+	var s := ""
+	if acc.has("horn"):
+		s += '<path d="M-10 %s Q0 %s 10 %s Z" fill="#f2e6b0"%s/>' % [n(-ry + 6), n(-ry - 38), n(-ry + 6), INK]
+	if acc.has("antenna"):
+		s += '<path d="M%s %s L%s %s" stroke="#2a1a14" stroke-width="3"/><circle cx="%s" cy="%s" r="7" fill="#7af0ff"%s/>' % [n(rx * 0.4), n(-ry + 4), n(rx * 0.6), n(-ry - 30), n(rx * 0.6), n(-ry - 34), INK]
+	if acc.has("norigae"):
+		s += '<g transform="translate(%s,%s)"><circle r="7" fill="#d84a6a"%s/><path d="M-4 6 L-6 40 M0 7 L0 44 M4 6 L6 40" stroke="#d84a6a" stroke-width="3"/></g>' % [n(rx * 0.7), n(ry + 60), INK]
+	return s
+
+
+static func _robe(L: Dictionary, w: float, T: float, B: float, o: String) -> String:
+	# 두루마기/당의: 흰 동정 깃 + 고름
+	return '<path d="M%s %s L%s %s L%s %s" stroke="#f6f1e6" stroke-width="11" fill="none" stroke-linejoin="round"/><path d="M%s %s L%s %s" stroke="#2a1a14" stroke-width="3"/><path d="M%s %s Q%s %s %s %s M%s %s Q%s %s %s %s" stroke="%s" stroke-width="8" fill="none" stroke-linecap="round"/>' % [n(-w * 0.32), n(T - 4), n(w * 0.1), n(T + 58), n(w * 0.32), n(T - 4), n(w * 0.1), n(T + 58), n(w * 0.1), n(B), n(w * 0.1), n(T + 60), n(w * 0.3), n(T + 74), n(w * 0.22), n(T + 140), n(w * 0.1), n(T + 60), n(w * 0.02), n(T + 84), n(w * 0.06), n(T + 124), o]
+
+
+static func _jeogori(L: Dictionary, w: float, T: float, B: float, o: String) -> String:
+	var s := '<path d="M%s %s L%s %s" stroke="#f6f1e6" stroke-width="10"/><path d="M%s %s Q%s %s %s %s" stroke="%s" stroke-width="8" fill="none" stroke-linecap="round"/>' % [n(-w * 0.35), n(T - 4), n(w * 0.12), n(T + 50), n(w * 0.12), n(T + 50), n(w * 0.28), n(T + 66), n(w * 0.18), n(T + 112), o]
+	if L["outfit"] == "jeogori":
+		# 치마 허리선
+		s += '<path d="M%s %s L%s %s" stroke="#2a1a14" stroke-width="3"/><rect x="%s" y="%s" width="%s" height="%s" fill="%s" opacity=".9"/>' % [n(-w), n(T + 78), n(w), n(T + 78), n(-w + 2), n(T + 80), n(w * 2 - 4), n(B - T - 80), o]
+	elif L["outfit"] == "vest":
+		s += '<path d="M%s %s L%s %s L%s %s L%s %s Z M%s %s L%s %s L%s %s L%s %s Z" fill="%s" opacity=".85"/>' % [n(-w + 6), n(T + 4), n(-w * 0.18), n(T + 40), n(-w * 0.18), n(B), n(-w + 6), n(B), n(w - 6), n(T + 4), n(w * 0.18), n(T + 40), n(w * 0.18), n(B), n(w - 6), n(B), o]
+	return s
+
+
+## 일반 손님 외형 (동양풍 우주 유형)
+static func customer_look2(arch: String, traits: Array, seed_value: int) -> Dictionary:
+	var r := RandomNumberGenerator.new()
+	r.seed = seed_value
+	var p := func(a: Array): return a[r.randi_range(0, a.size() - 1)]
+	var o := {"skin": p.call(SKINS), "hc": p.call(["#1d1410", "#2b1b12", "#3a2418"]), "nose": p.call(["button", "long", "round"])}
+	match arch:
+		"seonbi":
+			o.merge({"head": p.call(["oval", "long"]), "hair": 10, "outfit": "durumagi", "oc": p.call(["#ece6d6", "#cfd8e0", "#d8e0c8", "#3a4a6a"]), "oc2": p.call(["#5a4a3a", "#2a3a5a"]), "hat": p.call(["gat", "gat", "tanggeon"]), "fh": p.call([0, 1, 2, 4]), "bw": r.randf_range(0.9, 1.05)}, true)
+		"rabbit":
+			o.merge({"skin": "#fbf3ee", "head": "round", "hair": 11, "hc": p.call(["#e8e0d8", "#c9b8a8", "#2b1b12"]), "outfit": "jeogori", "oc": p.call(["#f0b8c8", "#b8d8f0", "#f0e0a0", "#c8e8b8"]), "oc2": p.call(["#c8323a", "#4a5ab8"]), "eyes": "big", "acc": ["rabbit_ears", "blush"], "bw": r.randf_range(0.85, 1.0)}, true)
+		"fox":
+			o.merge({"skin": "#f6dcc0", "head": p.call(["oval", "long"]), "hair": p.call([11, 12]), "hc": p.call(["#e07a30", "#f0f0f0", "#c85a20"]), "outfit": p.call(["dangui", "durumagi"]), "oc": p.call(["#7a2a4a", "#3a2a6a", "#1a4a4a"]), "oc2": "#e0b040", "eyes": "shifty", "acc": ["fox_ears"], "bw": r.randf_range(0.9, 1.0)}, true)
+		"dokkaebi":
+			o.merge({"skin": p.call(["#7a9ad8", "#d87a6a", "#8ac07a"]), "head": "square", "hair": 13, "hc": p.call(["#1d1d1d", "#3a2418"]), "outfit": "vest", "oc": p.call(["#c8a060", "#6a7a4a", "#8a5a3a"]), "oc2": "#3a2a1a", "bw": r.randf_range(1.15, 1.4), "fh": p.call([0, 3]), "brows": "proud", "acc": ["horn"]}, true)
+		"granny":
+			o.merge({"head": "round", "hair": 11, "hc": p.call(["#d9d4cc", "#bfb8ad", "#e8e4dc"]), "outfit": "jeogori", "oc": p.call(["#c8506a", "#5b7fb8", "#7fa65a"]), "oc2": "#f0d24a", "bw": r.randf_range(0.9, 1.05), "acc": ["wrinkles"], "nose": "round", "hat": "jobawi" if r.randf() < 0.5 else "none"}, true)
+		"doryeong":
+			o.merge({"head": p.call(["round", "oval"]), "hair": 12, "outfit": "jeogori_m", "oc": p.call(["#e8e0c8", "#c8d8e8", "#f0d0a0"]), "oc2": p.call(["#3a6ac8", "#c83a4a", "#4a8a4a"]), "bw": r.randf_range(0.85, 0.95), "eyes": p.call(["dot", "big"]), "hat": "helmet" if r.randf() < 0.3 else "none"}, true)
+		"robot":
+			o.merge({"skin": p.call(["#b8c4d0", "#d0c0a8", "#a8b8b0"]), "head": "square", "hair": 11, "hc": p.call(["#3a3a48", "#6a3a5a"]), "outfit": "dangui", "oc": p.call(["#8a3a5a", "#3a5a8a", "#5a3a8a"]), "oc2": "#e0c040", "eyes": "big", "acc": ["robot", "antenna"], "bw": r.randf_range(0.95, 1.1)}, true)
+		_:
+			return customer_look(arch, traits, seed_value)
+	var L := look(o)
+	var acc: Array = L["acc"].duplicate()
+	var t := func(k): return traits.has(k)
+	if t.call("rich"):
+		acc.append("norigae")
+	if t.call("naive"):
+		L["eyes"] = "big"
+		acc.append("blush")
+	if t.call("calm"):
+		L["eyes"] = "sleepy"
+	if t.call("scammer"):
+		L["eyes"] = "shifty"
+		L["hat"] = "satgat"
+		L["fh"] = 1
+	if t.call("expert"):
+		L["glasses"] = 1
+	if t.call("hasty"):
+		acc.append("sweat")
+	if t.call("stingy"):
+		acc.append("patch")
+	if t.call("desperate"):
+		acc.append_array(["bags", "bandaid"])
+	if t.call("greedy"):
+		acc.append("goldtooth")
+	if t.call("proud"):
+		L["brows"] = "proud"
+	if t.call("chatty"):
+		acc.append("chatty")
+	L["acc"] = acc
+	return L
