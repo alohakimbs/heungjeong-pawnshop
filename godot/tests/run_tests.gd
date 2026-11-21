@@ -36,8 +36,24 @@ func _init() -> void:
 	test_sim_random()
 	test_sim_smart()
 	data.free()
-	print("\n결과: %d 통과, %d 실패" % [passed, failed])
-	quit(1 if failed > 0 else 0)
+	# 화면 테스트는 씬 트리가 돌기 시작한 뒤(_process)에 실행한다
+
+
+var _frames := 0
+var _main = null
+
+
+func _process(_delta: float) -> bool:
+	_frames += 1
+	if _frames == 1:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path("user://save.json"))
+		_main = load("res://scenes/main.tscn").instantiate()
+		root.add_child(_main)
+	elif _frames == 3:
+		test_ui_smoke()
+		print("\n결과: %d 통과, %d 실패" % [passed, failed])
+		quit(1 if failed > 0 else 0)
+	return false
 
 
 func check(cond: bool, name: String) -> void:
@@ -301,3 +317,27 @@ func test_sim_smart() -> void:
 	check(errs.is_empty(), "규칙 위반 0건")
 	check(bankrupt == 0, "숙련 플레이는 파산하지 않음 (파산 %d)" % bankrupt)
 	check(worths[worths.size() / 2] > 5000, "숙련 플레이 중앙값 순자산이 시작 자금($5,000)보다 큼")
+
+
+func test_ui_smoke() -> void:
+	print("[화면: 메인 장면 생성·모든 오버레이 열기]")
+	var main = _main
+	var ok: bool = main.g != null and main.stage != null
+	check(ok, "메인 장면 생성")
+	if not ok:
+		return
+	main.close_modal()
+	main.g.event = ""
+	main.g.flip_open()
+	main.render()
+	check(main.dyn.get_child_count() > 20, "흥정 화면에 소품·버튼 배치 (%d개)" % main.dyn.get_child_count())
+	var opened := true
+	for f in ["show_paper", "show_inv", "show_staff", "show_ledger"]:
+		main.call(f)
+		opened = opened and main.modal.visible
+		main.close_modal()
+	check(opened, "신문·창고·직원·장부 화면이 열림")
+	var before: int = main.g.neg.rounds
+	for k in ["C", "1", "2", "0", "0", "제시"]:
+		main._key(k)
+	check(main.g.neg.rounds == before + 1 or main.g.cur["gone"], "계산기로 가격 제시가 흥정에 반영됨")
