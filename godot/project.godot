@@ -8,6 +8,7 @@ config/description="전당포 흥정 시뮬레이션"
 config/version="0.7.0"
 config/features=PackedStringArray("4.7", "Mobile")
 run/main_scene="res://scenes/main.tscn"
+config/icon="res://assets/icon/icon_192.png"
 
 [autoload]
 

@@ -4,3 +4,4 @@ export/
 *.keystore
 *.jks
 .DS_Store
+godot/android/

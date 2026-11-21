@@ -828,20 +828,15 @@ func visit_pick(i: int) -> void:
 		"blackout":
 			today["bonus"] -= 2
 			txt = "손님이 좀 줄 거예요. 수고하세요!"
-		"lottery":
+		"fortune":
 			if i == 0:
 				money -= 50
-				book("penalty", 50)
-				if rng.randf() < 0.08:
-					money += 1500
-					book("prize", 1500)
-					md = "shock"
-					txt = "어어? 당첨이에요! $1,500! 제 자리 덕분인 거 아시죠?"
-				else:
-					md = "meh"
-					txt = "꽝이네... 내일은 진짜 나와요!"
+				book("fees", 50)
+				md = "happy"
+				txt = "보이는구먼... 내일은 「%s」이(가) 뜬다네. 허허." % D.items["categories"][next_up]["n"]
 			else:
-				txt = "1등 놓치시는 거예요~"
+				md = "meh"
+				txt = "기운을 놓치는구먼, 쯧쯧."
 		"rival":
 			if i == 0:
 				money -= 20

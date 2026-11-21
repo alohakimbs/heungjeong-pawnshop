@@ -1,0 +1,70 @@
+name: 출시용 AAB
+
+# 수동 실행(Actions 탭 → Run workflow) 또는 v로 시작하는 태그를 올리면 실행.
+# GitHub Secrets에 업로드 키가 있으면 정식 서명, 없으면 임시 키로 서명한 "점검용" AAB를 만든다.
+#   ANDROID_KEYSTORE_BASE64  업로드 키스토어(.jks)를 base64로 인코딩한 값
+#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Godot + 내보내기 템플릿
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot-bin && chmod +x godot-bin
+          curl -sSL -o tpl.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          unzip -q tpl.tpz -d tpl && mv tpl/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+      - name: 서명 키 준비
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$HOME/upload.jks"
+            echo "SIGN_MODE=정식 업로드 키" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KS_ALIAS" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KS_PASS" >> $GITHUB_ENV
+          else
+            keytool -genkeypair -keystore "$HOME/upload.jks" -storepass temp1234 -alias temp -keypass temp1234 -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Temp,O=Test,C=KR"
+            echo "SIGN_MODE=임시 키(점검용, 플레이 콘솔 업로드 불가)" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=temp" >> $GITHUB_ENV
+            echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=temp1234" >> $GITHUB_ENV
+          fi
+          echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$HOME/upload.jks" >> $GITHUB_ENV
+          keytool -genkeypair -keystore "$HOME/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p ~/.config/godot
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\nexport/android/debug_keystore = "%s"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$ANDROID_SDK_ROOT" "$JAVA_HOME" "$HOME/debug.keystore" > ~/.config/godot/editor_settings-${GODOT_VERSION%.*}.tres
+      - name: 안드로이드 빌드 템플릿 설치 + AAB 내보내기
+        run: |
+          mkdir -p export
+          ./godot-bin --headless --path godot --import || true
+          ./godot-bin --headless --path godot --install-android-build-template || true
+          ls godot/android/build >/dev/null
+          ./godot-bin --headless --path godot --export-release "Android AAB" ../export/heungjeong.aab
+          ls -la export
+      - name: 릴리스(aab-latest)에 올리기
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(grep -m1 -oP 'version/name="\K[^"]+' godot/export_presets.cfg)
+          gh release view aab-latest >/dev/null 2>&1 || gh release create aab-latest --prerelease --title "출시용 AAB (최신)" --notes "준비 중"
+          gh release upload aab-latest export/heungjeong.aab --clobber
+          gh release edit aab-latest --notes "버전 ${VER} · 커밋 ${GITHUB_SHA::7} · 서명: ${SIGN_MODE}"
