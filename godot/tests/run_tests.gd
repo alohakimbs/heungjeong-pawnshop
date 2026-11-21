@@ -376,6 +376,21 @@ func test_ui_smoke() -> void:
 			if not ItemArt.MAP.has(it[1]):
 				missing.append(it[1])
 	check(missing.is_empty(), "모든 물건에 그림 아이콘이 있음 %s" % str(missing))
+	var no_art: Array = []
+	for a in main.D.archetypes:
+		for md in ["ok", "happy", "angry", "meh"]:
+			if main._char_tex(a["id"], md) == null or not ResourceLoader.exists("res://assets/chars/%s_%s.png" % [a["id"], md]):
+				no_art.append("%s_%s" % [a["id"], md])
+	for k in main.D.specials:
+		if main._char_tex(main._char_key({"sk": k}), "angry") == null:
+			no_art.append(k)
+	for k in main.D.events:
+		if main._char_tex(main._char_key({"visitor": true, "vk": k}), "ok") == null:
+			no_art.append("v_" + k)
+	for k in main.D.staff:
+		if main._char_tex("s_" + k, "ok") == null:
+			no_art.append("s_" + k)
+	check(no_art.is_empty(), "손님·단골·불청객·직원 모두 손그림 있음 %s" % str(no_art))
 	check(int(ProjectSettings.get_setting("display/window/size/viewport_width")) < int(ProjectSettings.get_setting("display/window/size/viewport_height")) and int(ProjectSettings.get_setting("display/window/handheld/orientation")) == 1, "세로 화면 설정")
 
 

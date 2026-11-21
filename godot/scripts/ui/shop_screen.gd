@@ -281,13 +281,35 @@ func _look_of(c: Dictionary) -> Dictionary:
 	return SvgArt.customer_look2(c.get("arch", "seonbi"), c.get("tr", []), int(c.get("look_seed", 1)))
 
 
+## 손그림 캐릭터(assets/chars). 없으면 null → 코드 그림으로 대신한다.
+func _char_key(c: Dictionary) -> String:
+	if c.get("visitor", false):
+		var vk: String = c.get("vk", "")
+		return "yuna" if vk == "streamer" else "v_" + vk
+	var sk: String = c.get("sk", "")
+	if sk != "":
+		return "granny_junk" if sk == "granny" else sk
+	return String(c.get("arch", ""))
+
+
+func _char_tex(base: String, mood: String) -> Texture2D:
+	if base == "":
+		return null
+	for k in [base + "_" + mood, base + "_ok", base]:
+		var path := "res://assets/chars/%s.png" % k
+		if ResourceLoader.exists(path):
+			return load(path)
+	return null
+
+
 func _render_queue() -> void:
 	var waiting: Array = g.upcoming if g.phase == "open" else []
 	var spots := [Vector2(434, 418), Vector2(6, 418)]
 	for i in 2:
 		var t: TextureRect = queue_tex[i]
 		if i < waiting.size():
-			t.texture = _raster("q%d" % i, SvgArt.draw_char(_look_of(waiting[i]), "ok", true), SvgArt.STAND_VB)
+			var art := _char_tex(_char_key(waiting[i]), "ok")
+			t.texture = art if art != null else _raster("q%d" % i, SvgArt.draw_char(_look_of(waiting[i]), "ok", true), SvgArt.STAND_VB)
 			t.position = spots[i]
 			t.size = Vector2(100, 214)
 			t.modulate = Color(0.62, 0.6, 0.78)
@@ -304,20 +326,31 @@ func _render_customer() -> void:
 			bob_tween.kill()
 		return
 	var md := g.mood()
-	cust_tex.texture = _raster("cust", SvgArt.draw_char(_look_of(c), md), SvgArt.CHAR_VB)
+	var art := _char_tex(_char_key(c), md)
+	var base := Vector2(120, 170)
+	if art != null:
+		# 전신 그림: 무릎 아래는 계산대에 가려진다
+		cust_tex.texture = art
+		cust_tex.size = Vector2(360, 640)
+		base = Vector2((W - 360) / 2.0, 128)
+		cust_tex.flip_h = c.get("arch", "") != "" and int(c.get("look_seed", 0)) % 2 == 1
+	else:
+		cust_tex.texture = _raster("cust", SvgArt.draw_char(_look_of(c), md), SvgArt.CHAR_VB)
+		cust_tex.size = Vector2(300, 484)
+		cust_tex.flip_h = false
 	cust_tex.visible = true
 	if bob_tween:
 		bob_tween.kill()
-	cust_tex.position = Vector2(120, 170)
+	cust_tex.position = base
 	bob_tween = create_tween().set_loops()
 	if md == "angry" and not c.get("gone", false):
-		bob_tween.tween_property(cust_tex, "position:x", 112.0, 0.06)
-		bob_tween.tween_property(cust_tex, "position:x", 128.0, 0.12)
-		bob_tween.tween_property(cust_tex, "position:x", 120.0, 0.06)
+		bob_tween.tween_property(cust_tex, "position:x", base.x - 8, 0.06)
+		bob_tween.tween_property(cust_tex, "position:x", base.x + 8, 0.12)
+		bob_tween.tween_property(cust_tex, "position:x", base.x, 0.06)
 		bob_tween.tween_interval(1.6)
 	else:
-		bob_tween.tween_property(cust_tex, "position:y", 175.0, 1.7).set_trans(Tween.TRANS_SINE)
-		bob_tween.tween_property(cust_tex, "position:y", 170.0, 1.7).set_trans(Tween.TRANS_SINE)
+		bob_tween.tween_property(cust_tex, "position:y", base.y + 5, 1.7).set_trans(Tween.TRANS_SINE)
+		bob_tween.tween_property(cust_tex, "position:y", base.y, 1.7).set_trans(Tween.TRANS_SINE)
 	if not c.get("visitor", false):
 		hot(Rect2(160, 300, 220, 320), "손님 성향 보기", func(): show_traits())
 
@@ -938,7 +971,8 @@ func _vbox(parent: Control, ink: Color) -> VBoxContainer:
 
 func _portrait(key: String, L: Dictionary, mood: String, sz: Vector2) -> TextureRect:
 	var pic := TextureRect.new()
-	pic.texture = _raster(key, SvgArt.draw_char(SvgArt.look(L), mood), [-80, -100, 160, 175])
+	var art: Texture2D = _char_tex("s_" + key.trim_prefix("staff_").trim_suffix("h"), mood) if key.begins_with("staff_") else null
+	pic.texture = art if art != null else _raster(key, SvgArt.draw_char(SvgArt.look(L), mood), [-80, -100, 160, 175])
 	pic.custom_minimum_size = sz
 	pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
