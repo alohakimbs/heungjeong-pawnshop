@@ -35,6 +35,7 @@ func _init() -> void:
 	test_regular_remembers()
 	test_flow_and_queue()
 	test_debt_liquidation()
+	test_pawn()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -386,3 +387,50 @@ func test_debt_liquidation() -> void:
 	g.cur["gone"] = true
 	g.next_customer()
 	check(g.phase == "night" and (g.money >= 0 or g.inv.is_empty()), "마감 때 재고 처분으로 빚 상환 (현금 %s, 남은 재고 %d)" % [g.fmt(g.money), g.inv.size()])
+
+
+func test_pawn() -> void:
+	print("[전당포: 맡기기 → 상환 또는 몰수]")
+	var redeemed := 0
+	var forfeited := 0
+	var blocked := true
+	for s in 40:
+		var g = new_game(500 + s)
+		g.event = ""
+		g.flip_open()
+		var guard := 0
+		while not g.cur.get("pawn", false) and guard < 200:
+			guard += 1
+			g.queue = 5
+			g.cur["gone"] = true
+			g.next_customer()
+		if not g.cur.get("pawn", false):
+			continue
+		var it: Dictionary = g.cur["item"]
+		var loan: int = g.neg.ask
+		g.accept()
+		if not g.is_pawned(it):
+			continue  # 돈이 부족하거나 창고가 차서 대출 불가 — 이 경우는 건너뜀
+		blocked = blocked and not g.dump(it["id"])
+		var start_money: int = g.money
+		var due: int = it["pawn"]["due"]
+		var repay: int = it["pawn"]["repay"]
+		for d in 10:
+			g.queue = 0
+			if g.phase == "open":
+				g.cur["gone"] = true
+				g.next_customer()
+			if g.find_item(it["id"]).is_empty():
+				redeemed += 1
+				break
+			if not g.is_pawned(it):
+				forfeited += 1
+				if g.day != due + 1:
+					check(false, "기한 다음 날 마감 때 몰수 (%d일차 기한, %d일차 몰수)" % [due, g.day])
+				break
+			g.next_day()
+			g.event = ""
+			g.flip_open()
+		check(repay > loan, "상환액이 대출금보다 큼 (%s → %s)" % [g.fmt(loan), g.fmt(repay)]) if s == 0 else null
+	check(blocked, "담보 물건은 기한 전 도매 처분 불가")
+	check(redeemed > 0 and forfeited > 0, "상환 %d건 · 몰수 %d건 모두 발생" % [redeemed, forfeited])

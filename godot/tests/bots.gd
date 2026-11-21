@@ -119,6 +119,8 @@ func _smart_haggle() -> void:
 			g.accuse()
 			return
 		var target: float = mid * 0.8 if not (it["known"] and it["fake"]) else g.val(it, false) * 0.9
+		if g.cur.get("pawn", false):
+			target = mid * 0.55
 		if g.neg.ask <= target:
 			if g.money >= g.neg.ask:
 				g.accept()

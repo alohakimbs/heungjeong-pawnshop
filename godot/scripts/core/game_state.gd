@@ -83,7 +83,7 @@ func toast(m: String) -> void:
 func line(key: String, price: int = -1, item: String = "") -> String:
 	var v = D.lines.get(key, "")
 	var s: String = pick(v) if v is Array else str(v)
-	return s.replace("{price}", fmt(price)).replace("{item}", item)
+	return s.replace("{price}", fmt(price)).replace("{item}", item).replace("{days}", str(cur.get("days", 3)))
 
 
 func tic() -> String:
@@ -226,8 +226,12 @@ func _fill_upcoming() -> void:
 		upcoming.append(_gen_identity())
 
 
+func is_pawned(it: Dictionary) -> bool:
+	return it.has("pawn") and not it["pawn"].is_empty()
+
+
 func gen_customer() -> Dictionary:
-	var avail := inv.filter(func(i): return not i["restoring"])
+	var avail := inv.filter(func(i): return not i["restoring"] and not is_pawned(i))
 	var ident: Dictionary = upcoming.pop_front() if upcoming.size() > 0 else _gen_identity()
 	var tr: Array = ident["tr"]
 	var spk: String = ident.get("sk", "")
@@ -267,7 +271,19 @@ func gen_customer() -> Dictionary:
 			intro = spd["hi"] + " "
 	cur = c
 	neg = Negotiation.new(rng)
-	if not buy:
+	# 전당포 의뢰인: 물건을 맡기고 돈을 빌린다 (사기꾼은 맡기지 않는다)
+	var pawn: bool = not buy and not tr.has("scammer") and rng.randf() < 0.18
+	if pawn:
+		c["pawn"] = true
+		c["days"] = rng.randi_range(3, 6)
+		var it := gen_item(0.05)
+		c["item"] = it
+		var per := val(it, true) * (0.6 if tr.has("naive") else 1.0) * rnd(0.85, 1.15)
+		neg.setup_seller(per * 0.62, tr, skills["haggle"], skills["charm"], min_adj)
+		c["msg"] = intro + line("pawn_open", -1, it["name"]) + tic()
+		c["price_msg"] = line("pawn_price", neg.ask)
+		draft = r10(neg.ask * 0.6)
+	elif not buy:
 		var it := gen_item(0.5 if tr.has("scammer") else 0.1)
 		c["item"] = it
 		var per := val(it, true) * (0.6 if tr.has("naive") else 1.0) * (rnd(0.95, 1.05) if tr.has("expert") else rnd(0.8, 1.2))
@@ -381,7 +397,7 @@ func look_item() -> void:
 	if not is_haggling() or cur.get("stage", "haggle") != "intro":
 		return
 	cur["stage"] = "look"
-	cur["msg"] = line("ask_look_buy" if cur["buy"] else "ask_look_sell")
+	cur["msg"] = line("ask_look_pawn" if cur.get("pawn", false) else ("ask_look_buy" if cur["buy"] else "ask_look_sell"))
 
 
 func start_haggle() -> void:
@@ -459,6 +475,18 @@ func _deal_sell(x: int) -> void:
 	money -= x
 	it["paid"] = x
 	inv.append(it)
+	if cur.get("pawn", false):
+		var days: int = cur["days"]
+		it["pawn"] = {"due": day + days, "repay": pawn_repay(x, days), "owner": cur["name"]}
+		today["lent"] = int(today.get("lent", 0)) + x
+		stats["lent"] = int(stats.get("lent", 0)) + x
+		today["deals"] += 1
+		stats["deals"] += 1
+		rep += 1
+		_rel_note("fair")
+		gain_xp(8 + neg.rounds * 2)
+		_finish("happy", line("deal_pawn") + tic(), "%s 대출 · %d일차까지 %s 상환 예정" % [fmt(x), day + days, fmt(it["pawn"]["repay"])])
+		return
 	today["bought"] += x
 	today["deals"] += 1
 	stats["deals"] += 1
@@ -466,6 +494,11 @@ func _deal_sell(x: int) -> void:
 	_rel_note("steal" if x < val(it, true) * 0.75 else "fair")
 	gain_xp(8 + neg.rounds * 2 + clampf((val(it, false) - x) / 40.0, 0, 40))
 	_finish("happy", line("deal_sell") + tic(), "%s에 매입" % fmt(x))
+
+
+## 상환액 = 대출금 × (1 + 10% + 하루 3%)
+static func pawn_repay(loan: int, days: int) -> int:
+	return r10(loan * (1.1 + 0.03 * days))
 
 
 func _deal_buy(x: int) -> void:
@@ -523,7 +556,7 @@ func restore_cost(it: Dictionary) -> int:
 
 func restore(id) -> bool:
 	var it := find_item(id)
-	if it.is_empty() or not has_staff("restorer") or int(it["c"]) >= 4 or it["restoring"]:
+	if it.is_empty() or not has_staff("restorer") or int(it["c"]) >= 4 or it["restoring"] or is_pawned(it):
 		return false
 	var c := restore_cost(it)
 	if money < c:
@@ -538,6 +571,9 @@ func restore(id) -> bool:
 func dump(id) -> bool:
 	var it := find_item(id)
 	if it.is_empty() or it["restoring"]:
+		return false
+	if is_pawned(it):
+		toast("맡아 둔 물건은 기한 전엔 처분할 수 없어요")
 		return false
 	if is_haggling() and cur["buy"] and int(cur["item_id"]) == int(id):
 		toast("손님이 보고 있는 물건이에요")
@@ -738,8 +774,24 @@ func close_shop() -> void:
 			var up := 2 if rng.randf() < 0.2 else 1
 			it["c"] = mini(4, int(it["c"]) + up)
 			notes.append("수리 완료: %s → %s" % [it["name"], D.items["condition"][int(it["c"])]["n"]])
-	if not has_staff("guard") and inv.size() > 0 and rng.randf() < 0.12:
-		var it: Dictionary = pick(inv)
+	# 맡긴 물건: 기한 안에 주인이 찾아가거나(상환), 기한이 지나면 내 것이 된다
+	for it in inv.duplicate():
+		if not is_pawned(it):
+			continue
+		var pw: Dictionary = it["pawn"]
+		var left := int(pw["due"]) - day
+		if left >= 0 and rng.randf() < (0.55 if left == 0 else 0.22):
+			money += int(pw["repay"])
+			today["repaid"] = int(today.get("repaid", 0)) + int(pw["repay"])
+			stats["profit"] += int(pw["repay"]) - int(it["paid"])
+			remove_item(it["id"])
+			notes.append("%s님이 맡긴 %s을(를) 찾아감: 상환 %s" % [pw["owner"], it["name"], fmt(pw["repay"])])
+		elif left < 0:
+			it["pawn"] = {}
+			notes.append("%s님이 기한까지 오지 않아 %s은(는) 이제 내 것!" % [pw["owner"], it["name"]])
+	var stealable := inv.filter(func(i): return not is_pawned(i))
+	if not has_staff("guard") and stealable.size() > 0 and rng.randf() < 0.12:
+		var it: Dictionary = pick(stealable)
 		remove_item(it["id"])
 		notes.append("밤도둑이 %s을(를) 훔쳐 감!" % it["name"])
 	var keep: Array = []
@@ -760,7 +812,7 @@ func close_shop() -> void:
 	scams = keep
 	# 빚이 생기면 파산 전에 도매상이 재고를 가져가 메운다 (싼 물건부터, 가치의 절반)
 	if money < 0 and inv.size() > 0:
-		var order := inv.duplicate()
+		var order := inv.filter(func(i): return not is_pawned(i))
 		order.sort_custom(func(a, b): return val(a, false) < val(b, false))
 		var taken: Array = []
 		for it in order:
@@ -771,8 +823,9 @@ func close_shop() -> void:
 			stats["profit"] += p - int(it["paid"])
 			remove_item(it["id"])
 			taken.append(it["name"])
-		notes.append("빚 독촉: 도매상이 %s을(를) 헐값에 가져감" % ", ".join(taken))
-	receipt = {"day": day, "deals": today["deals"], "bought": today["bought"], "sold": today["sold"], "rent": int(sh["rent"]), "shop": sh["n"], "wages": wg, "d": money - int(today["start"]), "xp": today.get("xp", 0), "notes": notes}
+		if not taken.is_empty():
+			notes.append("빚 독촉: 도매상이 %s을(를) 헐값에 가져감" % ", ".join(taken))
+	receipt = {"day": day, "deals": today["deals"], "bought": today["bought"], "sold": today["sold"], "rent": int(sh["rent"]), "shop": sh["n"], "wages": wg, "lent": int(today.get("lent", 0)), "repaid": int(today.get("repaid", 0)), "d": money - int(today["start"]), "xp": today.get("xp", 0), "notes": notes}
 
 
 ## 파산선: 차고 -$3,000, 가게 단계마다 $2,000씩 더 버틴다

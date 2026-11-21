@@ -398,6 +398,8 @@ func _tag_style() -> Array:
 	var c := g.cur
 	if c.get("visitor", false):
 		return ["방문객 · " + c["name"], Color("#e6c06a")]
+	if c.get("pawn", false):
+		return ["전당포 의뢰인 · " + c["name"], Color("#e6c06a")]
 	if c.get("sk", "") != "":
 		return ["단골 · " + c["name"], Color("#b49ae0")]
 	return [("구매자 · " if c["buy"] else "판매자 · ") + c["name"], Color("#9cc878") if c["buy"] else Color("#e08a7a")]
@@ -459,7 +461,7 @@ func _choices() -> Array:
 		"look":
 			return [["거래합시다!", func(): g.start_haggle()], ["관심 없어요.", func(): g.refuse()]]
 		_:
-			var out: Array = [["%s에 할게요." % GameState.fmt(g.their_price()), func(): g.accept()]]
+			var out: Array = [[("%s 빌려드릴게요." if c.get("pawn", false) else "%s에 할게요.") % GameState.fmt(g.their_price()), func(): g.accept()]]
 			var it := g.cur_item()
 			if not c["buy"] and not it.is_empty() and (it["suspect"] or (it["known"] and it["fake"])) and not c["accused"]:
 				out.append(["[감정] 이거 가짜 같은데요?", func(): g.accuse(), true])
@@ -504,6 +506,8 @@ func _render_chalkboard() -> void:
 	var rows := [["희귀도", rar["n"], Color(rar["c"]).lightened(0.3)], ["상태", D.items["condition"][int(it["c"])]["n"], Color("#f0a090") if int(it["c"]) <= 1 else Color("#a0e0a0")], ["종류", D.items["categories"][it["cat"]]["n"], chalk], ["견적액", GameState.fmt(g.val(it, false)) if it["known"] else "%s~%s" % [GameState.fmt(e[0]), GameState.fmt(e[1])], chalk]]
 	if int(it["paid"]) > 0:
 		rows.append(["지불액", GameState.fmt(it["paid"]), chalk])
+	if g.cur.get("pawn", false):
+		rows.append(["맡기는 기간", "%d일 · 상환액은 대출금의 %d%%" % [g.cur["days"], int(round((1.1 + 0.03 * g.cur["days"]) * 100))], Color("#ffd77a")])
 	for r in rows:
 		var l := Label.new()
 		l.text = "%s: %s" % [r[0], r[1]]
@@ -512,7 +516,7 @@ func _render_chalkboard() -> void:
 		l.add_theme_color_override("font_color", r[2])
 		v.add_child(l)
 	var curl := Label.new()
-	curl.text = "현재: %s" % GameState.fmt(g.their_price())
+	curl.text = ("대출 요청: %s" if g.cur.get("pawn", false) else "현재: %s") % GameState.fmt(g.their_price())
 	curl.add_theme_font_override("font", font_k)
 	curl.add_theme_font_size_override("font_size", 30)
 	curl.add_theme_color_override("font_color", Color.WHITE)
@@ -783,6 +787,8 @@ func show_inspect(it: Dictionary) -> void:
 	t(cv, "견적액: %s" % (GameState.fmt(g.val(it, false)) if it["known"] else "%s ~ %s" % [GameState.fmt(e[0]), GameState.fmt(e[1])]), 19, font_k, Color("#1f6a66"), HORIZONTAL_ALIGNMENT_CENTER)
 	if int(it["paid"]) > 0:
 		t(cv, "지불액: %s" % GameState.fmt(it["paid"]), 17, font_b, null, HORIZONTAL_ALIGNMENT_CENTER)
+	if g.is_pawned(it):
+		t(cv, "담보: %s님 · %d일차까지 · 상환 %s" % [it["pawn"]["owner"], int(it["pawn"]["due"]), GameState.fmt(it["pawn"]["repay"])], 16, font_b, Color("#8a5a10"), HORIZONTAL_ALIGNMENT_CENTER)
 	if it["known"] and it["fake"]:
 		t(cv, "정밀 감정 결과: 가품!", 18, font_k, Color("#c4402a"), HORIZONTAL_ALIGNMENT_CENTER)
 	elif it["suspect"]:
@@ -883,7 +889,7 @@ func show_receipt() -> void:
 	t(v, "흥정왕 전당포", 24, font_k, null, HORIZONTAL_ALIGNMENT_CENTER)
 	t(v, "%s · %d일차 마감" % [r["shop"], r["day"]], 15, null, null, HORIZONTAL_ALIGNMENT_CENTER)
 	var good: bool = r["d"] >= 0
-	for pair in [["거래", "%d건" % r["deals"]], ["매입", GameState.fmt(-r["bought"])], ["판매", GameState.fmt(r["sold"])], ["임대료", GameState.fmt(-r["rent"])], ["직원 급여", GameState.fmt(-r["wages"])], ["현금 변화", GameState.fmt(r["d"])], ["경험치", "+%d XP" % r["xp"]]]:
+	for pair in [["거래", "%d건" % r["deals"]], ["매입", GameState.fmt(-r["bought"])], ["판매", GameState.fmt(r["sold"])], ["대출", GameState.fmt(-int(r.get("lent", 0)))], ["상환 받음", GameState.fmt(int(r.get("repaid", 0)))], ["임대료", GameState.fmt(-r["rent"])], ["직원 급여", GameState.fmt(-r["wages"])], ["현금 변화", GameState.fmt(r["d"])], ["경험치", "+%d XP" % r["xp"]]]:
 		var h := row(v)
 		var a := t(h, pair[0], 16)
 		a.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -942,6 +948,8 @@ func show_inv() -> void:
 		if it["suspect"] or (it["known"] and it["fake"]):
 			flags += " · 가품 확정" if it["known"] else " · 가품 의심"
 		t(cv, "%s · %s · %s%s" % [rar["n"], D.items["condition"][int(it["c"])]["n"], D.items["categories"][it["cat"]]["n"], flags], 14, null, Color(rar["c"]).darkened(0.2))
+		if g.is_pawned(it):
+			t(cv, "🔒 담보 — %s님 · %d일차까지 · 상환 %s" % [it["pawn"]["owner"], int(it["pawn"]["due"]), GameState.fmt(it["pawn"]["repay"])], 14, font_b, Color("#8a5a10"))
 		var e := g.est(it)
 		t(cv, ("감정가 %s · 지불 %s" % [GameState.fmt(g.val(it, false)), GameState.fmt(it["paid"])]) if it["known"] else "견적 %s~%s · 지불 %s" % [GameState.fmt(e[0]), GameState.fmt(e[1]), GameState.fmt(it["paid"])], 15, font_b, Color("#1f6a66"))
 		var h := row(cv)
@@ -956,7 +964,7 @@ func show_inv() -> void:
 				show_inv(), Color("#1f8a86"))
 		btn(h, "도매 처분", func():
 			g.dump(id)
-			show_inv(), Color("#c4402a"), Color.WHITE, not it["restoring"])
+			show_inv(), Color("#c4402a"), Color.WHITE, not it["restoring"] and not g.is_pawned(it))
 
 
 func show_staff() -> void:
