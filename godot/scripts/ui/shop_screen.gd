@@ -17,7 +17,7 @@ const HANJI := Color("#f1e6cb")
 const LACQUER := Color("#2b1d1f")
 const GOLD := Color("#d9a441")
 const SEAL := Color("#b8322a")
-const PRICE_POS := Vector2(110, 912)
+const PRICE_POS := Vector2(110, 922)
 const COUNTER_Y := 640.0
 const DESK_Y := 800.0
 
@@ -503,10 +503,8 @@ func _front_svg() -> String:
 func _render_hud() -> void:
 	# 대들보 위: [장부] · 날짜/가게 · 돈
 	pic(_raster("beam", _beam_svg(), [0, 0, W, 66]), Vector2.ZERO, Vector2(W, 66))
-	_stamp(Rect2(10, 6, 96, 48), "장부" + (" ●" if g.sp > 0 else ""), SEAL, func(): pass, 19)
-	(dyn.get_child(dyn.get_child_count() - 1) as Button).pressed.connect(func(): show_menu())
-	lbl("%d일째" % g.day, Vector2(150, 4), Vector2(170, 30), 21, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
-	lbl(g.shop_info()["n"], Vector2(130, 32), Vector2(210, 22), 13, GOLD, font_b, HORIZONTAL_ALIGNMENT_CENTER)
+	lbl("%d일째" % g.day, Vector2(14, 4), Vector2(200, 28), 21, HANJI, font_k)
+	lbl(g.shop_info()["n"], Vector2(14, 30), Vector2(220, 20), 13, GOLD, font_b)
 	pic(_icon("coins"), Vector2(352, 10), Vector2(40, 40))
 	lbl(GameState.fmt(g.money), Vector2(392, 10), Vector2(140, 40), 21, Color("#ff8a6a") if g.money < 0 else Color("#ffe2a0"), font_k, HORIZONTAL_ALIGNMENT_RIGHT)
 
@@ -534,6 +532,10 @@ func _render_counter() -> void:
 	cl.add_theme_constant_override("outline_size", 4)
 	cl.add_theme_color_override("font_outline_color", Color("#1a0c06"))
 	hot(Rect2(14, COUNTER_Y - 76, 140, 136), "창고 열기", func(): show_inv())
+	var ll := lbl("장부" + (" ●" if g.sp > 0 else ""), Vector2(400, COUNTER_Y + 28), Vector2(132, 30), 15, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	ll.add_theme_constant_override("outline_size", 4)
+	ll.add_theme_color_override("font_outline_color", Color("#1a0c06"))
+	hot(Rect2(396, COUNTER_Y - 76, 140, 136), "장부 열기", func(): show_menu())
 	if not it.is_empty() and g.phase == "open":
 		pic(_icon(it["e"]), Vector2(195, COUNTER_Y - 152), Vector2(150, 150))
 		if it["known"] and it["fake"]:
@@ -614,10 +616,11 @@ func _render_dialog() -> void:
 	if c.get("stage", "") == "haggle" and not c["gone"] and not c.get("visitor", false):
 		_render_haggle_desk()
 	else:
-		var y := DESK_Y + 34.0
+		_page()
+		var y := DESK_Y + 40.0
 		for o in _choices():
-			_choice(Rect2(40, y, 460, 58), o[0], o[1], o.size() > 2 and o[2])
-			y += 70.0
+			_ink_line(Rect2(44, y, 452, 52), o[0], o[1], o.size() > 2 and o[2], 21)
+			y += 60.0
 
 
 ## [표시 문구, 동작, 특수 선택지 여부]
@@ -760,79 +763,156 @@ func _board_svg(sz: Vector2, wood: String, rim: String) -> String:
 	return out
 
 
-## 흥정 중 아래 책상: 두루마리(물건 정보) · 가격 명패 · 도장 세 개 · 수 선택지
+## 흥정 중 아래 책상: 펼친 흥정 장부(물건·값·향) + 책상 위 도장 세 개. 버튼처럼 보이는 상자 없이 그림 위를 누른다.
 func _render_haggle_desk() -> void:
 	var it := g.cur_item()
 	if it.is_empty() or g.neg == null:
 		return
 	var pawn: bool = g.cur.get("pawn", false)
-	# 두루마리
-	pic(_raster("scroll", _slip_svg(Vector2(508, 100), "#f1e6cb", 7), [0, 0, 508, 100]), Vector2(16, DESK_Y + 4), Vector2(508, 100))
-	for x in [8.0, 524.0]:
-		var rod := ColorRect.new()
-		rod.color = Color("#5a3420")
-		rod.position = Vector2(x, DESK_Y + 2)
-		rod.size = Vector2(8, 104)
-		dyn.add_child(rod)
+	_page()
+	var y0 := DESK_Y + 14.0
 	var rar: Dictionary = D.items["rarity"][int(it["r"])]
 	var e := g.est(it)
 	var est_s: String = GameState.fmt(g.val(it, false)) if it["known"] else "%s~%s" % [GameState.fmt(e[0]), GameState.fmt(e[1])]
-	lbl(it["name"], Vector2(34, DESK_Y + 14), Vector2(260, 26), 17, INK, font_k)
-	lbl("%s · %s" % [rar["n"], D.items["condition"][int(it["c"])]["n"]], Vector2(34, DESK_Y + 40), Vector2(260, 22), 14, Color(rar["c"]).darkened(0.25), font_sb)
+	lbl(it["name"], Vector2(46, y0 + 10), Vector2(280, 28), 19, INK, font_k)
+	lbl("%s · %s" % [rar["n"], D.items["condition"][int(it["c"])]["n"]], Vector2(46, y0 + 38), Vector2(280, 20), 14, Color(rar["c"]).darkened(0.3), font_b)
 	var extra := ""
 	if g.cur.has("read"):
-		extra = "  속마음 %s~%s" % [GameState.fmt(g.cur["read"][0]), GameState.fmt(g.cur["read"][1])]
+		extra = " · 속마음 %s~%s" % [GameState.fmt(g.cur["read"][0]), GameState.fmt(g.cur["read"][1])]
 	if pawn:
-		extra = "  %d일 · 상환 %d%%" % [g.cur["days"], int(round((1.1 + 0.03 * g.cur["days"]) * 100))]
-	lbl("견적 %s%s" % [est_s, extra], Vector2(34, DESK_Y + 64), Vector2(470, 24), 14, Color("#1f5a56"), font_sb)
-	lbl("빌려 달라는 돈" if pawn else ("손님 부른 값"), Vector2(300, DESK_Y + 12), Vector2(206, 20), 12, Color("#6a5a4a"), font_sb, HORIZONTAL_ALIGNMENT_RIGHT)
-	lbl(GameState.fmt(g.their_price()), Vector2(290, DESK_Y + 30), Vector2(216, 34), 24, SEAL, font_k, HORIZONTAL_ALIGNMENT_RIGHT)
-	# 인내심: 타들어 가는 향
-	var m := g.neg.patience_ratio()
+		extra = " · %d일 · 상환 %d%%" % [g.cur["days"], int(round((1.1 + 0.03 * g.cur["days"]) * 100))]
+	lbl("견적 %s%s" % [est_s, extra], Vector2(46, y0 + 60), Vector2(450, 22), 14, Color("#1f5a56"), font_b)
+	lbl("빌려 달라는 돈" if pawn else "손님 부른 값", Vector2(300, y0 + 10), Vector2(196, 20), 13, Color("#7a6a5a"), font_b, HORIZONTAL_ALIGNMENT_RIGHT)
+	lbl(GameState.fmt(g.their_price()), Vector2(280, y0 + 28), Vector2(216, 34), 26, SEAL, font_k, HORIZONTAL_ALIGNMENT_RIGHT)
+	# 인내심: 타들어 가는 향 (먹선 막대 + 불씨)
+	var m := clampf(g.neg.patience_ratio(), 0, 1)
 	var stick := ColorRect.new()
-	stick.color = Color("#7a5a3a")
-	stick.position = Vector2(34, DESK_Y + 88)
-	stick.size = Vector2(472, 5)
+	stick.color = Color("#8a6a4a")
+	stick.position = Vector2(46, y0 + 88)
+	stick.size = Vector2(450 * m, 4)
+	stick.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dyn.add_child(stick)
-	var burn := ColorRect.new()
-	burn.color = Color("#6aa85a") if m > 0.66 else (Color("#d9a441") if m > 0.33 else Color("#d8402e"))
-	burn.position = Vector2(34, DESK_Y + 88)
-	burn.size = Vector2(472 * clampf(m, 0, 1), 5)
-	dyn.add_child(burn)
+	var ember := ColorRect.new()
+	ember.color = Color("#e8502e") if m < 0.34 else Color("#f0a040")
+	ember.position = Vector2(46 + 450 * m - 4, y0 + 86)
+	ember.size = Vector2(8, 8)
+	ember.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dyn.add_child(ember)
 	if g.has_staff("profiler"):
-		lbl("인내심 %d/%d" % [maxi(0, int(g.neg.patience)), int(g.neg.max_patience)], Vector2(380, DESK_Y + 64), Vector2(126, 24), 12, Color("#6a5a4a"), font_sb, HORIZONTAL_ALIGNMENT_RIGHT)
-	# 가격 명패: [-] 명패 [+]
-	var py := DESK_Y + 112.0
-	_stamp(Rect2(16, py, 84, 60), "−", Color("#5a3420"), func():
-		g.draft = maxi(10, GameState.r10(g.draft - maxf(10.0, g.their_price() * 0.05))), 30)
-	_stamp(Rect2(440, py, 84, 60), "+", Color("#5a3420"), func():
-		g.draft = GameState.r10(g.draft + maxf(10.0, g.their_price() * 0.05)), 30)
-	var plate := PanelContainer.new()
-	plate.add_theme_stylebox_override("panel", _box(Color("#e8c890"), 4, INK, 3, 2))
-	plate.position = Vector2(108, py)
-	plate.custom_minimum_size = Vector2(324, 60)
-	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	dyn.add_child(plate)
-	lbl(GameState.fmt(g.draft), PRICE_POS, Vector2(320, 58), 30, INK, font_k, HORIZONTAL_ALIGNMENT_CENTER)
-	var pb := hot(Rect2(108, py, 324, 60), "내 제시 가격: 좌우로 끌어 조정, 눌러서 직접 입력", func(): show_keypad())
+		lbl("인내심 %d/%d" % [maxi(0, int(g.neg.patience)), int(g.neg.max_patience)], Vector2(356, y0 + 92), Vector2(140, 18), 11, Color("#7a6a5a"), font_b, HORIZONTAL_ALIGNMENT_RIGHT)
+	# 내 값: 붓글씨 숫자 + 양옆 먹 표시(−/+), 끌거나 눌러서 입력
+	var py := y0 + 108.0
+	_ink_line(Rect2(40, py, 64, 58), "−", func():
+		g.draft = maxi(10, GameState.r10(g.draft - maxf(10.0, g.their_price() * 0.05))), false, 34, true)
+	_ink_line(Rect2(436, py, 64, 58), "+", func():
+		g.draft = GameState.r10(g.draft + maxf(10.0, g.their_price() * 0.05)), false, 34, true)
+	lbl(GameState.fmt(g.draft), PRICE_POS, Vector2(320, 58), 36, INK, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	var ul := ColorRect.new()
+	ul.color = Color(0.16, 0.1, 0.06, 0.7)
+	ul.position = Vector2(150, py + 56)
+	ul.size = Vector2(240, 3)
+	ul.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dyn.add_child(ul)
+	var pb := hot(Rect2(110, py, 320, 60), "내 제시 가격: 좌우로 끌어 조정, 눌러서 직접 입력", func(): show_keypad())
 	pb.gui_input.connect(_on_sign_drag)
-	lbl("내 제시 값 · 끌거나 눌러서 입력", Vector2(108, py + 60), Vector2(324, 18), 11, Color("#e8c890"), font_sb, HORIZONTAL_ALIGNMENT_CENTER)
-	# 도장 세 개
-	var sy := py + 84.0
-	_stamp(Rect2(16, sy, 160, 72), "제안", SEAL, func(): g.propose(g.draft))
-	_stamp(Rect2(190, sy, 160, 72), "최종 제안", Color("#8a6a1a"), func():
-		sfx.play("bell")
-		g.propose(g.draft, true))
-	_stamp(Rect2(364, sy, 160, 72), "거절", Color("#2a2a34"), func(): g.refuse())
-	# 수(특수 선택지 + 손님 값 수락) — 2열
+	lbl("내 값 — 좌우로 끌거나 눌러서 쓰기", Vector2(110, py + 60), Vector2(320, 16), 11, Color("#8a7a6a"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
+	# 수: 손님 값 수락 + 특수 선택지 (먹글씨 줄)
 	var opts := _choices().filter(func(o): return o[0] != "관심 없소")
-	var oy := sy + 86.0
-	var rows := int(ceil(opts.size() / 2.0))
-	var hgt := clampf((H - 8 - oy) / maxf(1, rows) - 8, 34, 54)
-	for i in opts.size():
+	var oy := py + 80.0
+	for i in mini(opts.size(), 4):
 		var o: Array = opts[i]
 		var lone := i == opts.size() - 1 and i % 2 == 0
-		_choice(Rect2(16 + (i % 2) * 258, oy + (i / 2) * (hgt + 8), 508 if lone else 250, hgt), o[0], o[1], o.size() > 2 and o[2], 17 if lone else 15)
+		_ink_line(Rect2(40 + (i % 2) * 230, oy + (i / 2) * 36, 460 if lone else 230, 34), o[0], o[1], o.size() > 2 and o[2], 16)
+	# 책상 위 도장 세 개
+	var sy := H - 104.0
+	_seal_obj(Rect2(36, sy, 140, 98), "제안", SEAL, func(): g.propose(g.draft))
+	_seal_obj(Rect2(200, sy, 140, 98), "최종 제안", Color("#9a7a1a"), func():
+		sfx.play("bell")
+		g.propose(g.draft, true))
+	_seal_obj(Rect2(364, sy, 140, 98), "거절", Color("#2a2a34"), func(): g.refuse())
+
+
+## 책상 위 펼친 한지 장부 (버튼 판이 아니라 종이 한 장)
+func _page() -> void:
+	var r := Rect2(20, DESK_Y + 12, 500, H - DESK_Y - (128 if g.is_haggling() and g.cur.get("stage", "") == "haggle" else 36))
+	pic(_raster("page%d" % int(r.size.y), _page_svg(r.size), [0, 0, r.size.x, r.size.y]), r.position, r.size)
+
+
+func _page_svg(sz: Vector2) -> String:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	var w := sz.x
+	var h := sz.y
+	var s := '<rect x="6" y="9" width="%s" height="%s" rx="3" fill="#000" opacity="0.4" transform="rotate(-0.6)"/>' % [SvgArt.n(w - 8), SvgArt.n(h - 10)]
+	s += '<rect x="2" y="2" width="%s" height="%s" rx="2" fill="#efe2c0" transform="rotate(-0.6)"/>' % [SvgArt.n(w - 6), SvgArt.n(h - 10)]
+	for i in int(w * h / 900):
+		var fx := rng.randf_range(6, w - 8)
+		var fy := rng.randf_range(6, h - 12)
+		s += '<path d="M%s,%s q%s,%s %s,%s" stroke="#a08a60" stroke-width="0.6" fill="none" opacity="0.3"/>' % [SvgArt.n(fx), SvgArt.n(fy), SvgArt.n(rng.randf_range(2, 6)), SvgArt.n(rng.randf_range(-2, 2)), SvgArt.n(rng.randf_range(6, 14)), SvgArt.n(rng.randf_range(-2, 2))]
+	var y := 34.0
+	while y < h - 16:
+		s += '<path d="M16,%s H%s" stroke="#b8a27a" stroke-width="0.8" opacity="0.55"/>' % [SvgArt.n(y), SvgArt.n(w - 16)]
+		y += 30
+	s += '<path d="M14,8 V%s" stroke="#c8402e" stroke-width="1" opacity="0.45"/>' % SvgArt.n(h - 14)
+	s += '<rect x="0" y="0" width="%s" height="%s" fill="none" stroke="#7a5a3a" stroke-width="1" opacity="0.5" transform="rotate(-0.6)"/>' % [SvgArt.n(w - 4), SvgArt.n(h - 8)]
+	return s
+
+
+## 종이에 쓴 먹글씨 한 줄. 누르면 먹 번짐이 생긴다.
+func _ink_line(rect: Rect2, text: String, cb: Callable, special := false, fs := 20, center := false) -> Button:
+	var b := Button.new()
+	b.text = ("" if center else "◦ ") + text
+	b.position = rect.position
+	b.size = rect.size
+	b.focus_mode = Control.FOCUS_NONE
+	b.alignment = HORIZONTAL_ALIGNMENT_CENTER if center else HORIZONTAL_ALIGNMENT_LEFT
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.add_theme_font_override("font", font_k if center else font_b)
+	b.add_theme_font_size_override("font_size", fs)
+	var fg := Color("#2a3a7a") if special else INK
+	for st in ["font_color", "font_hover_color"]:
+		b.add_theme_color_override(st, fg)
+	b.add_theme_color_override("font_pressed_color", SEAL)
+	var empty := StyleBoxEmpty.new()
+	var wash := StyleBoxFlat.new()
+	wash.bg_color = Color(0.3, 0.18, 0.08, 0.14)
+	wash.set_corner_radius_all(14)
+	for st in ["normal", "disabled", "focus"]:
+		b.add_theme_stylebox_override(st, empty)
+	b.add_theme_stylebox_override("hover", wash)
+	b.add_theme_stylebox_override("pressed", wash)
+	b.pressed.connect(func(): _act(cb))
+	dyn.add_child(b)
+	return b
+
+
+## 책상 위에 세워 둔 도장 (손잡이 + 인면). 누르면 쿵 찍힌다.
+func _seal_obj(rect: Rect2, text: String, c: Color, cb: Callable) -> void:
+	var w := rect.size.x
+	var h := rect.size.y
+	var col := "#" + c.to_html(false)
+	var sv := '<ellipse cx="%s" cy="%s" rx="%s" ry="7" fill="#000" opacity="0.45"/>' % [SvgArt.n(w / 2), SvgArt.n(h - 6), SvgArt.n(w / 2 - 6)]
+	sv += '<path d="M%s,8 a14,12 0 1 1 28,0 l6,26 h-40 Z" fill="#8a5a32" stroke="#1a0c06" stroke-width="2.5"/>' % SvgArt.n(w / 2 - 14)
+	sv += '<path d="M%s,10 q4,-6 9,-1" stroke="#e0b080" stroke-width="2" fill="none" opacity="0.7"/>' % SvgArt.n(w / 2 - 8)
+	sv += '<rect x="%s" y="32" width="%s" height="10" fill="#5a3420" stroke="#1a0c06" stroke-width="2.5"/>' % [SvgArt.n(w / 2 - 26), SvgArt.n(52)]
+	sv += '<path d="M8,42 H%s L%s,%s H4 Z" fill="%s" stroke="#1a0c06" stroke-width="2.5"/>' % [SvgArt.n(w - 8), SvgArt.n(w - 4), SvgArt.n(h - 10), col]
+	sv += '<path d="M12,46 H%s" stroke="#fff" stroke-width="2" opacity="0.25"/>' % SvgArt.n(w - 12)
+	var skin := pic(_raster("sealobj", sv, [0, 0, w, h]), rect.position, rect.size)
+	var b := _skinned_button(Rect2(rect.position + Vector2(0, 40), Vector2(w, h - 48)), text, cb, skin, font_k, 20, Color("#fff4dc"))
+	b.add_theme_constant_override("outline_size", 3)
+	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.4))
+	var top := Button.new()
+	top.flat = true
+	top.position = rect.position
+	top.size = Vector2(w, 42)
+	top.focus_mode = Control.FOCUS_NONE
+	var e := StyleBoxEmpty.new()
+	for st in ["normal", "hover", "pressed", "focus"]:
+		top.add_theme_stylebox_override(st, e)
+	top.button_down.connect(func(): b.button_down.emit())
+	top.button_up.connect(func(): b.button_up.emit())
+	top.pressed.connect(func(): _act(cb))
+	dyn.add_child(top)
 
 
 ## 도장 모양 버튼 (인주 그림 위에 글자)
@@ -841,6 +921,23 @@ func _stamp(rect: Rect2, text: String, c: Color, cb: Callable, fs := 22) -> void
 	var b := _skinned_button(rect, text, cb, skin, font_k, fs, Color("#fff4dc"))
 	b.add_theme_constant_override("outline_size", 3)
 	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.35))
+
+
+## 책상에 기대 세운 나무 영업패. 끈으로 매단 패에 글자를 새긴 모양.
+func _plaque(rect: Rect2, text: String, hint: String, cb: Callable, raw := false) -> void:
+	var w := rect.size.x
+	var h := rect.size.y
+	var sv := '<path d="M%s,4 L%s,34 M%s,4 L%s,34" stroke="#c8a060" stroke-width="3"/><circle cx="%s" cy="4" r="5" fill="#c9963a" stroke="#1a0c06" stroke-width="2"/>' % [SvgArt.n(w / 2), SvgArt.n(w * 0.2), SvgArt.n(w / 2), SvgArt.n(w * 0.8), SvgArt.n(w / 2)]
+	sv += '<path d="M10,%s Q%s,%s %s,%s L%s,%s Q%s,%s 10,%s Z" fill="#000" opacity="0.4" transform="translate(4,6)"/>' % [SvgArt.n(34), SvgArt.n(w / 2), SvgArt.n(26), SvgArt.n(w - 10), SvgArt.n(34), SvgArt.n(w - 10), SvgArt.n(h - 30), SvgArt.n(w / 2), SvgArt.n(h - 22), SvgArt.n(h - 30)]
+	sv += '<path d="M10,%s Q%s,%s %s,%s L%s,%s Q%s,%s 10,%s Z" fill="#8a5a32" stroke="#1a0c06" stroke-width="3"/>' % [SvgArt.n(34), SvgArt.n(w / 2), SvgArt.n(26), SvgArt.n(w - 10), SvgArt.n(34), SvgArt.n(w - 10), SvgArt.n(h - 30), SvgArt.n(w / 2), SvgArt.n(h - 22), SvgArt.n(h - 30)]
+	for i in 5:
+		sv += '<path d="M20,%d c60,-5 %s,5 %s,0" stroke="#000" stroke-width="1" fill="none" opacity="0.2"/>' % [48 + i * 16, SvgArt.n(w * 0.5), SvgArt.n(w - 40)]
+	sv += '<rect x="24" y="44" width="%s" height="%s" rx="3" fill="none" stroke="#3a1e0c" stroke-width="2" opacity="0.6"/>' % [SvgArt.n(w - 48), SvgArt.n(h - 84)]
+	var skin := pic(_raster("plaque", sv, [0, 0, w, h]), rect.position, rect.size)
+	var b := _skinned_button(Rect2(rect.position + Vector2(0, 30), Vector2(w, h - 60)), text, cb, skin, font_k, 38, Color("#2a1408"), raw)
+	b.add_theme_constant_override("outline_size", 2)
+	b.add_theme_color_override("font_outline_color", Color("#c08a50"))
+	lbl(hint, Vector2(rect.position.x - 40, rect.end.y + 4), Vector2(w + 80, 22), 14, Color("#e8d0a8"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 ## 나무 현판 버튼 (문 열기 · 마감)
@@ -855,8 +952,7 @@ func _board(rect: Rect2, text: String, cb: Callable, fs := 40, raw := false) -> 
 # ---------------------------------------------------------------- 아침·밤
 func _render_morning() -> void:
 	_render_newspaper()
-	_board(Rect2(110, DESK_Y + 150, 320, 116), "문 열기", func(): g.flip_open(), 44)
-	lbl("현판을 눌러 가게 문을 엽니다", Vector2(60, DESK_Y + 268), Vector2(420, 24), 14, HANJI, font_b, HORIZONTAL_ALIGNMENT_CENTER)
+	_plaque(Rect2(120, DESK_Y + 120, 300, 150), "閉 · 닫힘", "패를 뒤집어 문을 엽니다", func(): g.flip_open())
 
 
 ## 아침 방문(榜文): 「은하 일보」. 시세·경매·구인·팁을 붙인 종이 쪽지.
@@ -950,7 +1046,7 @@ func _render_newspaper() -> void:
 
 func _render_night() -> void:
 	lbl("오늘 장사는 여기까지", Vector2(40, 300), Vector2(460, 60), 30, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
-	_board(Rect2(70, DESK_Y + 120, 400, 106), "마감 · 영수증 보기", func(): show_receipt(), 28, true)
+	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "마감", "패를 눌러 오늘 장부를 셈합니다", func(): show_receipt(), true)
 
 
 ## 장부: 모든 메뉴를 한곳에
