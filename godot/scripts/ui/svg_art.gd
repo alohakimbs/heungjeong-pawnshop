@@ -85,7 +85,7 @@ static func customer_look(arch: String, traits: Array, seed_value: int) -> Dicti
 
 
 ## 캐릭터 SVG 본문(좌표계: 머리 중심 0,0)
-static func draw_char(L: Dictionary, mood: String) -> String:
+static func draw_char(L: Dictionary, mood: String, legs := false) -> String:
 	var sk: String = L["skin"]
 	var hc: String = L["hc"]
 	var acc: Array = L["acc"]
@@ -130,8 +130,12 @@ static func draw_char(L: Dictionary, mood: String) -> String:
 		s += '<rect x="-20" y="%s" width="40" height="%s" rx="9" fill="%s"/>' % [n(ry - 8), n(T - ry + 12), L["oc"]]
 	if L["outfit"] == "hoodie":
 		s += '<path d="M-14 %s L-12 %s M14 %s L12 %s" stroke="#f4efe6" stroke-width="3" stroke-linecap="round"/>' % [n(T + 4), n(T + 44), n(T + 4), n(T + 44)]
+	# 다리 (대기 줄에 선 전신 모습)
+	if legs:
+		var pc: String = "#3a3a48" if L["outfit"] != "track" else L["oc"]
+		s = '<rect x="%s" y="%s" width="%s" height="112" rx="8" fill="%s"/><rect x="4" y="%s" width="%s" height="112" rx="8" fill="%s"/><ellipse cx="%s" cy="%s" rx="22" ry="10" fill="#2a1e18"/><ellipse cx="%s" cy="%s" rx="22" ry="10" fill="#2a1e18"/>' % [n(-w * 0.62), n(B - 14), n(w * 0.62 - 4), pc, n(B - 14), n(w * 0.62 - 4), pc, n(-w * 0.32 - 4), n(B + 100), n(w * 0.32 + 4), n(B + 100)] + s
 	# 손
-	for d in [-1, 1]:
+	for d in ([] if legs else [-1, 1]):
 		var hx: float = d * (w - 22)
 		s += '<ellipse cx="%s" cy="%s" rx="16" ry="10" fill="%s" stroke="#000" stroke-opacity=".22" stroke-width="2"/>' % [n(hx), n(B - 6), sk]
 	# 귀·머리
@@ -323,6 +327,9 @@ static func rasterize(body: String, viewbox: Array, scale: float) -> ImageTextur
 
 ## 캐릭터 전신 텍스처 (머리 중심 기준 viewBox -110,-130 220,355)
 const CHAR_VB := [-110, -130, 220, 355]
+
+
+const STAND_VB := [-110, -130, 220, 470]
 
 
 static func char_texture(L: Dictionary, mood: String, scale: float) -> ImageTexture:

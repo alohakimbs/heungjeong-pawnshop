@@ -16,7 +16,7 @@ var failed := 0
 
 func _init() -> void:
 	data = GameDataScript.new()
-	for scr in [GameState, Bots, Negotiation]:
+	for scr in [GameState, Bots, Negotiation, load("res://scripts/ui/svg_art.gd"), load("res://scripts/ui/shop_screen.gd")]:
 		if not scr.can_instantiate():
 			print("✗ 스크립트 컴파일 실패: ", scr.resource_path)
 			quit(1)
@@ -33,6 +33,8 @@ func _init() -> void:
 	test_estimate_contains_value()
 	test_save_roundtrip()
 	test_regular_remembers()
+	test_flow_and_queue()
+	test_debt_liquidation()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -322,24 +324,65 @@ func test_sim_smart() -> void:
 
 
 func test_ui_smoke() -> void:
-	print("[화면: 메인 장면 생성·모든 오버레이 열기]")
+	print("[화면: 가로 메인 장면·흐름·오버레이]")
 	var main = _main
-	var ok: bool = main.g != null and main.stage != null
-	check(ok, "메인 장면 생성")
+	var ok: bool = ("g" in main) and main.g != null and main.stage != null
+	check(ok, "메인 장면 생성 (화면 스크립트 컴파일 포함)")
 	if not ok:
 		return
-	main.close_modal()
-	main.g.event = ""
-	main.g.flip_open()
+	var g = main.g
+	check(g.phase == "morning" and main.dyn.get_child_count() > 10, "아침: 신문과 열기 팻말 표시")
+	g.event = ""
+	main._act(func(): g.flip_open())
+	check(g.phase == "open" and main._choices().size() >= 2, "손님 등장 + 선택지 표시")
+	var first: Array = main._choices()[0]
+	first[1].call()
 	main.render()
-	check(main.dyn.get_child_count() > 20, "흥정 화면에 소품·버튼 배치 (%d개)" % main.dyn.get_child_count())
+	check(g.cur["stage"] == "look" and main.modal.visible, "한 번 볼게요 → 물건 살펴보기 창")
+	main.close_modal()
+	main._choices()[0][1].call()
+	main.render()
+	check(g.cur["stage"] == "haggle", "거래합시다 → 칠판 흥정")
+	var before: int = g.neg.rounds
+	g.draft = int(g.their_price() * 0.7)
+	g.propose(g.draft)
+	check(g.neg.rounds == before + 1 or g.cur["gone"], "가격표 ✓로 제안 반영")
 	var opened := true
-	for f in ["show_paper", "show_inv", "show_staff", "show_ledger"]:
+	for f in ["show_inv", "show_staff", "show_ledger", "show_traits", "show_keypad"]:
 		main.call(f)
 		opened = opened and main.modal.visible
 		main.close_modal()
-	check(opened, "신문·창고·직원·장부 화면이 열림")
-	var before: int = main.g.neg.rounds
-	for k in ["C", "1", "2", "0", "0", "제시"]:
-		main._key(k)
-	check(main.g.neg.rounds == before + 1 or main.g.cur["gone"], "계산기로 가격 제시가 흥정에 반영됨")
+	check(opened, "창고·직원·장부·성향·키패드 화면이 열림")
+
+
+func test_flow_and_queue() -> void:
+	print("[원작 흐름: 인사 → 살펴보기 → 흥정, 대기 줄]")
+	var g = new_game(21)
+	g.event = ""
+	g.flip_open()
+	check(g.cur["stage"] == "intro" and not String(g.cur["msg"]).contains("$"), "첫 대사는 인사(가격 없음)")
+	check(g.upcoming.size() == mini(2, g.queue), "대기 줄에 다음 손님 %d명" % g.upcoming.size())
+	var next_name: String = g.upcoming[0]["name"] if g.upcoming.size() > 0 else ""
+	g.look_item()
+	check(g.cur["stage"] == "look", "살펴보기 단계")
+	g.start_haggle()
+	check(g.cur["stage"] == "haggle" and String(g.cur["msg"]).contains("$"), "흥정 시작 시 가격 제시")
+	g.refuse()
+	g.next_customer()
+	check(next_name == "" or g.cur["name"] == next_name, "대기 줄 맨 앞 손님이 다음으로 들어옴")
+
+
+func test_debt_liquidation() -> void:
+	print("[빚이 생기면 재고로 메움]")
+	var g = new_game(22)
+	g.event = ""
+	g.flip_open()
+	for i in 4:
+		var it: Dictionary = g.gen_item(0.0)
+		it["paid"] = 100
+		g.inv.append(it)
+	g.money = -500
+	g.queue = 0
+	g.cur["gone"] = true
+	g.next_customer()
+	check(g.phase == "night" and (g.money >= 0 or g.inv.is_empty()), "마감 때 재고 처분으로 빚 상환 (현금 %s, 남은 재고 %d)" % [g.fmt(g.money), g.inv.size()])

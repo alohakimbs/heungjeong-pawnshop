@@ -38,6 +38,7 @@ var stats := {"deals": 0, "profit": 0}
 var rel: Dictionary = {}  # 단골 관계: {키: {visits, last}}
 var receipt: Dictionary = {}
 var auction: Dictionary = {}
+var upcoming: Array = []  # 대기 줄에 서 있는 다음 손님들의 정체
 var draft := 0  # 계산기에 찍힌 금액
 var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
 
@@ -192,8 +193,8 @@ func _conflicts(k: String, tr: Array) -> bool:
 	return false
 
 
-func gen_customer() -> Dictionary:
-	var avail := inv.filter(func(i): return not i["restoring"])
+## 손님의 정체(이름·외형·성향·단골 여부)만 만든다. 대기 줄에 미리 세워 두는 데 쓴다.
+func _gen_identity() -> Dictionary:
 	if not today.has("sp"):
 		today["sp"] = []
 	var spk := ""
@@ -202,31 +203,41 @@ func gen_customer() -> Dictionary:
 		if ks.size() > 0:
 			spk = pick(ks)
 			today["sp"].append(spk)
+	if spk != "":
+		var spd: Dictionary = D.specials[spk]
+		return {"name": spd["n"], "role": spd["role"], "tic": spd["tic"], "look": spd["L"], "sk": spk, "tr": spd["tr"].duplicate()}
+	var keys: Array = D.traits["traits"].keys()
+	var tr: Array = []
+	var n := 1 if rng.randf() < 0.55 else 2
+	var guard := 0
+	while tr.size() < n and guard < 50:
+		guard += 1
+		var k: String = pick(keys)
+		if tr.has(k) or _conflicts(k, tr):
+			continue
+		tr.append(k)
+	var ar: Dictionary = pick(D.archetypes)
+	return {"name": pick(D.text["surnames"]) + pick(D.text["given_names"]), "role": ar["n"], "tic": ar["tic"], "arch": ar["id"], "look_seed": rng.randi(), "sk": "", "tr": tr}
+
+
+## 대기 줄(다음 손님들)을 남은 인원만큼, 최대 2명까지 채운다
+func _fill_upcoming() -> void:
+	while upcoming.size() < mini(2, queue):
+		upcoming.append(_gen_identity())
+
+
+func gen_customer() -> Dictionary:
+	var avail := inv.filter(func(i): return not i["restoring"])
+	var ident: Dictionary = upcoming.pop_front() if upcoming.size() > 0 else _gen_identity()
+	var tr: Array = ident["tr"]
+	var spk: String = ident.get("sk", "")
 	var spd: Dictionary = D.specials[spk] if spk != "" else {}
-	var sell_only := false
-	for t in spd.get("tr", []):
-		if t == "scammer" or t == "desperate":
-			sell_only = true
+	var sell_only: bool = tr.has("scammer") or tr.has("desperate")
 	# 창고가 찰수록 사러 오는 손님이 늘어난다 (빈 창고 35% → 꽉 찬 창고 75%)
 	var buy_p := 0.35 + 0.4 * float(inv.size()) / cap()
 	var buy: bool = (not sell_only) and avail.size() > 0 and rng.randf() < buy_p
-	var tr: Array = []
-	var c := {}
-	if spk != "":
-		tr = spd["tr"].duplicate()
-		c = {"name": spd["n"], "role": spd["role"], "tic": spd["tic"], "look": spd["L"], "sk": spk}
-	else:
-		var keys: Array = D.traits["traits"].keys().filter(func(k): return not (buy and (k == "desperate" or k == "scammer")))
-		var n := 1 if rng.randf() < 0.55 else 2
-		var guard := 0
-		while tr.size() < n and guard < 50:
-			guard += 1
-			var k: String = pick(keys)
-			if tr.has(k) or _conflicts(k, tr):
-				continue
-			tr.append(k)
-		var ar: Dictionary = pick(D.archetypes)
-		c = {"name": pick(D.text["surnames"]) + pick(D.text["given_names"]), "role": ar["n"], "tic": ar["tic"], "arch": ar["id"], "look_seed": rng.randi(), "sk": ""}
+	var c := ident.duplicate(true)
+	c["stage"] = "intro"
 	c["tr"] = tr
 	c["buy"] = buy
 	var shown := tr.size() if (has_staff("profiler") or skills["psych"] >= 3) else (1 if skills["psych"] >= 1 else 0)
@@ -270,10 +281,11 @@ func gen_customer() -> Dictionary:
 			m = line("sell_greedy", -1, it["name"])
 		else:
 			m = line("sell_open", -1, it["name"])
-		m += line("sell_ask", neg.ask)
-		if tr.has("chatty"):
-			m += line("sell_chatty", r10(neg.min_price * rnd(1.0, 1.12)))
 		c["msg"] = intro + m + tic()
+		var pm := line("sell_price", neg.ask)
+		if tr.has("chatty"):
+			pm += line("sell_chatty", r10(neg.min_price * rnd(1.0, 1.12)))
+		c["price_msg"] = pm
 		draft = r10(neg.ask * 0.55)
 	else:
 		var it: Dictionary = pick(avail)
@@ -287,14 +299,16 @@ func gen_customer() -> Dictionary:
 			neg.setup_buyer(val(it, true), int(it["r"]), tr, skills["haggle"], skills["charm"], min_adj)
 			var m := ""
 			if tr.has("collector") and int(it["r"]) >= 2:
-				m = line("buy_collector", neg.offer, it["name"])
+				m = line("buy_collector", -1, it["name"])
 			elif tr.has("stingy"):
-				m = line("buy_stingy", neg.offer, it["name"])
+				m = line("buy_stingy", -1, it["name"])
 			else:
-				m = line("buy_open", neg.offer, it["name"])
-			if tr.has("chatty"):
-				m += line("buy_chatty", r10(neg.max_price * rnd(0.88, 1.0)))
+				m = line("buy_open", -1, it["name"])
 			c["msg"] = intro + m + tic()
+			var pm := line("buy_price", neg.offer)
+			if tr.has("chatty"):
+				pm += line("buy_chatty", r10(neg.max_price * rnd(0.88, 1.0)))
+			c["price_msg"] = pm
 			draft = r10(neg.offer * 1.6)
 	neg.max_patience = round(neg.max_patience * pat_mul)
 	neg.patience = neg.max_patience
@@ -339,6 +353,7 @@ func propose(x: int, final := false) -> void:
 	if not cur["buy"] and inv.size() >= cap():
 		toast("창고가 가득 찼어요")
 		return
+	cur["stage"] = "haggle"
 	var r := neg.propose(x, final)
 	var b := "buy" if cur["buy"] else "sell"
 	match r:
@@ -359,6 +374,21 @@ func propose(x: int, final := false) -> void:
 					cur["msg"] = line("low_" + b) + line("low_" + b + "_tail", neg.their_price())
 			if rng.randf() < 0.35:
 				cur["msg"] += tic()
+
+
+## 원작 흐름: 인사(intro) → 물건 살펴보기(look) → 흥정(haggle)
+func look_item() -> void:
+	if not is_haggling() or cur.get("stage", "haggle") != "intro":
+		return
+	cur["stage"] = "look"
+	cur["msg"] = line("ask_look_buy" if cur["buy"] else "ask_look_sell")
+
+
+func start_haggle() -> void:
+	if not is_haggling() or cur.get("stage", "haggle") == "haggle":
+		return
+	cur["stage"] = "haggle"
+	cur["msg"] = cur.get("price_msg", "")
 
 
 func accept() -> void:
@@ -593,6 +623,7 @@ func start_day() -> void:
 	cur = {}
 	neg = null
 	receipt = {}
+	upcoming = []
 
 
 func is_auction_today() -> bool:
@@ -679,6 +710,7 @@ func next_customer() -> void:
 		return
 	queue -= 1
 	cur = gen_customer()
+	_fill_upcoming()
 	if cur.get("fake_call", false):
 		rep = maxi(0, rep - 3)
 		cur["gone"] = true
@@ -719,17 +751,37 @@ func close_shop() -> void:
 				rep = maxi(0, rep - 8)
 				notes.append("가품 판매 신고(%s): 벌금 %s, 평판 -8" % [sc["name"], fmt(f)])
 			else:
-				money -= int(sc["price"])
+				var refund := r10(int(sc["price"]) * 0.5)
+				money -= refund
 				rep = maxi(0, rep - 3)
-				notes.append("손님이 가품을 알고 반품(%s): 환불 %s, 평판 -3" % [sc["name"], fmt(sc["price"])])
+				notes.append("손님이 가품이라며 항의(%s): 절반 환불 %s로 합의, 평판 -3" % [sc["name"], fmt(refund)])
 		elif day - int(sc["day"]) < 5:
 			keep.append(sc)
 	scams = keep
+	# 빚이 생기면 파산 전에 도매상이 재고를 가져가 메운다 (싼 물건부터, 가치의 절반)
+	if money < 0 and inv.size() > 0:
+		var order := inv.duplicate()
+		order.sort_custom(func(a, b): return val(a, false) < val(b, false))
+		var taken: Array = []
+		for it in order:
+			if money >= 0:
+				break
+			var p := r10(val(it, false) * 0.5)
+			money += p
+			stats["profit"] += p - int(it["paid"])
+			remove_item(it["id"])
+			taken.append(it["name"])
+		notes.append("빚 독촉: 도매상이 %s을(를) 헐값에 가져감" % ", ".join(taken))
 	receipt = {"day": day, "deals": today["deals"], "bought": today["bought"], "sold": today["sold"], "rent": int(sh["rent"]), "shop": sh["n"], "wages": wg, "d": money - int(today["start"]), "xp": today.get("xp", 0), "notes": notes}
 
 
+## 파산선: 차고 -$3,000, 가게 단계마다 $2,000씩 더 버틴다
+func bankrupt_line() -> int:
+	return -3000 - 2000 * shop
+
+
 func is_bankrupt() -> bool:
-	return money < -3000
+	return money < bankrupt_line()
 
 
 ## 다음 날 아침으로. 파산이면 false.
@@ -845,7 +897,7 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming"]
 const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft"]
 
 
