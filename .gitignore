@@ -5,3 +5,6 @@ export/
 *.jks
 .DS_Store
 godot/android/
+!godot/assets/chars/*.import
+!godot/assets/items/*.import
+!godot/assets/bg/*.import
