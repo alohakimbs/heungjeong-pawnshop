@@ -25,13 +25,10 @@ func _process(_d):
 			main._act(func(): g.flip_open())
 		20: shot("2_intro")
 		21:
-			main._choices()[0][1].call()
-			main.render()
+			main.show_inspect(g.cur_item())
 		30: shot("3_inspect")
 		31:
 			main.close_modal()
-			main._choices()[0][1].call()
-			main.render()
 		40: shot("4_haggle")
 		41:
 			g.draft = int(g.their_price() * 0.5)

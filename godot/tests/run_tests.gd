@@ -338,24 +338,31 @@ func test_ui_smoke() -> void:
 	check(g.phase == "morning" and main.dyn.get_child_count() > 10, "아침: 신문과 열기 팻말 표시")
 	g.event = ""
 	main._act(func(): g.flip_open())
-	check(g.phase == "open" and main._choices().size() >= 2, "손님 등장 + 선택지 표시")
-	var first: Array = main._choices()[0]
-	first[1].call()
-	main.render()
-	check(g.cur["stage"] == "look" and main.modal.visible, "한 번 볼게요 → 물건 살펴보기 창")
+	check(g.phase == "open" and (g.cur.get("visitor", false) or g.cur["stage"] == "haggle" or g.cur["gone"]), "손님이 들어오자마자 값을 부름(경쾌한 진행)")
+	if g.cur.get("visitor", false) or g.cur["gone"]:
+		g.cur = {}
+		g.queue += 1
+		g.next_customer()
+		main._act(func(): pass)
+	check(String(g.cur["msg"]).contains("냥"), "첫 말풍선에 부른 값이 있음")
+	main.show_inspect(g.cur_item())
+	check(main.modal.visible, "계산대 물건 누르면 살펴보기 창")
 	main.close_modal()
-	main._choices()[0][1].call()
 	main.render()
-	check(g.cur["stage"] == "haggle", "흥정해 봅시다 → 흥정 시작")
+	check(g.cur["stage"] == "haggle", "흥정 진행 중")
 	var stamps := 0
 	for c in main.dyn.get_children():
-		if c is Button and c.text in ["제안", "최종 제안", "거절"]:
+		if c is Button and not c.is_queued_for_deletion() and c.text in ["제안", "최종 제안", "거절"]:
 			stamps += 1
 	check(stamps == 3, "흥정 중에만 도장 3개(제안·최종·거절)가 책상에 나옴 (%d)" % stamps)
 	var before: int = g.neg.rounds
 	g.draft = int(g.their_price() * 0.7)
 	g.propose(g.draft)
 	check(g.neg.rounds == before + 1 or g.cur["gone"], "가격표 ✓로 제안 반영")
+	g.cur["gone"] = true
+	var nm: String = g.cur["name"]
+	main._act(func(): pass)
+	check(main._auto_tw != null, "손님이 떠나면 다음 손님 자동 예약")
 	var opened := true
 	for f in ["show_menu", "show_inv", "show_staff", "show_ledger", "show_traits", "show_keypad"]:
 		main.call(f)

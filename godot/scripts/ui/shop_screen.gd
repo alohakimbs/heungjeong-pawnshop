@@ -44,6 +44,8 @@ var _snap := {}  # 효과음 판단용 직전 상태
 var title: Control
 var _last_cust := ""
 var fx: Control  # 도장 자국·돈 글씨 같은 잠깐 연출
+var _auto_tw: Tween  # 손님이 떠나면 잠시 뒤 다음 손님
+const NEXT_DELAY := 0.9
 
 
 func _ready() -> void:
@@ -134,7 +136,7 @@ func _layout() -> void:
 		_px = px
 		_cache.clear()
 		render()
-	toast_lbl.position = Vector2(vs.x * 0.08, vs.y * 0.075)
+	toast_lbl.position = Vector2(vs.x * 0.08, vs.y * 0.17)
 	toast_lbl.size = Vector2(vs.x * 0.84, 0)
 
 
@@ -224,12 +226,14 @@ func hot(rect: Rect2, label: String, cb: Callable, enabled := true) -> Button:
 func _act(cb: Callable) -> void:
 	var before := _state_snap()
 	cb.call()
+	_brisk()
 	var after := _state_snap()
 	_play_for(before, after)
 	g.save_game()
 	render()
 	_fx_for(before, after)
 	_tutorial()
+	_schedule_next()
 
 
 func _state_snap() -> Dictionary:
@@ -259,8 +263,9 @@ func _flush_toasts() -> void:
 func toast(m: String) -> void:
 	toast_lbl.text = m
 	toast_lbl.visible = true
+	toast_lbl.size.y = 0
 	var t := create_tween()
-	t.tween_interval(2.4)
+	t.tween_interval(clampf(1.2 + m.length() * 0.05, 1.6, 4.5))
 	t.tween_callback(func(): toast_lbl.visible = false)
 
 
@@ -302,6 +307,38 @@ func _look_of(c: Dictionary) -> Dictionary:
 	return SvgArt.customer_look2(c.get("arch", "seonbi"), c.get("tr", []), int(c.get("look_seed", 1)))
 
 
+# ================================================================ 경쾌한 진행
+## 원작처럼 손님이 들어오자마자 물건을 내밀고 값을 부른다(인사·살펴보기 단계 생략).
+## 살펴보기는 계산대 위 물건을 누르면 언제든 열린다.
+func _brisk() -> void:
+	if g.phase != "open" or g.cur.is_empty() or g.cur.get("visitor", false) or g.cur.get("gone", false):
+		return
+	if g.cur.get("stage", "") == "intro":
+		var greet: String = g.cur.get("msg", "")
+		g.look_item()
+		g.start_haggle()
+		# 인사말 + 부른 값을 한 말풍선에
+		if greet != "" and not String(g.cur["msg"]).begins_with(greet):
+			g.cur["msg"] = greet + " " + String(g.cur["msg"])
+
+
+## 손님이 떠났으면 잠깐 반응을 보여 준 뒤 다음 손님을 자동으로 부른다.
+func _schedule_next() -> void:
+	if _auto_tw:
+		_auto_tw.kill()
+		_auto_tw = null
+	if g.phase != "open" or g.cur.is_empty() or not g.cur.get("gone", false) or g.cur.get("visitor", false):
+		return
+	var who: String = g.cur.get("name", "")
+	_auto_tw = create_tween()
+	_auto_tw.tween_interval(NEXT_DELAY)
+	_auto_tw.tween_callback(func():
+		if modal.visible or title != null:
+			return
+		if g.phase == "open" and g.cur.get("gone", false) and g.cur.get("name", "") == who:
+			_act(func(): g.next_customer()))
+
+
 # ================================================================ 연출
 ## 거래 성사 → 장부에 붉은 「成」 도장이 쿵. 돈이 바뀌면 위에 금액이 떠오른다.
 func _fx_for(a: Dictionary, b: Dictionary) -> void:
@@ -319,8 +356,8 @@ func _fx_for(a: Dictionary, b: Dictionary) -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		fx.add_child(l)
 		var tw := create_tween()
-		tw.tween_property(l, "position:y", 86.0, 0.9).set_trans(Tween.TRANS_SINE)
-		tw.parallel().tween_property(l, "modulate:a", 0.0, 0.9).set_delay(0.5)
+		tw.tween_property(l, "position:y", 86.0, 0.7).set_trans(Tween.TRANS_SINE)
+		tw.parallel().tween_property(l, "modulate:a", 0.0, 0.4).set_delay(0.35)
 		tw.tween_callback(l.queue_free)
 	if b["gone"] and not a["gone"] and b["name"] == a["name"]:
 		var ok: bool = b["mood"] == "happy"
@@ -347,8 +384,8 @@ func _fx_for(a: Dictionary, b: Dictionary) -> void:
 		var tw := create_tween()
 		tw.tween_property(st, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tw.parallel().tween_property(st, "modulate:a", 1.0, 0.1)
-		tw.tween_interval(0.9)
-		tw.tween_property(st, "modulate:a", 0.0, 0.4)
+		tw.tween_interval(0.5)
+		tw.tween_property(st, "modulate:a", 0.0, 0.25)
 		tw.tween_callback(st.queue_free)
 
 
@@ -370,7 +407,7 @@ func _tutorial() -> void:
 				msg = "계산대 위 물건을 누르면 다시 살펴볼 수 있어요. 견적보다 싸게 사서 비싸게 파는 게 장사!"
 			"haggle":
 				key = "haggle"
-				msg = "숫자를 좌우로 끌거나 눌러 값을 쓰고 「제안」 도장을 찍으세요. 향이 다 타면 손님이 화내고 떠납니다. 「최종 제안」은 한 번뿐!"
+				msg = "손님이 값을 불렀어요! 숫자를 끌어 내 값을 정하고 「제안」 도장을 쾅. 향이 다 타면 손님이 떠나요. 물건을 누르면 자세히 볼 수 있어요."
 	if key == "" or seen.has(key):
 		return
 	seen.append(key)
@@ -458,6 +495,7 @@ func _show_title() -> void:
 
 
 func _close_title() -> void:
+	_brisk()
 	if title:
 		var t0 := title
 		title = null
@@ -536,11 +574,11 @@ func _render_customer() -> void:
 		_last_cust = who
 		cust_tex.modulate.a = 0.0
 		var tin := create_tween()
-		tin.tween_property(cust_tex, "modulate:a", 1.0, 0.4)
+		tin.tween_property(cust_tex, "modulate:a", 1.0, 0.18)
 	elif c.get("gone", false):
 		var tout := create_tween()
-		tout.tween_interval(0.8)
-		tout.tween_property(cust_tex, "modulate:a", 0.35, 0.6)
+		tout.tween_interval(0.35)
+		tout.tween_property(cust_tex, "modulate:a", 0.0, 0.45)
 	else:
 		cust_tex.modulate.a = 1.0
 	bob_tween = create_tween().set_loops()
@@ -1254,6 +1292,7 @@ func close_modal() -> void:
 	for c in modal.get_children():
 		c.queue_free()
 	render()
+	_schedule_next()
 
 
 func sheet(bgc: Color, ink: Color, border := Color("#6b4126"), closable := true, wdt := 720.0) -> VBoxContainer:
