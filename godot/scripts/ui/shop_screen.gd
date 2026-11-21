@@ -237,7 +237,7 @@ func _act(cb: Callable) -> void:
 
 
 func _state_snap() -> Dictionary:
-	return {"name": g.cur.get("name", ""), "gone": g.cur.get("gone", false), "mood": g.cur.get("mood", ""), "money": g.money, "lv": g.lv, "rounds": g.neg.rounds if g.neg != null else 0}
+	return {"name": g.cur.get("name", ""), "gone": g.cur.get("gone", false), "visitor": g.cur.get("visitor", false), "mood": g.cur.get("mood", ""), "money": g.money, "lv": g.lv, "rounds": g.neg.rounds if g.neg != null else 0}
 
 
 func _play_for(a: Dictionary, b: Dictionary) -> void:
@@ -359,7 +359,7 @@ func _fx_for(a: Dictionary, b: Dictionary) -> void:
 		tw.tween_property(l, "position:y", 86.0, 0.7).set_trans(Tween.TRANS_SINE)
 		tw.parallel().tween_property(l, "modulate:a", 0.0, 0.4).set_delay(0.35)
 		tw.tween_callback(l.queue_free)
-	if b["gone"] and not a["gone"] and b["name"] == a["name"]:
+	if b["gone"] and not a["gone"] and b["name"] == a["name"] and not b.get("visitor", false):
 		var ok: bool = b["mood"] == "happy"
 		var st := Label.new()
 		st.text = "成" if ok else "破"
@@ -511,8 +511,10 @@ func _close_title() -> void:
 ## 손그림 캐릭터(assets/chars). 없으면 null → 코드 그림으로 대신한다.
 func _char_key(c: Dictionary) -> String:
 	if c.get("visitor", false):
-		var vk: String = c.get("vk", "")
-		return "yuna" if vk == "streamer" else "v_" + vk
+		var art: String = c.get("art", "")
+		if art == "" and D.events.has(c.get("vk", "")):
+			art = String(D.events[c["vk"]].get("art", ""))
+		return art if art != "" else "v_" + String(c.get("vk", ""))
 	var sk: String = c.get("sk", "")
 	if sk != "":
 		return "granny_junk" if sk == "granny" else sk
@@ -547,7 +549,7 @@ func _render_queue() -> void:
 
 func _render_customer() -> void:
 	var c := g.cur
-	if c.is_empty() or g.phase != "open":
+	if c.is_empty() or not (g.phase == "open" or g.phase == "visit"):
 		cust_tex.visible = false
 		if bob_tween:
 			bob_tween.kill()
@@ -795,7 +797,7 @@ func _refresh_price() -> void:
 func _tag_style() -> Array:
 	var c := g.cur
 	if c.get("visitor", false):
-		return ["손님 · " + c["name"], Color("#d9a441")]
+		return ["방문객 · " + c["name"], Color("#c98a5a")]
 	if c.get("pawn", false):
 		return ["전당 · " + c["name"], Color("#d9a441")]
 	if c.get("sk", "") != "":

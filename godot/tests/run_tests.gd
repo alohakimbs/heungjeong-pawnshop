@@ -39,6 +39,7 @@ func _init() -> void:
 	test_specials()
 	test_stats_and_collection()
 	test_all_events()
+	test_event_effects()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -251,7 +252,7 @@ func test_estimate_contains_value() -> void:
 		var v: float = g.val(it, true)
 		if v < e[0] - 10 or v > e[1] + 10:
 			ok = false
-	check(ok, "2000개 물건 모두 추정 범위 안 (반올림 오차 $10 허용)")
+	check(ok, "2000개 물건 모두 추정 범위 안 (반올림 오차 10냥 허용)")
 
 
 func test_save_roundtrip() -> void:
@@ -323,7 +324,7 @@ func test_sim_smart() -> void:
 	print("    30일 후 순자산(현금+재고 절반+가게 투자): ", worths, " · 가게 단계: ", shops)
 	check(errs.is_empty(), "규칙 위반 0건")
 	check(bankrupt == 0, "숙련 플레이는 파산하지 않음 (파산 %d)" % bankrupt)
-	check(worths[worths.size() / 2] > 5000, "숙련 플레이 중앙값 순자산이 시작 자금($5,000)보다 큼")
+	check(worths[worths.size() / 2] > 5000, "숙련 플레이 중앙값 순자산이 시작 자금(5,000냥)보다 큼")
 	check(moved >= 4, "숙련 플레이 절반 이상이 30일 안에 첫 가게 이전 (%d/8)" % moved)
 
 
@@ -336,6 +337,13 @@ func test_ui_smoke() -> void:
 		return
 	var g = main.g
 	check(g.phase == "morning" and main.dyn.get_child_count() > 10, "아침: 신문과 열기 팻말 표시")
+	g.event = "peddler"
+	main._act(func(): g.flip_open())
+	check(g.phase == "visit" and main.cust_tex.visible and main.cust_tex.texture != null, "방문객이 화면에 그려짐")
+	main._act(func(): g.visit_pick(1))
+	g.phase = "morning"
+	g.cur = {}
+	main.render()
 	g.event = ""
 	main._act(func(): g.flip_open())
 	check(g.phase == "open" and (g.cur.get("visitor", false) or g.cur["stage"] == "haggle" or g.cur["gone"]), "손님이 들어오자마자 값을 부름(경쾌한 진행)")
@@ -542,3 +550,72 @@ func test_all_events() -> void:
 				ok = false
 			n += 1
 	check(ok, "이벤트 %d종 · 선택지 %d개 모두 정상 진행" % [data.events.size(), n])
+
+
+func _visit(k: String, i: int, seed := 900, money := 5000):
+	var g = new_game(seed)
+	g.money = money
+	g.event = k
+	g.flip_open()
+	g.visit_pick(i)
+	return g
+
+
+func test_event_effects() -> void:
+	print("[불청객 이벤트: 효과]")
+	var g = _visit("insurance", 0)
+	check(g.money == 4700 and g.cur["mood"] == "happy", "자릿세 300냥 지불")
+	g = new_game(901)
+	g.money = 5000
+	g.staff.append("guard")
+	g.event = "insurance"
+	g.flip_open()
+	g.visit_pick(1)
+	check(g.money == 5000 and String(g.cur["msg"]).contains("문지기"), "문지기가 왈패를 막음")
+	g = _visit("tax", 0, 902, 20000)
+	check(g.money == 19000, "세금 5%% 추징 (%d)" % g.money)
+	g = new_game(903)
+	g.inv.clear()
+	g.event = "grandma"
+	g.flip_open()
+	g.visit_pick(0)
+	check(g.inv.size() == 1, "별할멈이 물건을 줌")
+	g = new_game(904)
+	g.money = 50000
+	g.inv.clear()
+	g.event = "peddler"
+	g.flip_open()
+	g.visit_pick(0)
+	check(g.inv.size() == 1 and g.money == 50000 - int(g.inv[0]["paid"]) and int(g.inv[0]["paid"]) > 0, "방물장수 보따리 구입")
+	g = new_game(905)
+	g.money = 50000
+	g.inv.clear()
+	var it = g.gen_item(0.0)
+	it["c"] = 1
+	g.inv.append(it)
+	g.event = "goblin"
+	g.flip_open()
+	g.visit_pick(0)
+	check(int(g.inv[0]["c"]) == 2 and g.money == 49850, "도깨비 땜장이가 상태를 한 단계 올림")
+	g = new_game(906)
+	g.inv.clear()
+	g.money = 50000
+	g.event = "goblin"
+	g.flip_open()
+	g.visit_pick(0)
+	check(g.money == 50000, "고칠 물건이 없으면 돈을 받지 않음")
+	g = new_game(907)
+	g.staff.append("analyst")
+	var r0: int = g.rep
+	g.event = "inspector"
+	g.flip_open()
+	g.visit_pick(0)
+	check(g.rep == r0 + 2, "시세꾼이 있으면 검사 통과 + 평판")
+	var bad: Array = []
+	for k in data.events:
+		var e: Dictionary = data.events[k]
+		if e.get("res", []).size() != e["opts"].size():
+			bad.append(k)
+		if JSON.stringify(e).contains("$"):
+			bad.append(k + "$")
+	check(bad.is_empty(), "모든 이벤트에 선택지별 결과가 있고 달러 표기 없음 %s" % str(bad))

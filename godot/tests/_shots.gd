@@ -48,5 +48,14 @@ func _process(_d):
 			main.close_modal()
 			main.show_menu()
 		80: shot("8_menu")
-		81: quit()
+		81:
+			main.close_modal()
+			g.phase = "morning"; g.cur = {}; g.auction_done = true; g.auction_day = g.day + 3
+			g.event = OS.get_environment("EV") if OS.get_environment("EV") != "" else "goblin"
+			for i in 2: g.inv.append(g.gen_item(0.0))
+			main._act(func(): g.flip_open())
+		90: shot("9_visitor")
+		91: main._act(func(): g.visit_pick(0))
+		100: shot("10_visitor_done")
+		101: quit()
 	return false

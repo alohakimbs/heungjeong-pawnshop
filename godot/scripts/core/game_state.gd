@@ -770,7 +770,7 @@ func flip_open() -> void:
 	if event != "":
 		var e: Dictionary = D.events[event]
 		var look = D.specials[e["look_special"]]["L"] if e.has("look_special") else e.get("look", {})
-		cur = {"visitor": true, "vk": event, "name": e["n"], "role": "불청객", "look": look, "msg": e["d"], "opts": e["opts"], "tr": [], "seen": [], "gone": false, "mood": "ok", "sk": ""}
+		cur = {"visitor": true, "vk": event, "name": e["n"], "role": "불청객", "look": look, "msg": e["d"], "opts": e["opts"], "tr": [], "seen": [], "gone": false, "mood": "ok", "sk": "", "art": String(e.get("art", ""))}
 		neg = null
 		event = ""
 		phase = "visit"
@@ -778,110 +778,82 @@ func flip_open() -> void:
 	open_shop()
 
 
+## 불청객 선택 결과. 결과는 events.json의 res[선택][갈래]에 데이터로 적는다.
+## 갈래 조건: staff(직원 있음), inv_full(창고 가득), p(확률). 조건이 맞는 첫 갈래를 쓴다.
+## 효과: money, money_pct, book, rep, bonus, xp, item, buy_item(값 비율), fake_p, fix_item.
 func visit_pick(i: int) -> void:
 	if phase != "visit" or cur.is_empty() or cur["gone"]:
 		return
+	var e: Dictionary = D.events.get(cur["vk"], {})
+	var res: Array = e.get("res", [])
+	var branches: Array = res[i] if i < res.size() else []
 	var md := "ok"
 	var txt := ""
-	match cur["vk"]:
-		"insurance":
-			if i == 0:
-				money -= 300
-				book("penalty", 300)
-				md = "happy"
-				txt = "현명한 선택이십니다. 내일 또 올게요~"
-			elif has_staff("guard"):
-				md = "angry"
-				txt = "(경비원 마동이 판매원을 정중하게 들어 올려 내보냈다)"
-			elif rng.randf() < 0.5:
-				money -= 900
-				book("penalty", 900)
-				md = "angry"
-				txt = "후회하실 텐데... (그날 오후 유리창이 깨졌다. 수리비 $900)"
-			else:
-				md = "meh"
-				txt = "쳇. 운 좋은 줄 아세요."
-		"grandma":
-			if inv.size() >= cap():
-				md = "meh"
-				txt = "창고가 꽉 찼다고? 아이고, 그럼 다음에."
-			else:
-				var it := gen_item(0.0)
-				inv.append(it)
-				collect(it)
-				md = "happy"
-				txt = "%s이여. 잘 써." % it["name"]
-		"tax":
-			var f := r10(money * 0.05)
-			money -= f
-			book("penalty", f)
-			txt = "추징금 %s 납부 확인했습니다. 수고하세요." % fmt(f)
-		"streamer":
-			if i == 0:
-				rep += 6
-				today["bonus"] += 2
-				md = "happy"
-				txt = "대박! 오늘 손님 몰려올 거예요! (평판 +6)"
-			else:
-				md = "meh"
-				txt = "힝... 다음에 또 올게요."
-		"blackout":
-			today["bonus"] -= 2
-			txt = "손님이 좀 줄 거예요. 수고하세요!"
-		"fortune":
-			if i == 0:
-				money -= 50
-				book("fees", 50)
-				md = "happy"
-				txt = "보이는구먼... 내일은 「%s」이(가) 뜬다네. 허허." % D.items["categories"][next_up]["n"]
-			else:
-				md = "meh"
-				txt = "기운을 놓치는구먼, 쯧쯧."
-		"rival":
-			if i == 0:
-				money -= 20
-				book("penalty", 20)
-				rep += 3
-				md = "happy"
-				txt = "커피 맛있네요. ...장사 잘되는 이유가 있었군. (평판 +3)"
-			else:
-				rep = maxi(0, rep - 1)
-				md = "angry"
-				txt = "쳇, 박하긴. (평판 -1)"
-		"puppy":
-			if i == 0:
-				rep += 4
-				md = "happy"
-				if rng.randf() < 0.5:
-					money += 200
-					book("prize", 200)
-					txt = "(주인이 달려와 고맙다며 사례금 $200을 건넸다. 평판 +4)"
-				else:
-					txt = "(주인이 고맙다며 동네에 소문을 내 주었다. 평판 +4)"
-			else:
-				md = "meh"
-				txt = "(강아지가 시무룩하게 돌아섰다)"
-		"blogger":
-			if i == 0:
-				var good := rng.randf() < 0.75
-				rep += 5 if good else -2
-				today["bonus"] += 1 if good else 0
-				md = "happy" if good else "meh"
-				txt = "리뷰 잘 쓸게요! (평판 +5, 오늘 손님 +1)" if good else "음... 조명이 좀 어둡네요. (평판 -2)"
-			else:
-				md = "meh"
-				txt = "아쉽네요. 다음에 올게요."
-		"rain":
-			if i == 0:
-				money -= 30
-				book("penalty", 30)
-				txt = "현명하시네. 오늘 손님은 좀 줄 거예요."
-			else:
-				txt = "젖어도 몰라요~"
-			today["bonus"] -= 1
+	for b in branches:
+		if b.has("staff") and not has_staff(b["staff"]):
+			continue
+		if b.get("inv_full", false) and inv.size() < cap():
+			continue
+		if b.has("p") and rng.randf() >= float(b["p"]):
+			continue
+		var r := _visit_apply(b)
+		if r.is_empty():
+			continue
+		md = r["md"]
+		txt = r["t"]
+		break
 	cur["mood"] = md
-	cur["msg"] = txt
+	cur["msg"] = txt if txt != "" else "..."
 	cur["gone"] = true
+
+
+## 갈래 하나의 효과를 적용한다. 적용할 수 없으면(돈·고칠 물건 부족) 빈 사전.
+func _visit_apply(b: Dictionary) -> Dictionary:
+	var f := 0
+	var item_name := ""
+	var cond := ""
+	if b.get("fix_item", false):
+		var cands := inv.filter(func(x): return int(x["c"]) < 4 and not x["restoring"] and not is_pawned(x))
+		if cands.is_empty() or money < -int(b.get("money", 0)):
+			return {}
+		var it: Dictionary = pick(cands)
+		it["c"] = int(it["c"]) + 1
+		item_name = it["name"]
+		cond = D.items["condition"][int(it["c"])]["n"]
+	if b.has("buy_item"):
+		var it := gen_item(float(b.get("fake_p", 0.0)))
+		f = r10(val(it, true) * float(b["buy_item"]))
+		if money < f:
+			return {"md": "meh", "t": "돈이 모자라시구려. 다음에 오지요."}
+		money -= f
+		book("bought", f)
+		it["paid"] = f
+		inv.append(it)
+		collect(it)
+		item_name = it["name"]
+	if b.get("item", false):
+		var it := gen_item(0.0)
+		inv.append(it)
+		collect(it)
+		item_name = it["name"]
+	if b.has("money"):
+		f = absi(int(b["money"]))
+		money += int(b["money"])
+		book(b.get("book", "penalty" if int(b["money"]) < 0 else "prize"), f)
+	if b.has("money_pct"):
+		f = r10(money * absf(float(b["money_pct"])))
+		money -= f
+		book(b.get("book", "penalty"), f)
+	if b.has("rep"):
+		rep = maxi(0, rep + int(b["rep"]))
+	if b.has("bonus"):
+		today["bonus"] = int(today.get("bonus", 0)) + int(b["bonus"])
+	if b.has("xp"):
+		gain_xp(float(b["xp"]))
+	var t: String = b.get("t", "")
+	t = t.replace("{f}", fmt(f)).replace("{item}", item_name).replace("{cond}", cond)
+	t = t.replace("{next}", D.items["categories"][next_up]["n"] if D.items["categories"].has(next_up) else "?")
+	return {"md": b.get("md", "ok"), "t": t}
 
 
 func open_shop() -> void:
@@ -991,7 +963,7 @@ func close_shop() -> void:
 		history.pop_front()
 
 
-## 파산선: 차고 -$3,000, 가게 단계마다 $2,000씩 더 버틴다
+## 파산선: 차고 -3,000냥, 가게 단계마다 2,000냥씩 더 버틴다
 func bankrupt_line() -> int:
 	return -3000 - 2000 * shop
 
