@@ -15,6 +15,7 @@ env:
 jobs:
   aab:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: write
     steps:
@@ -55,10 +56,13 @@ jobs:
       - name: 안드로이드 빌드 템플릿 설치 + AAB 내보내기
         run: |
           mkdir -p export
-          ./godot-bin --headless --path godot --import || true
-          ./godot-bin --headless --path godot --install-android-build-template || true
-          ls godot/android/build >/dev/null
-          ./godot-bin --headless --path godot --export-release "Android AAB" ../export/heungjeong.aab
+          timeout 300 ./godot-bin --headless --path godot --import || true
+          # 안드로이드 빌드 템플릿 설치 (에디터의 "Install Android Build Template"과 동일)
+          mkdir -p godot/android/build
+          unzip -q -o ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip -d godot/android/build
+          echo "${GODOT_VERSION}.stable" > godot/android/.build_version
+          touch godot/android/build/.gdignore
+          timeout 1500 ./godot-bin --headless --path godot --export-release "Android AAB" ../export/heungjeong.aab
           ls -la export
       - name: 릴리스(aab-latest)에 올리기
         env:
