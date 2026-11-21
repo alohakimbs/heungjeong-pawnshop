@@ -46,6 +46,7 @@ var draft := 0  # 계산기에 찍힌 금액
 var plan_buy := 0  # 오늘 남은 사러 올 손님
 var plan_sell := 0  # 오늘 남은 팔러(맡기러) 올 손님
 var later: Array = []  # 「나중에」로 미룬 손님: [{cur, neg}]
+var story_seen: Array = []  # 본 이야기 장면 id
 var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
 
 
@@ -519,6 +520,46 @@ func accept() -> void:
 		_deal_buy(neg.offer)
 	else:
 		_deal_sell(neg.ask)
+
+
+# ---------------------------------------------------------------- 이야기
+## 조건을 채운 다음 이야기 장면(아침에만). 없으면 "".
+func story_due() -> String:
+	if phase != "morning":
+		return ""
+	for b in D.story:
+		if story_seen.has(b["id"]):
+			continue
+		var w: Dictionary = b["when"]
+		if day >= int(w.get("day", 0)) and shop >= int(w.get("shop", 0)):
+			return b["id"]
+	return ""
+
+
+func story_beat(id: String) -> Dictionary:
+	for b in D.story:
+		if b["id"] == id:
+			return b
+	return {}
+
+
+## 장면을 봤다고 기록하고 보상을 준다. opt: 고른 선택지 번호(없으면 -1). 선택지의 결과 문장을 돌려준다.
+func story_done(id: String, opt := -1) -> String:
+	var b := story_beat(id)
+	if b.is_empty() or story_seen.has(id):
+		return ""
+	story_seen.append(id)
+	var rw: Dictionary = b.get("reward", {})
+	var out := ""
+	if opt >= 0 and b.has("opts"):
+		rw = b["opts"][opt][2]
+		out = b["opts"][opt][1]
+		stats["story_" + id] = opt
+	money += int(rw.get("money", 0))
+	rep += int(rw.get("rep", 0))
+	if b.get("ending", false):
+		stats["ending"] = opt
+	return out
 
 
 ## 오늘 남은 손님 수 (지금 손님 제외): [사러 올, 팔러 올]
@@ -1136,7 +1177,7 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "story_seen"]
 const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell"]
 
 

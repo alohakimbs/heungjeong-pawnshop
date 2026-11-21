@@ -12,6 +12,7 @@ var archetypes: Array = []
 var events: Dictionary = {}
 var lines: Dictionary = {}
 var tips: Array = []
+var story: Array = []
 
 
 func _init() -> void:
@@ -29,6 +30,7 @@ func reload() -> void:
 	events = load_json("res://data/events.json")
 	lines = load_json("res://data/lines.json")
 	tips = load_json("res://data/tips.json")
+	story = load_json("res://data/story.json")
 
 
 static func load_json(path: String) -> Variant:

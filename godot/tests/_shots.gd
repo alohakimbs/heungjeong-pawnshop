@@ -16,7 +16,7 @@ func _process(_d):
 	match step:
 		6: shot("0_title")
 		7:
-			g.stats["prologue"] = true
+			g.story_seen.append("letter")
 			main._close_title()
 		8:
 			g.auction_day = g.day
@@ -61,5 +61,10 @@ func _process(_d):
 		90: shot("9_visitor")
 		91: main._act(func(): g.visit_pick(0))
 		100: shot("10_visitor_done")
-		101: quit()
+		101:
+			main.close_modal()
+			g.phase = "morning"; g.cur = {}; g.day = 6
+			main.show_story("muk1", 2)
+		110: shot("11_story")
+		111: quit()
 	return false

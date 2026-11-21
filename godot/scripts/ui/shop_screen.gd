@@ -232,7 +232,8 @@ func _act(cb: Callable) -> void:
 	g.save_game()
 	render()
 	_fx_for(before, after)
-	_tutorial()
+	if not _maybe_story():
+		_tutorial()
 	_schedule_next()
 
 
@@ -502,9 +503,7 @@ func _close_title() -> void:
 		tw.tween_property(t0, "modulate:a", 0.0, 0.35)
 		tw.tween_callback(t0.queue_free)
 	render()
-	if not g.stats.get("prologue", false):
-		g.stats["prologue"] = true
-		show_prologue()
+	if _maybe_story():
 		return
 	_tutorial()
 	if g.phase == "night":
@@ -1384,17 +1383,60 @@ func _render_night() -> void:
 	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "마감", "패를 눌러 오늘 장부를 셈합니다", func(): show_receipt(), true)
 
 
-## 처음 시작할 때 한 번: 세계관 소개 (할아버지의 편지)
-func show_prologue() -> void:
-	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"))
-	t(v, "봉래(蓬萊) 성계", 26, font_k)
-	t(v, "옛 동방의 이야기에 나오는 신선의 섬 봉래. 아득한 옛날, 별을 읽던 학자와 바다를 건너던 장인과 산속 도사들이 하늘에서 떨어진 「성옥(星玉)」을 따라 모여들었고, 그들은 운해(雲海) 너머에 숨어 수천 년 동안 함께 하늘의 기술을 길렀다.", 16)
-	t(v, "봉래는 다섯 곳으로 이루어졌다. 비행선이 오가는 청룡항, 성옥을 캐는 백호곡, 예인과 장인의 주작궁, 학자와 의원의 현무원, 그리고 한가운데 황룡성. 삼백 년 전 운해가 열리자 은하의 온갖 족속이 몰려왔다. 월궁의 토끼족, 구미성운의 구미호족, 뿔 달린 광부들, 스스로 깨어난 기계족까지.", 16)
-	t(v, "— 할아버지의 편지", 18, font_k)
-	t(v, "\"얘야, 은하 어디서든 물건은 돌고 값은 흥정으로 정해진다. 남긴 것은 간판 하나와 별냥 5,000냥뿐이다. 운해 변두리 좌판에서 시작해 황룡성 대전당까지 가 보거라. 흥정왕이 되어라.\"", 16)
-	btn(v, "좌판을 펼친다", func():
-		close_modal()
-		_tutorial(), Color("#8a3020"))
+# ---------------------------------------------------------------- 이야기
+## 아침에 조건을 채운 이야기 장면이 있으면 띄운다.
+func _maybe_story() -> bool:
+	if modal.visible or title != null:
+		return false
+	var id := g.story_due()
+	if id == "":
+		return false
+	show_story(id, 0)
+	return true
+
+
+## 이야기 장면: 인물 그림 + 제목 + 쪽 넘김 + (마지막 쪽) 선택지
+func show_story(id: String, page: int) -> void:
+	var b := g.story_beat(id)
+	var pages: Array = b["pages"]
+	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"), false)
+	var who := String(b.get("who", ""))
+	var art := _char_tex(who if who != "granny" else "granny_junk", "ok")
+	if art == null and who == "mukhyang":
+		art = _char_tex("v_rival", "ok")
+	if art != null:
+		var pr := TextureRect.new()
+		pr.texture = art
+		pr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		pr.custom_minimum_size = Vector2(0, 230)
+		v.add_child(pr)
+	t(v, b["title"], 24, font_k)
+	t(v, pages[page], 17)
+	t(v, "%d / %d" % [page + 1, pages.size()], 12)
+	if page + 1 < pages.size():
+		btn(v, "다음", func(): show_story(id, page + 1))
+	elif b.has("opts"):
+		for i in b["opts"].size():
+			var o: Array = b["opts"][i]
+			btn(v, o[0], func():
+				var res := g.story_done(id, i)
+				g.save_game()
+				_story_result(b, res), Color("#8a3020"))
+	else:
+		btn(v, String(b.get("btn", "고개를 끄덕인다")), func():
+			g.story_done(id)
+			g.save_game()
+			close_modal(), Color("#8a3020"))
+
+
+func _story_result(b: Dictionary, res: String) -> void:
+	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"), false)
+	t(v, b["title"], 24, font_k)
+	t(v, res, 17)
+	if b.get("ending", false):
+		t(v, "— 흥정왕 전당포, 끝. 장사는 계속된다 —", 16, font_k)
+	btn(v, String(b.get("btn", "계속")), func(): close_modal(), Color("#8a3020"))
 
 
 ## 장부: 모든 메뉴를 한곳에
@@ -1414,6 +1456,8 @@ func close_modal() -> void:
 		c.queue_free()
 	render()
 	_schedule_next()
+	if title == null:
+		_maybe_story()
 
 
 func sheet(bgc: Color, ink: Color, border := Color("#6b4126"), closable := true, wdt := 720.0) -> VBoxContainer:

@@ -41,6 +41,7 @@ func _init() -> void:
 	test_all_events()
 	test_event_effects()
 	test_later()
+	test_story()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -327,6 +328,39 @@ func test_sim_smart() -> void:
 	check(bankrupt == 0, "숙련 플레이는 파산하지 않음 (파산 %d)" % bankrupt)
 	check(worths[worths.size() / 2] > 5000, "숙련 플레이 중앙값 순자산이 시작 자금(5,000냥)보다 큼")
 	check(moved >= 4, "숙련 플레이 절반 이상이 30일 안에 첫 가게 이전 (%d/8)" % moved)
+
+
+func test_story() -> void:
+	print("[이야기: 봉래 성계]")
+	var g := GameState.new(data)
+	check(data.story.size() >= 6, "이야기 장면 %d개" % data.story.size())
+	var ok := true
+	for b in data.story:
+		ok = ok and b["pages"].size() > 0 and b.has("title") and b.has("when")
+		for pg in b["pages"]:
+			for bad in ["조선", "한양", "임진", "대감", "진사"]:
+				ok = ok and not String(pg).contains(bad)
+	check(ok, "모든 장면에 제목·쪽·조건, 특정 국가 표현 없음")
+	check(g.story_due() == "letter", "첫날 아침: 할아버지의 편지")
+	g.story_done("letter")
+	check(g.story_due() == "", "본 장면은 다시 안 나옴")
+	g.day = 6
+	check(g.story_due() == "wang", "3일째 이후 왕 학사")
+	g.story_done("wang")
+	var m := g.money
+	g.story_done("muk1", 0)
+	check(g.story_seen.has("muk1") and g.stats.get("story_muk1", -1) == 0, "선택지 기록")
+	g.shop = 4
+	g.day = 40
+	var guard := 0
+	while g.story_due() != "finale" and guard < 10:
+		g.story_done(g.story_due(), 0)
+		guard += 1
+	check(g.story_due() == "finale", "대전당에서 운해 교역회(마지막 장)")
+	g.story_done("finale", 1)
+	check(g.stats.get("ending", -1) == 1 and g.story_due() == "", "결말 기록, 이후 자유 장사")
+	g.phase = "open"
+	check(g.story_due() == "", "이야기는 아침에만")
 
 
 func test_later() -> void:

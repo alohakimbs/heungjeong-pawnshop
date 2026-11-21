@@ -31,6 +31,7 @@
     - 0_화풍기준 1Nd0Y5pSFzlF9_lAkIQWoN93f_1H3dG5k · 1_손님 1NCO1RYdZMHGRisiJXhmdgVdYIgBnWo0U · 2_단골 1sAGMoSk15xpTPhlc5xy_WfTdTrxt0ym- · 3_직원 1cfsYqagD9Bz-12_aNP_5vTXLytRFS1dX · 4_불청객 1C7SkHO9BIBrSsBH9m4VQPBu5EwPtTZ-8
     - (2026-11-21 변경) 시트 방식: 손님·단골은 `키.png` 한 장에 2x2 표정(왼위 ok, 오른위 happy, 왼아래 angry, 오른아래 meh). 직원 `staff_1.png`(expert, restorer, profiler, analyst) `staff_2.png`(clerk, guard), 불청객 `visit_1.png`(insurance, grandma, tax, blackout) `visit_2.png`(fortune, rival, puppy, blogger) `visit_3.png`(rain) (선택: `visit_4.png` scholar, ricecake, peddler, goblin · `visit_5.png` errand, inspector, herbal — 오면 `v_키_ok.png`로 넣고 events.json의 `art` 키 삭제) — 2x2 칸 순서 왼위→오른위→왼아래→오른아래. 칸 단위로 잘라 쓴다. 단골 고물 할멈은 `granny_junk`(specials.json의 granny). 그림이 들어오면: 내려받기 → 배경 정리·크기 맞춤 → `godot/assets/chars/` → SvgArt 대신 텍스처 사용(없는 캐릭터는 코드 그림 유지) → 스크린샷 확인.
   - 계산대 소품 `props.png`(2x2: chest, books, cushion, seal) → `godot/assets/ui/` 적용 완료 (2026-11-22)
+  - 봉래_수정본: 1yT_4BHOxH1vuZVe16GMYptGWUI-g9wy0 — 기존 그림 전체를 봉래 세계관으로 고친 것(같은 파일 이름). 지시서 `docs/art/chatgpt_rework_bongnae.md`. 들어오면 캐릭터·물건·배경을 같은 방법으로 잘라 교체. `mukhyang.png`(이야기 맞수, 2x2 표정) → `mukhyang_표정.png`
   - 물건·배경_원본: 1KcArXXuKToAANwbzPHqJckFBBTcDMqNn (프롬프트 `docs/art/chatgpt_prompts_items_bg.md`). `items_<종류키>.png` 3x3(행 순서 = items.json 순서) → 잘라서 `godot/assets/items/<아이콘키>.png`; `bg_0~4.png`(2:3) → `godot/assets/bg/bg_N.png`. 코드는 파일이 있으면 자동 사용. import는 손실 압축(compress/mode=1, 0.85)으로 바꿀 것.
 - 03_빌드: 1DsEfCHNQDot8wRVm_UP80NnQ_Hgi7emI
 - 04_백업: 1RDWaCyc3hwj5GowVLpxpVm_FEId9goG2
@@ -48,6 +49,7 @@
 - [x] 물건 시트 10장 + 가게 배경 5장 업로드 → 적용 완료 (2026-11-21)
 - [ ] (선택) 새 방문객 7종 전용 그림: `visit_4.png`·`visit_5.png` 2x2 시트 — 설명은 `docs/art/chatgpt_prompts.md` 「추가 방문객 7종」. 안 올려도 손님 그림을 빌려 써서 동작함
 - [ ] 새 외계 종족 6종 그림(jelly, crystal, toad, cyclops, mushroom, turtle) — `docs/art/chatgpt_prompts_aliens.md`. 「1_손님」에 `키.png`(2x2 표정)로 올리면 `키_표정.png`로 잘라 넣는다 → 그 종족이 손님으로 등장
+- [ ] 기존 그림 전체 봉래 수정본(캐릭터 20장 + 묵향 1장 + 물건 10장 + 배경 5장) — `docs/art/chatgpt_rework_bongnae.md`
 - [ ] (M4) 수익 모델 결정: 유료 / 광고 / 인앱
 새로 생기면 여기에 추가하고 일일 보고에도 적는다.
 
