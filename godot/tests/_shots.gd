@@ -14,6 +14,8 @@ func _process(_d):
 	step += 1
 	var g = main.g
 	match step:
+		6: shot("0_title")
+		7: main._close_title()
 		8:
 			g.auction_day = g.day
 			main.render()

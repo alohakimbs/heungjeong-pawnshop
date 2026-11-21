@@ -41,6 +41,9 @@ var _cache := {}
 var _px := 2.0
 var sfx
 var _snap := {}  # 효과음 판단용 직전 상태
+var title: Control
+var _last_cust := ""
+var fx: Control  # 도장 자국·돈 글씨 같은 잠깐 연출
 
 
 func _ready() -> void:
@@ -58,8 +61,7 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 	render()
-	if g.phase == "night":
-		show_receipt()
+	_show_title()
 
 
 func _notification(what: int) -> void:
@@ -89,6 +91,10 @@ func _build() -> void:
 	dyn.size = Vector2(W, H)
 	dyn.mouse_filter = Control.MOUSE_FILTER_PASS
 	stage.add_child(dyn)
+	fx = Control.new()
+	fx.size = Vector2(W, H)
+	fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.add_child(fx)
 	modal = Control.new()
 	modal.set_anchors_preset(Control.PRESET_FULL_RECT)
 	modal.visible = false
@@ -97,7 +103,7 @@ func _build() -> void:
 	toast_lbl.add_theme_font_override("font", font_b)
 	toast_lbl.add_theme_font_size_override("font_size", 17)
 	toast_lbl.add_theme_color_override("font_color", INK)
-	toast_lbl.add_theme_stylebox_override("normal", _box(Color("#f6e7b8"), 3, Color("#6a3a22"), 4, 12))
+	toast_lbl.add_theme_stylebox_override("normal", _tex_box("hanji", Color("#f6e7c0"), 16))
 	toast_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	toast_lbl.visible = false
@@ -218,9 +224,12 @@ func hot(rect: Rect2, label: String, cb: Callable, enabled := true) -> Button:
 func _act(cb: Callable) -> void:
 	var before := _state_snap()
 	cb.call()
-	_play_for(before, _state_snap())
+	var after := _state_snap()
+	_play_for(before, after)
 	g.save_game()
 	render()
+	_fx_for(before, after)
+	_tutorial()
 
 
 func _state_snap() -> Dictionary:
@@ -293,6 +302,174 @@ func _look_of(c: Dictionary) -> Dictionary:
 	return SvgArt.customer_look2(c.get("arch", "seonbi"), c.get("tr", []), int(c.get("look_seed", 1)))
 
 
+# ================================================================ 연출
+## 거래 성사 → 장부에 붉은 「成」 도장이 쿵. 돈이 바뀌면 위에 금액이 떠오른다.
+func _fx_for(a: Dictionary, b: Dictionary) -> void:
+	var dm := int(b["money"]) - int(a["money"])
+	if dm != 0:
+		var l := Label.new()
+		l.text = ("+" if dm > 0 else "−") + GameState.fmt(absi(dm))
+		l.add_theme_font_override("font", font_k)
+		l.add_theme_font_size_override("font_size", 24)
+		l.add_theme_color_override("font_color", Color("#ffe08a") if dm > 0 else Color("#ff8a6a"))
+		l.add_theme_constant_override("outline_size", 5)
+		l.add_theme_color_override("font_outline_color", Color("#1a0c06"))
+		l.position = Vector2(360, 56)
+		l.size = Vector2(170, 30)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		fx.add_child(l)
+		var tw := create_tween()
+		tw.tween_property(l, "position:y", 86.0, 0.9).set_trans(Tween.TRANS_SINE)
+		tw.parallel().tween_property(l, "modulate:a", 0.0, 0.9).set_delay(0.5)
+		tw.tween_callback(l.queue_free)
+	if b["gone"] and not a["gone"] and b["name"] == a["name"]:
+		var ok: bool = b["mood"] == "happy"
+		var st := Label.new()
+		st.text = "成" if ok else "破"
+		st.add_theme_font_override("font", font_k)
+		st.add_theme_font_size_override("font_size", 84)
+		st.add_theme_color_override("font_color", Color(SEAL, 0.85) if ok else Color(0.15, 0.1, 0.08, 0.8))
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0, 0, 0, 0)
+		sb.set_border_width_all(6)
+		sb.border_color = Color(SEAL, 0.85) if ok else Color(0.15, 0.1, 0.08, 0.8)
+		sb.set_corner_radius_all(10)
+		sb.set_content_margin_all(4)
+		st.add_theme_stylebox_override("normal", sb)
+		st.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		st.size = Vector2(130, 130)
+		st.position = Vector2(W / 2 - 65, DESK_Y + 60)
+		st.pivot_offset = Vector2(65, 65)
+		st.rotation_degrees = -12
+		st.scale = Vector2(2.2, 2.2)
+		st.modulate.a = 0.0
+		fx.add_child(st)
+		var tw := create_tween()
+		tw.tween_property(st, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.parallel().tween_property(st, "modulate:a", 1.0, 0.1)
+		tw.tween_interval(0.9)
+		tw.tween_property(st, "modulate:a", 0.0, 0.4)
+		tw.tween_callback(st.queue_free)
+
+
+## 첫날 안내: 처음 한 번씩만 한지 쪽지로 알려 준다.
+func _tutorial() -> void:
+	var seen: Array = g.stats.get("tut", [])
+	var key := ""
+	var msg := ""
+	if g.phase == "morning":
+		key = "morning"
+		msg = "아침마다 「은하 일보」에서 오르고 내린 물건을 확인하세요. 준비가 되면 아래 영업패를 눌러 문을 엽니다."
+	elif g.phase == "open" and not g.cur.is_empty() and not g.cur.get("visitor", false):
+		match g.cur.get("stage", ""):
+			"intro":
+				key = "intro"
+				msg = "손님을 누르면 성향이 보입니다. 장부에 적힌 글씨를 눌러 대답하세요."
+			"look":
+				key = "look"
+				msg = "계산대 위 물건을 누르면 다시 살펴볼 수 있어요. 견적보다 싸게 사서 비싸게 파는 게 장사!"
+			"haggle":
+				key = "haggle"
+				msg = "숫자를 좌우로 끌거나 눌러 값을 쓰고 「제안」 도장을 찍으세요. 향이 다 타면 손님이 화내고 떠납니다. 「최종 제안」은 한 번뿐!"
+	if key == "" or seen.has(key):
+		return
+	seen.append(key)
+	g.stats["tut"] = seen
+	toast(msg)
+
+
+## 타이틀: 대전당 배경 + 이름 + 이어하기/새로 시작
+func _show_title() -> void:
+	title = Control.new()
+	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.z_index = 40
+	add_child(title)
+	var vs := get_viewport_rect().size
+	var bgc := ColorRect.new()
+	bgc.color = Color("#120c14")
+	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.add_child(bgc)
+	var art := TextureRect.new()
+	if ResourceLoader.exists("res://assets/bg/bg_4.png"):
+		art.texture = load("res://assets/bg/bg_4.png")
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.size = vs
+	art.modulate = Color(0.75, 0.72, 0.8)
+	title.add_child(art)
+	for k in [["fox_happy", Vector2(vs.x * 0.02, vs.y * 0.42), false], ["rabbit_happy", Vector2(vs.x * 0.56, vs.y * 0.44), true]]:
+		var cp := TextureRect.new()
+		cp.texture = _char_tex(String(k[0]).split("_")[0], "happy")
+		cp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		cp.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+		cp.size = Vector2(vs.x * 0.42, vs.y * 0.42)
+		cp.position = k[1]
+		cp.flip_h = k[2]
+		title.add_child(cp)
+	var shade := ColorRect.new()
+	shade.color = Color(0.05, 0.02, 0.04, 0.55)
+	shade.position = Vector2(0, vs.y * 0.08)
+	shade.size = Vector2(vs.x, 200)
+	title.add_child(shade)
+	var name_l := Label.new()
+	name_l.text = "흥정왕 전당포"
+	name_l.add_theme_font_override("font", font_k)
+	name_l.add_theme_font_size_override("font_size", 56)
+	name_l.add_theme_color_override("font_color", Color("#f6d27a"))
+	name_l.add_theme_constant_override("outline_size", 8)
+	name_l.add_theme_color_override("font_outline_color", Color("#2a1408"))
+	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_l.position = Vector2(0, vs.y * 0.08 + 36)
+	name_l.size = Vector2(vs.x, 80)
+	title.add_child(name_l)
+	var sub := Label.new()
+	sub.text = "궤도 위 한옥 전당포에서 은하 골동을 흥정하라"
+	sub.add_theme_font_override("font", font_b)
+	sub.add_theme_font_size_override("font_size", 17)
+	sub.add_theme_color_override("font_color", Color("#f1e6cb"))
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.position = Vector2(0, vs.y * 0.08 + 120)
+	sub.size = Vector2(vs.x, 30)
+	title.add_child(sub)
+	var paper := PanelContainer.new()
+	paper.add_theme_stylebox_override("panel", _tex_box("hanji", HANJI, 22))
+	paper.position = Vector2(vs.x * 0.15, vs.y * 0.74)
+	paper.custom_minimum_size = Vector2(vs.x * 0.7, 0)
+	title.add_child(paper)
+	var v := VBoxContainer.new()
+	v.set_meta("ink", INK)
+	v.add_theme_constant_override("separation", 6)
+	paper.add_child(v)
+	var fresh: bool = g.day <= 1 and g.phase == "morning" and int(g.stats.get("deals", 0)) == 0
+	btn(v, "처음 시작하기" if fresh else "이어하기  ·  %d일째" % g.day, func():
+		sfx.play("door")
+		_close_title())
+	if not fresh:
+		btn(v, "새로 시작하기", func():
+			g = GameState.new(D)
+			g.start_day()
+			g.save_game()
+			_close_title(), Color("#8a3020"))
+	btn(v, "효과음 끄기" if not sfx.muted else "효과음 켜기", func():
+		sfx.muted = not sfx.muted
+		g.stats["muted"] = sfx.muted
+		title.queue_free()
+		_show_title(), Color("#5a5a5a"))
+
+
+func _close_title() -> void:
+	if title:
+		var t0 := title
+		title = null
+		var tw := create_tween()
+		tw.tween_property(t0, "modulate:a", 0.0, 0.35)
+		tw.tween_callback(t0.queue_free)
+	render()
+	_tutorial()
+	if g.phase == "night":
+		show_receipt()
+
+
 ## 손그림 캐릭터(assets/chars). 없으면 null → 코드 그림으로 대신한다.
 func _char_key(c: Dictionary) -> String:
 	if c.get("visitor", false):
@@ -354,6 +531,18 @@ func _render_customer() -> void:
 	if bob_tween:
 		bob_tween.kill()
 	cust_tex.position = base
+	var who := "%s|%s" % [c.get("name", ""), c.get("vk", "")]
+	if who != _last_cust:
+		_last_cust = who
+		cust_tex.modulate.a = 0.0
+		var tin := create_tween()
+		tin.tween_property(cust_tex, "modulate:a", 1.0, 0.4)
+	elif c.get("gone", false):
+		var tout := create_tween()
+		tout.tween_interval(0.8)
+		tout.tween_property(cust_tex, "modulate:a", 0.35, 0.6)
+	else:
+		cust_tex.modulate.a = 1.0
 	bob_tween = create_tween().set_loops()
 	if md == "angry" and not c.get("gone", false):
 		bob_tween.tween_property(cust_tex, "position:x", base.x - 8, 0.06)
@@ -1180,22 +1369,44 @@ func t(v: Control, text: String, fs := 16, font: Font = null, color = null, alig
 
 
 func btn(parent: Control, text: String, cb: Callable, bg := Color("#6b4126"), fg := Color("#fbefd9"), enabled := true) -> Button:
+	# 종이 위 먹글씨(밝은 판) / 옻칠 위 금글씨(어두운 판). 상자 없이 밑줄만.
+	var ink: Color = parent.get_meta("ink") if parent.has_meta("ink") else INK
+	var dark_sheet := ink.get_luminance() > 0.5
+	var col: Color
+	if dark_sheet:
+		col = Color("#f0c870") if bg.get_luminance() < 0.6 else bg
+	else:
+		col = bg.darkened(0.15) if bg.get_luminance() < 0.55 and bg.get_luminance() > 0.08 else INK
+		if bg.get_luminance() >= 0.55:
+			col = Color("#7a5a1a")
 	var b := Button.new()
 	b.text = text
 	b.disabled = not enabled
-	b.custom_minimum_size = Vector2(0, 46)
+	b.custom_minimum_size = Vector2(0, 44)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.focus_mode = Control.FOCUS_NONE
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.add_theme_font_override("font", font_k)
 	b.add_theme_font_size_override("font_size", 17)
-	for st in ["font_color", "font_pressed_color", "font_hover_color"]:
-		b.add_theme_color_override(st, fg)
-	b.add_theme_color_override("font_disabled_color", fg.darkened(0.4))
-	var wood := _plank_box(bg)
-	b.add_theme_stylebox_override("normal", wood)
-	b.add_theme_stylebox_override("hover", _plank_box(bg, Color(1.08, 1.08, 1.08)))
-	b.add_theme_stylebox_override("pressed", _plank_box(bg, Color(0.75, 0.75, 0.75)))
-	b.add_theme_stylebox_override("disabled", _plank_box(bg, Color(0.55, 0.55, 0.55)))
+	for st in ["font_color", "font_hover_color"]:
+		b.add_theme_color_override(st, col)
+	b.add_theme_color_override("font_pressed_color", SEAL if not dark_sheet else Color.WHITE)
+	b.add_theme_color_override("font_disabled_color", Color(col, 0.35))
+	var under := StyleBoxFlat.new()
+	under.bg_color = Color(0, 0, 0, 0)
+	under.border_width_bottom = 2
+	under.border_color = Color(col, 0.55)
+	under.set_content_margin_all(6)
+	var wash := under.duplicate()
+	wash.bg_color = Color(col, 0.12)
+	wash.set_corner_radius_all(10)
+	var off := under.duplicate()
+	off.border_color = Color(col, 0.15)
+	b.add_theme_stylebox_override("normal", under)
+	b.add_theme_stylebox_override("hover", wash)
+	b.add_theme_stylebox_override("pressed", wash)
+	b.add_theme_stylebox_override("disabled", off)
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.pressed.connect(func():
 		cb.call()
 		g.save_game()
