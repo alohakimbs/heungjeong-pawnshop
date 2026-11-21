@@ -29,6 +29,8 @@ jobs:
     name: 안드로이드 테스트 APK
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -74,3 +76,14 @@ jobs:
           name: heungjeong-debug-apk
           path: export/heungjeong-debug.apk
           retention-days: 30
+      - name: 테스트 빌드 릴리스에 올리기 (main 브랜치만)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(grep -oP 'version/name="\K[^"]+' godot/export_presets.cfg)
+          cp export/heungjeong-debug.apk "export/heungjeong-test.apk"
+          gh release view test-latest >/dev/null 2>&1 || gh release create test-latest --prerelease --title "테스트 빌드 (최신)" --notes "main 브랜치에 푸시될 때마다 자동으로 갱신되는 디버그 APK입니다."
+          gh release upload test-latest "export/heungjeong-test.apk" --clobber
+          gh release edit test-latest --notes "버전 ${VER} · 커밋 ${GITHUB_SHA::7} · $(date -u +%Y-%m-%dT%H:%MZ)
+          휴대폰 브라우저에서 heungjeong-test.apk를 내려받아 설치하세요 (출처를 알 수 없는 앱 설치 허용 필요)."
