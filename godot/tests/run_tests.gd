@@ -38,6 +38,7 @@ func _init() -> void:
 	test_pawn()
 	test_specials()
 	test_stats_and_collection()
+	test_all_events()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -83,8 +84,8 @@ func test_data_files() -> void:
 	var n_items := 0
 	for k in cats:
 		n_items += cats[k]["items"].size()
-	check(cats.size() == 8, "카테고리 8개")
-	check(n_items >= 40, "물건 40종 이상 (%d)" % n_items)
+	check(cats.size() >= 12, "카테고리 12개 이상 (%d)" % cats.size())
+	check(n_items >= 120, "물건 120종 이상 (%d)" % n_items)
 	check(gd.shops.size() == 5, "가게 5단계")
 	check(gd.specials.size() == 8, "단골 8명")
 	check(gd.traits.get("traits", {}).size() == 12, "성향 12종")
@@ -485,3 +486,25 @@ func test_stats_and_collection() -> void:
 	for t in data.items["categories"][cat]["items"]:
 		h.collect({"cat": cat, "name": t[0], "r": 1})
 	check(h.col_done.has(cat) and h.money > m0 and h.collection.size() == data.items["categories"][cat]["items"].size(), "한 종류 완성 시 상금 지급")
+
+
+func test_all_events() -> void:
+	print("[불청객 이벤트: 모든 선택지]")
+	var ok := true
+	var n := 0
+	for k in data.events:
+		for i in data.events[k]["opts"].size():
+			var g = new_game(600 + n)
+			g.money = 20000
+			g.event = k
+			g.flip_open()
+			if g.phase != "visit" or g.cur["vk"] != k:
+				ok = false
+			g.visit_pick(i)
+			if not g.cur["gone"] or String(g.cur["msg"]) == "":
+				ok = false
+			g.open_shop()
+			if g.phase != "open":
+				ok = false
+			n += 1
+	check(ok, "이벤트 %d종 · 선택지 %d개 모두 정상 진행" % [data.events.size(), n])

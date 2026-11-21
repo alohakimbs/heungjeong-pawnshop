@@ -828,6 +828,62 @@ func visit_pick(i: int) -> void:
 		"blackout":
 			today["bonus"] -= 2
 			txt = "손님이 좀 줄 거예요. 수고하세요!"
+		"lottery":
+			if i == 0:
+				money -= 50
+				book("penalty", 50)
+				if rng.randf() < 0.08:
+					money += 1500
+					book("prize", 1500)
+					md = "shock"
+					txt = "어어? 당첨이에요! $1,500! 제 자리 덕분인 거 아시죠?"
+				else:
+					md = "meh"
+					txt = "꽝이네... 내일은 진짜 나와요!"
+			else:
+				txt = "1등 놓치시는 거예요~"
+		"rival":
+			if i == 0:
+				money -= 20
+				book("penalty", 20)
+				rep += 3
+				md = "happy"
+				txt = "커피 맛있네요. ...장사 잘되는 이유가 있었군. (평판 +3)"
+			else:
+				rep = maxi(0, rep - 1)
+				md = "angry"
+				txt = "쳇, 박하긴. (평판 -1)"
+		"puppy":
+			if i == 0:
+				rep += 4
+				md = "happy"
+				if rng.randf() < 0.5:
+					money += 200
+					book("prize", 200)
+					txt = "(주인이 달려와 고맙다며 사례금 $200을 건넸다. 평판 +4)"
+				else:
+					txt = "(주인이 고맙다며 동네에 소문을 내 주었다. 평판 +4)"
+			else:
+				md = "meh"
+				txt = "(강아지가 시무룩하게 돌아섰다)"
+		"blogger":
+			if i == 0:
+				var good := rng.randf() < 0.75
+				rep += 5 if good else -2
+				today["bonus"] += 1 if good else 0
+				md = "happy" if good else "meh"
+				txt = "리뷰 잘 쓸게요! (평판 +5, 오늘 손님 +1)" if good else "음... 조명이 좀 어둡네요. (평판 -2)"
+			else:
+				md = "meh"
+				txt = "아쉽네요. 다음에 올게요."
+		"rain":
+			if i == 0:
+				money -= 30
+				book("penalty", 30)
+				txt = "현명하시네. 오늘 손님은 좀 줄 거예요."
+			else:
+				txt = "젖어도 몰라요~"
+			today["bonus"] -= 1
 	cur["mood"] = md
 	cur["msg"] = txt
 	cur["gone"] = true

@@ -1,11 +1,166 @@
 {
- "insurance": {"n": "보험왕 강", "d": "사장님, 가게 보험 하나 드시죠. 하루 $300이면 유리창이... 안 깨지거든요.", "opts": ["$300 낸다", "거절한다"],
-   "look": {"head": "square", "hair": 7, "outfit": "suit", "oc": "#2a2a2a", "oc2": "#c9a227", "glasses": 2, "acc": ["chain", "goldtooth"]}},
- "grandma": {"n": "옆집 할머니", "d": "창고 정리하다 나온 건데, 자네가 쓰게.", "opts": ["감사히 받는다"],
-   "look": {"hair": 5, "hc": "#d9d4cc", "outfit": "hanbok", "oc": "#5b7fb8", "oc2": "#f0d24a", "acc": ["wrinkles", "blush"], "nose": "round"}},
- "tax": {"n": "세무서 김 주무관", "d": "장부 좀 보겠습니다.", "opts": ["협조한다"], "min_money": 15000,
-   "look": {"head": "long", "hair": 6, "outfit": "suit", "oc": "#4a4a52", "oc2": "#3d6e8f", "glasses": 4}},
- "streamer": {"n": "하이텐션 유나", "d": "구독자 여러분~ 오늘은 이 전당포에서 촬영해도 돼요?", "opts": ["촬영 허락", "거절"], "look_special": "yuna"},
- "blackout": {"n": "전기공 오씨", "d": "동네 전체가 정전이에요. 오늘은 촛불 켜고 하셔야겠네.", "opts": ["촛불 영업"],
-   "look": {"hair": 9, "outfit": "tee", "oc": "#d08a2c", "hat": "cap", "fh": 3, "bw": 1.15}}
+ "insurance": {
+  "n": "보험왕 강",
+  "d": "사장님, 가게 보험 하나 드시죠. 하루 $300이면 유리창이... 안 깨지거든요.",
+  "opts": [
+   "$300 낸다",
+   "거절한다"
+  ],
+  "look": {
+   "head": "square",
+   "hair": 7,
+   "outfit": "suit",
+   "oc": "#2a2a2a",
+   "oc2": "#c9a227",
+   "glasses": 2,
+   "acc": [
+    "chain",
+    "goldtooth"
+   ]
+  }
+ },
+ "grandma": {
+  "n": "옆집 할머니",
+  "d": "창고 정리하다 나온 건데, 자네가 쓰게.",
+  "opts": [
+   "감사히 받는다"
+  ],
+  "look": {
+   "hair": 5,
+   "hc": "#d9d4cc",
+   "outfit": "hanbok",
+   "oc": "#5b7fb8",
+   "oc2": "#f0d24a",
+   "acc": [
+    "wrinkles",
+    "blush"
+   ],
+   "nose": "round"
+  }
+ },
+ "tax": {
+  "n": "세무서 김 주무관",
+  "d": "장부 좀 보겠습니다.",
+  "opts": [
+   "협조한다"
+  ],
+  "min_money": 15000,
+  "look": {
+   "head": "long",
+   "hair": 6,
+   "outfit": "suit",
+   "oc": "#4a4a52",
+   "oc2": "#3d6e8f",
+   "glasses": 4
+  }
+ },
+ "streamer": {
+  "n": "하이텐션 유나",
+  "d": "구독자 여러분~ 오늘은 이 전당포에서 촬영해도 돼요?",
+  "opts": [
+   "촬영 허락",
+   "거절"
+  ],
+  "look_special": "yuna"
+ },
+ "blackout": {
+  "n": "전기공 오씨",
+  "d": "동네 전체가 정전이에요. 오늘은 촛불 켜고 하셔야겠네.",
+  "opts": [
+   "촛불 영업"
+  ],
+  "look": {
+   "hair": 9,
+   "outfit": "tee",
+   "oc": "#d08a2c",
+   "hat": "cap",
+   "fh": 3,
+   "bw": 1.15
+  }
+ },
+ "lottery": {
+  "n": "복권 아저씨",
+  "d": "사장님, 오늘 1등 나올 자리 복권! 한 장에 $50이요.",
+  "opts": [
+   "한 장 산다",
+   "됐어요"
+  ],
+  "look": {
+   "head": "round",
+   "hair": 2,
+   "outfit": "cardigan",
+   "oc": "#6a7a4a",
+   "fh": 1,
+   "bw": 1.2
+  }
+ },
+ "rival": {
+  "n": "건너편 가게 사장",
+  "d": "구경 좀 할게요. ...음, 여기 가격표가 어떻게 되나?",
+  "opts": [
+   "커피 한 잔 대접한다 ($20)",
+   "나가 달라고 한다"
+  ],
+  "look": {
+   "head": "long",
+   "hair": 7,
+   "outfit": "suit",
+   "oc": "#5a2a2a",
+   "oc2": "#d9a441",
+   "glasses": 4,
+   "acc": [
+    "chain"
+   ]
+  }
+ },
+ "puppy": {
+  "n": "길 잃은 강아지",
+  "d": "(문 앞에 목줄 달린 강아지가 꼬리를 흔들고 있다. 목줄에 전화번호가 적혀 있다)",
+  "opts": [
+   "주인에게 연락한다",
+   "모른 척한다"
+  ],
+  "look": {
+   "hair": 9,
+   "hc": "#c9a06a",
+   "outfit": "tee",
+   "oc": "#c9a06a",
+   "acc": [
+    "blush"
+   ],
+   "eyes": "big"
+  }
+ },
+ "blogger": {
+  "n": "맛집 아닌 가게 블로거",
+  "d": "안녕하세요, 동네 가게 리뷰 쓰는 블로거예요. 사진 좀 찍어도 될까요?",
+  "opts": [
+   "활짝 웃으며 허락",
+   "사진은 곤란해요"
+  ],
+  "look": {
+   "head": "oval",
+   "hair": 6,
+   "hc": "#a0522d",
+   "outfit": "cardigan",
+   "oc": "#e8c0d0",
+   "oc2": "#ffffff",
+   "glasses": 4
+  }
+ },
+ "rain": {
+  "n": "우산 장수",
+  "d": "오늘 장마 시작이래요. 손님 좀 줄겠네. 우산 하나 사실래요? $30.",
+  "opts": [
+   "산다 ($30)",
+   "괜찮아요"
+  ],
+  "look": {
+   "hair": 0,
+   "outfit": "coat",
+   "oc": "#3a5a7a",
+   "hat": "cap",
+   "fh": 3
+  }
+ }
 }
