@@ -43,6 +43,9 @@ var history: Array = []  # 날마다의 정산 기록 (통계용)
 var collection: Dictionary = {}  # 도감: "종류/이름" → 가져 본 최고 희귀도
 var col_done: Array = []  # 완성한 종류(카테고리)
 var draft := 0  # 계산기에 찍힌 금액
+var plan_buy := 0  # 오늘 남은 사러 올 손님
+var plan_sell := 0  # 오늘 남은 팔러(맡기러) 올 손님
+var later: Array = []  # 「나중에」로 미룬 손님: [{cur, neg}]
 var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
 
 
@@ -252,7 +255,9 @@ func _gen_identity() -> Dictionary:
 		if tr.has(k) or _conflicts(k, tr):
 			continue
 		tr.append(k)
-	var ar: Dictionary = pick(D.archetypes)
+	# 그림이 아직 없는 종족(needs_art)은 그림 파일이 들어올 때까지 나오지 않는다
+	var pool: Array = D.archetypes.filter(func(a): return not a.get("needs_art", false) or ResourceLoader.exists("res://assets/chars/%s_ok.png" % a["id"]))
+	var ar: Dictionary = pick(pool)
 	return {"name": pick(D.text["surnames"]) + pick(D.text["given_names"]), "role": ar["n"], "tic": ar["tic"], "arch": ar["id"], "look_seed": rng.randi(), "sk": "", "tr": tr}
 
 
@@ -274,11 +279,18 @@ func gen_customer() -> Dictionary:
 	var spd: Dictionary = D.specials[spk] if spk != "" else {}
 	var sell_only: bool = tr.has("scammer") or tr.has("desperate")
 	# 창고가 찰수록 사러 오는 손님이 늘어난다 (빈 창고 35% → 꽉 찬 창고 75%)
-	var buy_p := 0.35 + 0.4 * float(inv.size()) / cap()
+	var tot := plan_buy + plan_sell
+	var buy_p := float(plan_buy) / tot if tot > 0 else 0.35 + 0.4 * float(inv.size()) / cap()
 	var buy: bool = (not sell_only) and avail.size() > 0 and rng.randf() < buy_p
 	var c := ident.duplicate(true)
 	c["stage"] = "intro"
 	c["tr"] = tr
+	if buy:
+		plan_buy = maxi(0, plan_buy - 1)
+	elif plan_sell > 0:
+		plan_sell -= 1
+	else:
+		plan_buy = maxi(0, plan_buy - 1)
 	c["buy"] = buy
 	var shown := tr.size() if (has_staff("profiler") or skills["psych"] >= 3) else (1 if skills["psych"] >= 1 else 0)
 	c["seen"] = tr.slice(0, shown)
@@ -507,6 +519,30 @@ func accept() -> void:
 		_deal_buy(neg.offer)
 	else:
 		_deal_sell(neg.ask)
+
+
+## 오늘 남은 손님 수 (지금 손님 제외): [사러 올, 팔러 올]
+func remaining() -> Array:
+	var b := plan_buy
+	var s2 := plan_sell
+	for l in later:
+		if l["cur"].get("buy", false):
+			b += 1
+		else:
+			s2 += 1
+	return [b, s2]
+
+
+## 「나중에」: 손님을 줄 맨 뒤로 보낸다(손님당 한 번). 마감 전에 다시 온다.
+func defer() -> void:
+	if not is_haggling() or cur.get("deferred", false) or cur.get("stage", "") != "intro":
+		return
+	cur["deferred"] = true
+	later.append({"cur": cur.duplicate(true), "neg": neg.to_dict()})
+	cur["gone"] = true
+	cur["mood"] = "ok"
+	cur["msg"] = line("later")
+	cur["res"] = "나중에 다시 옴"
 
 
 func refuse() -> void:
@@ -859,6 +895,9 @@ func _visit_apply(b: Dictionary) -> Dictionary:
 func open_shop() -> void:
 	phase = "open"
 	queue = maxi(2, int(shop_info()["cust"]) + (2 if has_staff("clerk") else 0) + rep / 25 + int(today.get("bonus", 0)))
+	plan_buy = int(round(queue * rnd(0.35, 0.5)))
+	plan_sell = queue - plan_buy
+	later = []
 	next_customer()
 
 
@@ -866,6 +905,14 @@ func next_customer() -> void:
 	if phase != "open":
 		return
 	if queue <= 0:
+		if later.size() > 0:
+			var l: Dictionary = later.pop_front()
+			cur = l["cur"]
+			neg = Negotiation.new(rng)
+			neg.from_dict(l["neg"])
+			cur["msg"] = line("back_buy" if cur["buy"] else "back_sell") + " " + String(cur.get("price_msg", ""))
+			cur["stage"] = "intro"
+			return
 		close_shop()
 		return
 	queue -= 1
@@ -1089,8 +1136,8 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done"]
-const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later"]
+const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell"]
 
 
 func to_dict() -> Dictionary:

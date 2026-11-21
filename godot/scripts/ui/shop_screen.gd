@@ -313,13 +313,12 @@ func _look_of(c: Dictionary) -> Dictionary:
 func _brisk() -> void:
 	if g.phase != "open" or g.cur.is_empty() or g.cur.get("visitor", false) or g.cur.get("gone", false):
 		return
-	if g.cur.get("stage", "") == "intro":
-		var greet: String = g.cur.get("msg", "")
-		g.look_item()
-		g.start_haggle()
-		# 인사말 + 부른 값을 한 말풍선에
-		if greet != "" and not String(g.cur["msg"]).begins_with(greet):
-			g.cur["msg"] = greet + " " + String(g.cur["msg"])
+	if g.cur.get("stage", "") == "intro" and not g.cur.get("offered", false):
+		# 원작처럼: 들어오자마자 물건을 내밀고 값을 부른다 → 거래할지·필요 없는지·나중에인지 고른다
+		g.cur["offered"] = true
+		var pm: String = g.cur.get("price_msg", "")
+		if pm != "" and not String(g.cur["msg"]).contains(pm):
+			g.cur["msg"] = String(g.cur["msg"]) + " " + pm
 
 
 ## 손님이 떠났으면 잠깐 반응을 보여 준 뒤 다음 손님을 자동으로 부른다.
@@ -401,7 +400,7 @@ func _tutorial() -> void:
 		match g.cur.get("stage", ""):
 			"intro":
 				key = "intro"
-				msg = "손님을 누르면 성향이 보입니다. 장부에 적힌 글씨를 눌러 대답하세요."
+				msg = "손님이 물건과 값을 내밀었어요. 「거래합시다 · 필요 없소 · 나중에 오시오」 중에 고르세요. 손님을 누르면 성향이 보여요."
 			"look":
 				key = "look"
 				msg = "계산대 위 물건을 누르면 다시 살펴볼 수 있어요. 견적보다 싸게 사서 비싸게 파는 게 장사!"
@@ -460,7 +459,7 @@ func _show_title() -> void:
 	name_l.size = Vector2(vs.x, 80)
 	title.add_child(name_l)
 	var sub := Label.new()
-	sub.text = "궤도 위 한옥 전당포에서 은하 골동을 흥정하라"
+	sub.text = "우주조선 상인, 은하의 외계 손님과 흥정하다"
 	sub.add_theme_font_override("font", font_b)
 	sub.add_theme_font_size_override("font_size", 17)
 	sub.add_theme_color_override("font_color", Color("#f1e6cb"))
@@ -503,6 +502,10 @@ func _close_title() -> void:
 		tw.tween_property(t0, "modulate:a", 0.0, 0.35)
 		tw.tween_callback(t0.queue_free)
 	render()
+	if not g.stats.get("prologue", false):
+		g.stats["prologue"] = true
+		show_prologue()
+		return
 	_tutorial()
 	if g.phase == "night":
 		show_receipt()
@@ -532,20 +535,9 @@ func _char_tex(base: String, mood: String) -> Texture2D:
 
 
 func _render_queue() -> void:
-	var waiting: Array = g.upcoming if g.phase == "open" else []
-	var spots := [Vector2(452, 392), Vector2(8, 392)]
-	for i in 2:
-		var t: TextureRect = queue_tex[i]
-		if i < waiting.size():
-			var art := _char_tex(_char_key(waiting[i]), "ok")
-			t.texture = art if art != null else _raster("q%d" % i, SvgArt.draw_char(_look_of(waiting[i]), "ok", true), SvgArt.STAND_VB)
-			t.position = spots[i]
-			t.size = Vector2(78, 168)
-			t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			t.modulate = Color(0.5, 0.48, 0.62, 0.7)
-			t.visible = true
-		else:
-			t.visible = false
+	# 줄 선 손님 그림은 쓰지 않는다(위쪽에 남은 손님 수로 표시)
+	for t in queue_tex:
+		t.visible = false
 
 
 func _render_customer() -> void:
@@ -684,7 +676,7 @@ func _front_svg() -> String:
 	# 계산대 상판
 	s += '<rect x="-4" y="%s" width="548" height="22" rx="3" fill="url(#ct)" stroke="#1a0c06" stroke-width="3"/>' % n.call(y0 - 12)
 	s += '<path d="M4,%s H536" stroke="#f0c890" stroke-width="2" opacity="0.55"/>' % n.call(y0 - 8)
-	if ResourceLoader.exists("res://assets/ui/props.png"):
+	if ResourceLoader.exists("res://assets/ui/chest.png"):
 		pass  # 손그림 궤짝·장부·방석은 _render_counter에서 그림 위에 얹는다
 	else:
 		s += _props_svg(it, y0)
@@ -741,7 +733,11 @@ func _render_hud() -> void:
 	# 대들보 위: [장부] · 날짜/가게 · 돈
 	pic(_raster("beam", _beam_svg(), [0, 0, W, 66]), Vector2.ZERO, Vector2(W, 66))
 	lbl("%d일째" % g.day, Vector2(14, 4), Vector2(200, 28), 21, HANJI, font_k)
-	lbl(g.shop_info()["n"], Vector2(14, 30), Vector2(220, 20), 13, GOLD, font_b)
+	if g.phase == "open":
+		var r: Array = g.remaining()
+		lbl("남은 손님 · 사러 %d · 팔러 %d" % [r[0], r[1]], Vector2(14, 32), Vector2(300, 18), 13, Color(0.95, 0.86, 0.66, 0.8), font_b)
+	else:
+		lbl(g.shop_info()["n"], Vector2(14, 30), Vector2(220, 20), 13, GOLD, font_b)
 	pic(_icon("coins"), Vector2(352, 10), Vector2(40, 40))
 	lbl(GameState.fmt(g.money), Vector2(392, 10), Vector2(140, 40), 21, Color("#ff8a6a") if g.money < 0 else Color("#ffe2a0"), font_k, HORIZONTAL_ALIGNMENT_RIGHT)
 
@@ -790,9 +786,15 @@ func _obj_tag(pos: Vector2, text: String, fg: Color) -> void:
 func _render_counter() -> void:
 	var it := g.cur_item()
 	var full := g.inv.size() >= g.cap()
-	_obj_tag(Vector2(30, COUNTER_Y - 104), "창고 %d/%d" % [g.inv.size(), g.cap()], Color("#9a2a1a") if full else INK)
+	if ResourceLoader.exists("res://assets/ui/chest.png"):
+		pic(load("res://assets/ui/chest.png"), Vector2(12, COUNTER_Y - 92), Vector2(144, 89))
+		pic(load("res://assets/ui/books.png"), Vector2(404, COUNTER_Y - 98), Vector2(124, 97))
+		if not it.is_empty() and g.phase == "open":
+			var cu := pic(load("res://assets/ui/cushion.png"), Vector2(165, COUNTER_Y - 62), Vector2(210, 103))
+			cu.modulate = Color(str(D.items["rarity"][int(it["r"])]["c"])).lerp(Color.WHITE, 0.45)
+	_obj_tag(Vector2(30, COUNTER_Y - 118), "창고 %d/%d" % [g.inv.size(), g.cap()], Color("#9a2a1a") if full else INK)
+	_obj_tag(Vector2(424, COUNTER_Y - 122), "장부" + (" ●" if g.sp > 0 else ""), SEAL if g.sp > 0 else INK)
 	hot(Rect2(14, COUNTER_Y - 110, 140, 130), "창고 열기", func(): show_inv())
-	_obj_tag(Vector2(424, COUNTER_Y - 84), "장부" + (" ●" if g.sp > 0 else ""), SEAL if g.sp > 0 else INK)
 	hot(Rect2(396, COUNTER_Y - 110, 140, 130), "장부 열기", func(): show_menu())
 	if not it.is_empty() and g.phase == "open":
 		pic(_icon(it["e"]), Vector2(195, COUNTER_Y - 152), Vector2(150, 150))
@@ -876,10 +878,14 @@ func _render_dialog() -> void:
 		_render_haggle_desk()
 	else:
 		_page()
-		var y := DESK_Y + 40.0
-		for o in _choices():
-			_ink_line(Rect2(44, y, 452, 52), o[0], o[1], o.size() > 2 and o[2], 21)
-			y += 60.0
+		var ch := _choices()
+		if c.get("stage", "") == "intro" and not c["gone"] and not c.get("visitor", false):
+			_offer_page(ch)
+		else:
+			var y := DESK_Y + 40.0
+			for o in ch:
+				_ink_line(Rect2(44, y, 452, 52), o[0], o[1], o.size() > 2 and o[2], 21)
+				y += 60.0
 
 
 ## [표시 문구, 동작, 특수 선택지 여부]
@@ -896,9 +902,12 @@ func _choices() -> Array:
 		return [["다음 손님", func(): g.next_customer()]]
 	match c.get("stage", "intro"):
 		"intro":
-			return [["한번 봅시다", func():
+			var o: Array = [["거래합시다", func():
 				g.look_item()
-				show_inspect(g.cur_item())], ["관심 없소", func(): g.refuse()]]
+				g.start_haggle()], ["필요 없소", func(): g.refuse()]]
+			if not c.get("deferred", false):
+				o.append(["나중에 오시오", func(): g.defer()])
+			return o
 		"look":
 			return [["흥정해 봅시다!", func(): g.start_haggle()], ["관심 없소", func(): g.refuse()]]
 		_:
@@ -1124,6 +1133,26 @@ func _ink_mark(rect: Rect2, plus: bool, cb: Callable) -> void:
 	hot(rect, "올리기" if plus else "내리기", cb)
 
 
+## 손님이 값을 부른 직후: 장부에 물건·값을 적고 「거래합시다 / 필요 없소 / 나중에」
+func _offer_page(ch: Array) -> void:
+	var it := g.cur_item()
+	var y0 := DESK_Y + 14.0
+	if not it.is_empty():
+		var rar: Dictionary = D.items["rarity"][int(it["r"])]
+		var e := g.est(it)
+		lbl(it["name"], Vector2(46, y0 + 12), Vector2(300, 30), 21, INK, font_k)
+		lbl("%s · %s · 견적 %s~%s" % [rar["n"], D.items["condition"][int(it["c"])]["n"], GameState.fmt(e[0]), GameState.fmt(e[1])], Vector2(46, y0 + 44), Vector2(450, 22), 14, Color("#1f5a56"), font_b)
+		var who := "빌려 달라는 돈" if g.cur.get("pawn", false) else ("사겠다는 값" if g.cur.get("buy", false) else "팔겠다는 값")
+		lbl(who, Vector2(300, y0 + 12), Vector2(196, 20), 13, Color("#7a6a5a"), font_b, HORIZONTAL_ALIGNMENT_RIGHT)
+		lbl(GameState.fmt(g.their_price()), Vector2(280, y0 + 30), Vector2(216, 34), 26, SEAL, font_k, HORIZONTAL_ALIGNMENT_RIGHT)
+		lbl("물건을 누르면 자세히 볼 수 있소", Vector2(46, y0 + 72), Vector2(450, 18), 12, Color("#8a7a6a"), font_b)
+	var n := ch.size()
+	var bw := 452.0 / n
+	for i in n:
+		var o: Array = ch[i]
+		_ink_line(Rect2(44 + i * bw, y0 + 110, bw, 70), o[0], o[1], false, 23 if i == 0 else 20, true)
+
+
 ## 책상 위 펼친 한지 장부 (버튼 판이 아니라 종이 한 장)
 func _page() -> void:
 	var r := Rect2(20, DESK_Y + 12, 500, H - DESK_Y - (128 if g.is_haggling() and g.cur.get("stage", "") == "haggle" else 36))
@@ -1184,6 +1213,17 @@ func _ink_line(rect: Rect2, text: String, cb: Callable, special := false, fs := 
 
 ## 책상 위에 세워 둔 도장 (손잡이 + 인면). 누르면 쿵 찍힌다.
 func _seal_obj(rect: Rect2, text: String, c: Color, cb: Callable) -> void:
+	if ResourceLoader.exists("res://assets/ui/seal.png"):
+		var sh := 118.0
+		var sw := sh * 250.0 / 449.0
+		var sk := pic(load("res://assets/ui/seal.png"), Vector2(rect.get_center().x - sw / 2, rect.position.y - 14), Vector2(sw, sh))
+		var sb := _skinned_button(Rect2(rect.position.x, rect.position.y + sh - 58, rect.size.x, 40), text, cb, sk, font_k, 22, Color("#fff0d8"))
+		sb.add_theme_constant_override("outline_size", 7)
+		sb.add_theme_color_override("font_outline_color", Color("#4a160c"))
+		var up := hot(Rect2(rect.position.x + 20, rect.position.y - 14, rect.size.x - 40, sh - 58), text, cb)
+		up.button_down.connect(func(): sb.button_down.emit())
+		up.button_up.connect(func(): sb.button_up.emit())
+		return
 	var w := rect.size.x
 	var h := rect.size.y
 	var col := "#" + c.to_html(false)
@@ -1342,6 +1382,19 @@ func _render_newspaper() -> void:
 func _render_night() -> void:
 	lbl("오늘 장사는 여기까지", Vector2(40, 300), Vector2(460, 60), 30, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
 	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "마감", "패를 눌러 오늘 장부를 셈합니다", func(): show_receipt(), true)
+
+
+## 처음 시작할 때 한 번: 세계관 소개 (할아버지의 편지)
+func show_prologue() -> void:
+	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"))
+	t(v, "우주조선(宇宙朝鮮)", 26, font_k)
+	t(v, "임진년, 함경도 산골에 별 하나가 떨어졌다. 관상감 천문관들은 그 돌 「천강석(天降石)」이 기(氣)를 담아 키운다는 것을 알아냈고, 조정은 운무결계로 나라를 감춘 채 몇백 년 동안 홀로 하늘의 기술을 길렀다.", 16)
+	t(v, "바깥 세상이 조선을 잊었을 때, 우리는 단청 빛 비거를 띄우고 궤도 위에 천도(天都) 한양을 세웠다. 그리고 결계를 열자 은하의 온갖 족속이 몰려왔다. 옥토성의 달토끼족, 구미성운의 구미호족, 뿔별의 도깨비족, 자격루에서 깨어난 기계족까지.", 16)
+	t(v, "— 할아버지의 편지", 18, font_k)
+	t(v, "\"얘야, 은하 어디서든 물건은 돌고 값은 흥정으로 정해진다. 남긴 것은 간판 하나와 별냥 5,000냥뿐이다. 개똥별 교역로 좌판에서 시작해 천도 한양 대전당까지 가 보거라. 흥정왕이 되어라.\"", 16)
+	btn(v, "좌판을 펼친다", func():
+		close_modal()
+		_tutorial(), Color("#8a3020"))
 
 
 ## 장부: 모든 메뉴를 한곳에

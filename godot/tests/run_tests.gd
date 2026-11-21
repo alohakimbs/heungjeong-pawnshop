@@ -40,6 +40,7 @@ func _init() -> void:
 	test_stats_and_collection()
 	test_all_events()
 	test_event_effects()
+	test_later()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -328,6 +329,35 @@ func test_sim_smart() -> void:
 	check(moved >= 4, "숙련 플레이 절반 이상이 30일 안에 첫 가게 이전 (%d/8)" % moved)
 
 
+func test_later() -> void:
+	print("[나중에: 손님을 줄 뒤로]")
+	var g := GameState.new(data)
+	g.start_day()
+	g.event = ""
+	g.flip_open()
+	if g.cur.get("visitor", false):
+		g.visit_pick(0)
+		g.open_shop()
+	var nm: String = g.cur["name"]
+	var price: int = g.their_price()
+	var before: Array = g.remaining()
+	g.defer()
+	check(g.cur["gone"] and g.later.size() == 1, "나중에 → 손님이 줄 뒤로")
+	var after: Array = g.remaining()
+	check(after[0] + after[1] == before[0] + before[1] + 1, "남은 손님 수에 미룬 손님 포함")
+	g.next_customer()
+	var guard := 0
+	while g.phase == "open" and not g.cur.get("deferred", false) and guard < 60:
+		guard += 1
+		if not g.cur.get("gone", false):
+			g.refuse()
+		g.next_customer()
+	check(g.cur.get("name", "") == nm and g.cur["stage"] == "intro" and not g.cur["gone"] and g.later.is_empty(), "마감 전에 같은 손님이 다시 옴")
+	check(g.their_price() == price, "다시 와도 같은 값")
+	g.defer()
+	check(not g.cur["gone"], "나중에는 한 번만")
+
+
 func test_ui_smoke() -> void:
 	print("[화면: 세로 메인 장면·흐름·오버레이]")
 	var main = _main
@@ -346,12 +376,18 @@ func test_ui_smoke() -> void:
 	main.render()
 	g.event = ""
 	main._act(func(): g.flip_open())
-	check(g.phase == "open" and (g.cur.get("visitor", false) or g.cur["stage"] == "haggle" or g.cur["gone"]), "손님이 들어오자마자 값을 부름(경쾌한 진행)")
 	if g.cur.get("visitor", false) or g.cur["gone"]:
 		g.cur = {}
 		g.queue += 1
 		g.next_customer()
 		main._act(func(): pass)
+	check(g.phase == "open" and g.cur["stage"] == "intro" and String(g.cur["msg"]).contains("냥"), "손님이 들어오자마자 물건과 값을 내밂")
+	var labels: Array = main._choices().map(func(o): return o[0])
+	check(labels == ["거래합시다", "필요 없소", "나중에 오시오"], "거래합시다 / 필요 없소 / 나중에 선택지 %s" % str(labels))
+	var r0: Array = g.remaining()
+	check(r0[0] + r0[1] == g.queue, "남은 손님(사러+팔러) = 줄 길이")
+	main._choices()[0][1].call()
+	main.render()
 	check(String(g.cur["msg"]).contains("냥"), "첫 말풍선에 부른 값이 있음")
 	main.show_inspect(g.cur_item())
 	check(main.modal.visible, "계산대 물건 누르면 살펴보기 창")
@@ -392,7 +428,7 @@ func test_ui_smoke() -> void:
 				missing.append(it[1])
 	check(missing.is_empty(), "모든 물건에 그림 아이콘이 있음 %s" % str(missing))
 	var no_art: Array = []
-	for a in main.D.archetypes:
+	for a in main.D.archetypes.filter(func(x): return not x.get("needs_art", false)):
 		for md in ["ok", "happy", "angry", "meh"]:
 			if main._char_tex(a["id"], md) == null or not ResourceLoader.exists("res://assets/chars/%s_%s.png" % [a["id"], md]):
 				no_art.append("%s_%s" % [a["id"], md])

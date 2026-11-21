@@ -15,7 +15,9 @@ func _process(_d):
 	var g = main.g
 	match step:
 		6: shot("0_title")
-		7: main._close_title()
+		7:
+			g.stats["prologue"] = true
+			main._close_title()
 		8:
 			g.auction_day = g.day
 			main.render()
@@ -29,6 +31,8 @@ func _process(_d):
 		30: shot("3_inspect")
 		31:
 			main.close_modal()
+			main._choices()[0][1].call()
+			main.render()
 		40: shot("4_haggle")
 		41:
 			g.draft = int(g.their_price() * 0.5)
