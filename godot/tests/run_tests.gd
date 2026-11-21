@@ -36,6 +36,7 @@ func _init() -> void:
 	test_flow_and_queue()
 	test_debt_liquidation()
 	test_pawn()
+	test_specials()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -434,3 +435,25 @@ func test_pawn() -> void:
 		check(repay > loan, "상환액이 대출금보다 큼 (%s → %s)" % [g.fmt(loan), g.fmt(repay)]) if s == 0 else null
 	check(blocked, "담보 물건은 기한 전 도매 처분 불가")
 	check(redeemed > 0 and forfeited > 0, "상환 %d건 · 몰수 %d건 모두 발생" % [redeemed, forfeited])
+
+
+func test_specials() -> void:
+	print("[특수 선택지: 스킬·직원·평판 조건]")
+	var g = new_game(31)
+	g.event = ""
+	g.flip_open()
+	g.start_haggle()
+	check(g.special_options().is_empty(), "조건 미달이면 특수 선택지 없음")
+	g.skills["charm"] = 3
+	g.skills["psych"] = 2
+	g.rep = 40
+	g.staff.append("expert")
+	var ids: Array = g.special_options().map(func(o): return o[0])
+	check(ids.has("persuade") and ids.has("read") and ids.has("fame"), "화술·심리·평판 선택지 등장 %s" % str(ids))
+	g.use_special("read")
+	check(g.cur.has("read") and not g.special_options().map(func(o): return o[0]).has("read"), "속마음 읽기는 한 번만, 칠판에 범위 표시")
+	var lim: int = g.neg.max_price if g.cur["buy"] else g.neg.min_price
+	check(g.cur["read"][0] <= lim and lim <= g.cur["read"][1], "읽은 범위 안에 실제 한계선이 있음")
+	var before: int = g.their_price()
+	g.use_special("persuade")
+	check(g.cur["gone"] or (g.their_price() != before or String(g.cur["msg"]).contains("말로")), "설득 결과가 가격이나 대사에 반영")

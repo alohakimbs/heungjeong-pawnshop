@@ -407,6 +407,63 @@ func start_haggle() -> void:
 	cur["msg"] = cur.get("price_msg", "")
 
 
+## 스킬·직원·평판 조건부 특수 선택지 (손님 한 명당 각각 한 번). [id, 표시 문구]
+func special_options() -> Array:
+	var out: Array = []
+	if not is_haggling() or cur.get("stage", "") != "haggle":
+		return out
+	var used: Array = cur.get("used", [])
+	if skills["charm"] >= 2 and not used.has("persuade"):
+		out.append(["persuade", "[화술 %d] 조금만 더 맞춰 주세요, 단골 될게요." % skills["charm"]])
+	if skills["psych"] >= 2 and not used.has("read"):
+		out.append(["read", "[심리 %d] (표정을 읽는다)" % skills["psych"]])
+	if rep >= 30 and not used.has("fame"):
+		out.append(["fame", "[평판 %d] 우리 가게 소문 들으셨죠?" % rep])
+	var it := cur_item()
+	if has_staff("expert") and not it.is_empty() and not it["known"] and not used.has("expert"):
+		out.append(["expert", "[감정사] 영감님, 이것 좀 봐 주세요."])
+	return out
+
+
+func use_special(id: String) -> void:
+	if not is_haggling():
+		return
+	var used: Array = cur.get("used", [])
+	if used.has(id):
+		return
+	used.append(id)
+	cur["used"] = used
+	match id:
+		"persuade":
+			var p: float = 0.6 + 0.1 * skills["charm"]
+			if rng.randf() < p:
+				if cur["buy"]:
+					neg.offer = mini(neg.max_price, r10(neg.offer + (neg.max_price - neg.offer) * 0.35))
+					cur["msg"] = "하하, 말씀 잘하시네. 그럼 %s까지 낼게요." % fmt(neg.offer)
+				else:
+					neg.ask = maxi(neg.min_price, r10(neg.ask - (neg.ask - neg.min_price) * 0.35))
+					cur["msg"] = "단골이라... 좋아요, %s까지 해 드리죠." % fmt(neg.ask)
+				neg.patience -= 5
+			else:
+				neg.patience -= 15
+				cur["msg"] = "말로 넘어갈 생각 마세요."
+		"read":
+			var floor_v: int = neg.max_price if cur["buy"] else neg.min_price
+			var lo := r10(floor_v * rnd(0.88, 0.97))
+			var hi := r10(floor_v * rnd(1.03, 1.12))
+			cur["read"] = [lo, hi]
+			cur["msg"] = "(눈빛을 보니 %s 사이에서 결정할 것 같다)" % ("%s~%s" % [fmt(lo), fmt(hi)])
+		"fame":
+			neg.patience = minf(neg.max_patience, neg.patience + 30)
+			cur["msg"] = "아, 그 유명한 가게! 천천히 이야기해 봐요."
+		"expert":
+			var it := cur_item()
+			it["known"] = true
+			cur["msg"] = "(감정사가 돋보기를 들이댄다) %s" % ("...가짜군." if it["fake"] else "진품이야. 견적은 %s 정도." % fmt(val(it, false)))
+	if neg.patience <= 0:
+		_leave(line("gave_up"), true)
+
+
 func accept() -> void:
 	if not is_haggling():
 		return

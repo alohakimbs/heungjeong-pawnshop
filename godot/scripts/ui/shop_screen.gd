@@ -435,10 +435,12 @@ func _render_dialog() -> void:
 	tl.add_theme_color_override("font_color", INK)
 	tag.add_child(tl)
 	dyn.add_child(tag)
-	var y := 200.0
-	for o in _choices():
+	var y := 196.0
+	var opts := _choices()
+	var step := 46.0 if opts.size() <= 4 else 38.0
+	for o in opts:
 		_choice(Vector2(40, y), o[0], o[1], o.size() > 2 and o[2])
-		y += 48
+		y += step
 
 
 ## [표시 문구, 동작, 특수 선택지 여부]
@@ -465,6 +467,9 @@ func _choices() -> Array:
 			var it := g.cur_item()
 			if not c["buy"] and not it.is_empty() and (it["suspect"] or (it["known"] and it["fake"])) and not c["accused"]:
 				out.append(["[감정] 이거 가짜 같은데요?", func(): g.accuse(), true])
+			for sp in g.special_options():
+				var sid: String = sp[0]
+				out.append([sp[1], func(): g.use_special(sid), true])
 			out.append(["관심 없어요.", func(): g.refuse()])
 			return out
 
@@ -473,7 +478,7 @@ func _choice(pos: Vector2, text: String, cb: Callable, special := false) -> void
 	var b := Button.new()
 	b.text = text
 	b.position = pos
-	b.size = Vector2(380, 40)
+	b.size = Vector2(380, 36)
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_override("font", font_b)
 	b.add_theme_font_size_override("font_size", 16)
@@ -506,6 +511,8 @@ func _render_chalkboard() -> void:
 	var rows := [["희귀도", rar["n"], Color(rar["c"]).lightened(0.3)], ["상태", D.items["condition"][int(it["c"])]["n"], Color("#f0a090") if int(it["c"]) <= 1 else Color("#a0e0a0")], ["종류", D.items["categories"][it["cat"]]["n"], chalk], ["견적액", GameState.fmt(g.val(it, false)) if it["known"] else "%s~%s" % [GameState.fmt(e[0]), GameState.fmt(e[1])], chalk]]
 	if int(it["paid"]) > 0:
 		rows.append(["지불액", GameState.fmt(it["paid"]), chalk])
+	if g.cur.has("read"):
+		rows.append(["속마음", "%s~%s" % [GameState.fmt(g.cur["read"][0]), GameState.fmt(g.cur["read"][1])], Color("#9ac4ff")])
 	if g.cur.get("pawn", false):
 		rows.append(["맡기는 기간", "%d일 · 상환액은 대출금의 %d%%" % [g.cur["days"], int(round((1.1 + 0.03 * g.cur["days"]) * 100))], Color("#ffd77a")])
 	for r in rows:
