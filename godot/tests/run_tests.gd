@@ -432,7 +432,7 @@ func test_ui_smoke() -> void:
 	for c in main.dyn.get_children():
 		if c is Button and not c.is_queued_for_deletion():
 			labels2.append(c.text)
-	check(labels2.has("제안") and labels2.has("필요 없소") and not labels2.has("최종 제안"), "흥정: 제안 도장 하나 + 필요 없소 + 수락 (최종 제안 버튼 없음)")
+	check(labels2.any(func(x): return String(x).ends_with("제안하기")) and labels2.has("거래 거절") and not labels2.has("최종 제안"), "흥정 패널: 제안하기 + 거래 거절 + 수락 (최종 제안 버튼 없음) %s" % str(labels2))
 	var before: int = g.neg.rounds
 	g.draft = int(g.their_price() * 0.7)
 	g.propose(g.draft)

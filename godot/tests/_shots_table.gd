@@ -12,6 +12,7 @@ func _process(_d):
 	step += 1
 	var g = main.g
 	match step:
+		3: shot("title")
 		5:
 			g.story_seen.append("letter")
 			g.stats["tut"] = ["morning", "intro", "look", "haggle"]
