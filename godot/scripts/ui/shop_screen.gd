@@ -1374,8 +1374,7 @@ func _board(rect: Rect2, text: String, cb: Callable, fs := 40, raw := false) -> 
 func _render_morning() -> void:
 	_render_newspaper()
 	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "閉 · 닫힘", "패를 뒤집어 문을 엽니다", func(): g.flip_open())
-	var went := not g.can_trip()
-	_jbtn(Rect2(120, DESK_Y + 300, 300, 50), "오늘 나들이는 다녀왔소" if went else "운경 나들이 · 부상열차", func(): show_map(), "dark" if went else "jade", 18)
+	_jbtn(Rect2(100, DESK_Y + 300, 340, 52), "가게 준비 · 운경 둘러보기", func(): show_map(), "jade", 19)
 
 
 ## 아침 방문(榜文): 「은하 일보」. 시세·경매·구인·팁을 붙인 종이 쪽지.
@@ -1487,7 +1486,7 @@ func show_map(result := "") -> void:
 	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	modal.add_child(bgc)
 	var hd := Label.new()
-	hd.text = "운경 나들이   ·   견문록 %d/%d" % [g.journal.size(), D.trips.size()]
+	hd.text = "가게 준비   ·   %s   ·   견문록 %d/%d" % [GameState.fmt(g.money), g.journal.size(), D.trips.size()]
 	hd.position = Vector2(16, 12)
 	hd.size = Vector2(vs.x - 32, 30)
 	hd.add_theme_font_override("font", font_k)
@@ -1512,7 +1511,7 @@ func _map_list(vs: Vector2) -> void:
 	v.add_theme_constant_override("separation", 12)
 	sc.add_child(v)
 	var sub := Label.new()
-	sub.text = "부상열차를 타고 하루 한 번, 운경 밖 한 곳에 다녀올 수 있소." if g.can_trip() else "오늘은 이미 다녀왔소. 구경만 할 수 있소."
+	sub.text = "문 열기 전에 운경 곳곳을 돌며 가게를 준비하시오."
 	sub.add_theme_font_override("font", font_b)
 	sub.add_theme_font_size_override("font_size", 14)
 	sub.add_theme_color_override("font_color", CREAM)
@@ -1558,7 +1557,7 @@ func _map_list(vs: Vector2) -> void:
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(nm)
 		var sb2 := Label.new()
-		sb2.text = "%s · 운임 %s" % [tp["sub"], GameState.fmt(int(tp["fare"]))]
+		sb2.text = tp["sub"]
 		sb2.add_theme_font_override("font", font_b)
 		sb2.add_theme_font_size_override("font_size", 13)
 		sb2.add_theme_color_override("font_color", Color("#9fd8c6"))
@@ -1639,34 +1638,121 @@ func _map_scene(vs: Vector2, result: String) -> void:
 	v.add_theme_constant_override("separation", 6)
 	sc.add_child(v)
 	t(v, "%s  ·  %s" % [tp["n"], tp["sub"]], 21, font_k)
+	var lore := g.visit(_map_sel)
+	if lore != "":
+		g.save_game()
+		t(v, "[견문록에 새로 적음] " + lore, 13, null, Color("#9fd8c6"))
 	if result != "":
-		t(v, result, 15)
-		if not g.trip_offer.is_empty():
-			var it: Dictionary = g.trip_offer["item"]
-			var e := g.est(it)
-			t(v, "%s · %s · 감정가 %s~%s" % [D.items["rarity"][int(it["r"])]["n"], D.items["condition"][int(it["c"])]["n"], GameState.fmt(e[0]), GameState.fmt(e[1])], 14)
-			btn(v, "%s에 산다" % GameState.fmt(int(g.trip_offer["price"])), func():
-				if g.trip_buy():
-					show_map("창고에 넣었다."), Color("#9a2e22"))
-			btn(v, "지나친다", func():
-				g.trip_offer = {}
-				show_map("구경만 하고 돌아섰다."))
-	else:
-		t(v, tp["d"], 15)
-		if g.can_trip():
-			btn(v, "부상열차 타고 가기 · 운임 %s" % GameState.fmt(int(tp["fare"])), func():
-				var r := g.trip(_map_sel)
-				g.save_game()
-				render()
-				show_map(r if r != "" else "운임이 모자라 다음에 가기로 했다."), Color("#9a2e22"), Color.WHITE, g.money >= int(tp["fare"]))
-		else:
-			t(v, "오늘은 이미 다녀왔소. 내일 아침에 다시.", 14)
+		t(v, result, 15, null, Color("#f3d68a"))
+	t(v, tp["d"], 14)
+	_place_actions(v, _map_sel)
 	btn(v, "다른 곳 보기", func():
 		_map_sel = ""
 		show_map())
 	btn(v, "가게로 돌아가기", func():
 		_map_sel = ""
 		close_modal())
+
+
+## 장소별로 할 수 있는 가게 준비
+func _place_actions(v: VBoxContainer, id: String) -> void:
+	var again := func(msg := ""): show_map(msg)
+	var morning := g.phase == "morning"
+	if not morning:
+		t(v, "가게 준비는 문 열기 전 아침에만 할 수 있소.", 14, null, Color("#e8a080"))
+		return
+	match id:
+		"unkyeong":
+			t(v, "— 가게 이전 —", 16, font_k, Color("#f3d68a"))
+			var cs := g.shop_info()
+			t(v, "지금: %s · 창고 %d칸 · 손님 %d명" % [cs["n"], g.cap(), int(cs["cust"])], 14)
+			if g.shop + 1 < D.shops.size():
+				var nx: Dictionary = D.shops[g.shop + 1]
+				btn(v, "%s(으)로 이전 계약 · %s" % [nx["n"], GameState.fmt(int(nx["cost"]))], func():
+					if g.move_shop():
+						render()
+						again.call("이전 계약을 마쳤다! 새 가게에서 문을 연다."), Color("#9a2e22"), Color.WHITE, g.can_move())
+			else:
+				t(v, "이미 운경 대전당이오. 더 갈 곳이 없소.", 14)
+			t(v, "— 인력 중개소 (일꾼 %d/%d) —" % [g.staff.size(), g.staff_slots()], 16, font_k, Color("#f3d68a"))
+			for k in D.staff:
+				var sd: Dictionary = D.staff[k]
+				if g.has_staff(k):
+					btn(v, "%s %s · 내보내기" % [sd["n"], sd["pn"]], func():
+						g.fire(k)
+						again.call("%s을(를) 내보냈다." % sd["pn"]))
+				else:
+					btn(v, "%s %s 고용 · 일급 %s" % [sd["n"], sd["pn"], GameState.fmt(int(sd["w"]))], func():
+						if g.hire(k):
+							again.call("%s %s" % [sd["pn"], sd["q"]]), Color("#16221f"), Color.WHITE, g.staff.size() < g.staff_slots())
+		"market", "port":
+			var lst := g.stall(id)
+			t(v, "— 오늘의 매물 (창고 %d/%d) —" % [g.inv.size(), g.cap()], 16, font_k, Color("#f3d68a"))
+			if lst.is_empty():
+				t(v, "다 팔렸소. 내일 다시 오시오.", 14)
+			for i in lst.size():
+				var o: Dictionary = lst[i]
+				var it: Dictionary = o["item"]
+				var e := g.est(it)
+				btn(v, "%s · %s·%s · 감정가 %s~%s  →  %s" % [it["name"], D.items["rarity"][int(it["r"])]["n"], D.items["condition"][int(it["c"])]["n"], GameState.fmt(e[0]), GameState.fmt(e[1]), GameState.fmt(int(o["price"]))], func():
+					if g.stall_buy(id, i):
+						render()
+						again.call("「%s」을(를) 샀다. 창고에 넣었다." % it["name"])
+					else:
+						again.call(""), Color("#16221f"), Color.WHITE, g.money >= int(o["price"]) and g.inv.size() < g.cap())
+			if id == "port":
+				if g.is_auction_today() and not g.auction_done:
+					btn(v, "성간 경매장에 들어간다 (참가비 %s)" % GameState.fmt(g.auction_fee()), func():
+						_map_sel = ""
+						modal.visible = false
+						_open_auction(), Color("#9a2e22"))
+				else:
+					t(v, "성간 경매는 신문에 공고가 난 날 열리오.", 13)
+		"workshop":
+			t(v, "— 장비 강화 —", 16, font_k, Color("#f3d68a"))
+			for k in GameState.EQUIP:
+				var eq: Dictionary = GameState.EQUIP[k]
+				var c := g.equip_cost(k)
+				var lv := int(g.equip.get(k, 0))
+				if c < 0:
+					t(v, "%s %d단계(최고) — %s" % [eq["n"], lv, eq["d"]], 14)
+				else:
+					btn(v, "%s %d→%d단계 · %s" % [eq["n"], lv, lv + 1, GameState.fmt(c)], func():
+						if g.equip_up(k):
+							render()
+							again.call("%s을(를) %d단계로 강화했다. %s." % [eq["n"], lv + 1, eq["d"]]), Color("#16221f"), Color.WHITE, g.money >= c)
+					t(v, eq["d"], 12, null, Color("#9fb8b0"))
+			t(v, "— 물건 수리 (바로, 한 단계) —", 16, font_k, Color("#f3d68a"))
+			var any := false
+			for it in g.inv:
+				if int(it["c"]) < 4 and not g.is_pawned(it):
+					any = true
+					var rc := g.repair_cost(it)
+					var iid = it["id"]
+					btn(v, "%s · %s → %s · %s" % [it["name"], D.items["condition"][int(it["c"])]["n"], D.items["condition"][int(it["c"]) + 1]["n"], GameState.fmt(rc)], func():
+						if g.repair_now(iid):
+							render()
+						again.call("장인이 옥 부품을 갈아 끼웠다."), Color("#16221f"), Color.WHITE, g.money >= rc)
+			if not any:
+				t(v, "고칠 물건이 없소.", 14)
+		"observatory":
+			if g.info_day == g.day:
+				t(v, "오늘은 이미 관측 결과를 들었소.", 14)
+			else:
+				btn(v, "항로 관측 결과 듣기 · 60냥", func():
+					var r := g.forecast()
+					render()
+					again.call(r if r != "" else "관측비가 모자랐다."), Color("#9a2e22"), Color.WHITE, g.money >= 60)
+		"farm":
+			if g.promo_day == g.day:
+				t(v, "오늘은 이미 가게를 알렸소. 손님이 늘 거요.", 14)
+			else:
+				btn(v, "농원에 가게 알리기 · 150냥 (오늘 손님 +2)", func():
+					if g.promote():
+						render()
+						again.call("수확을 거들며 가게 이야기를 했다. 오늘 장 보러 오겠다는 사람이 늘었다.")
+					else:
+						again.call("홍보비가 모자랐다."), Color("#9a2e22"), Color.WHITE, g.money >= 150)
 
 
 ## 어두운 판 위의 btn 글자를 금빛으로
@@ -2205,9 +2291,7 @@ func show_ledger() -> void:
 	if g.shop + 1 < D.shops.size():
 		var nx: Dictionary = D.shops[g.shop + 1]
 		t(v, "다음: %s · 창고 %d칸 · 손님 %d명 · 임대료 %s/일" % [nx["n"], int(nx["st"]), int(nx["cust"]), GameState.fmt(nx["rent"])], 14)
-		btn(v, "%s에 이전 계약" % GameState.fmt(nx["cost"]), func():
-			g.move_shop()
-			show_ledger(), Color("#d9a441"), INK, g.can_move())
+		t(v, "가게 이전 계약은 아침에 「운경 상단 거리」에서 합니다 (%s)." % GameState.fmt(nx["cost"]), 14)
 	else:
 		t(v, "최고의 가게! 이 거리의 흥정왕입니다.", 16, font_b)
 	t(v, "단골 수첩", 21, font_k)

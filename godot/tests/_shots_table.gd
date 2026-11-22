@@ -45,10 +45,10 @@ func _process(_d):
 			main.show_map()
 		52: shot("map")
 		53:
-			main._map_sel = "port"
+			g.money = 8000
+			main._map_sel = "workshop"
 			main._map_x = -1.0
-			var r = g.trip("port")
-			main.show_map(r)
+			main.show_map()
 		60: shot("map_result")
 		61: quit()
 	return false

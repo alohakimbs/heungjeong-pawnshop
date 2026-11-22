@@ -49,7 +49,11 @@ var later: Array = []  # 「나중에」로 미룬 손님: [{cur, neg}]
 var story_seen: Array = []  # 본 이야기 장면 id
 var trip_day := 0  # 마지막으로 나들이한 날
 var journal: Array = []  # 견문록: 가 본 곳 id
-var trip_offer: Dictionary = {}  # 나들이에서 만난 살 수 있는 물건
+var trip_offer: Dictionary = {}  # (옛 나들이) 살 수 있는 물건
+var equip := {"lens": 0, "shelf": 0, "censer": 0}  # 옥맥공방에서 강화하는 장비
+var stalls: Dictionary = {}  # 장소별 오늘의 매물: {id: {"day": n, "list": [{item, price}]}}
+var info_day := 0  # 설운관 관측한 날
+var promo_day := 0  # 청경농원 홍보한 날
 var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
 
 
@@ -115,7 +119,17 @@ func shop_info() -> Dictionary:
 
 
 func cap() -> int:
-	return int(shop_info()["st"])
+	return int(shop_info()["st"]) + 2 * int(equip.get("shelf", 0))
+
+
+## 감정 실력 = 기술 + 감정 렌즈
+func app_lv() -> int:
+	return int(skills["appraise"]) + int(equip.get("lens", 0))
+
+
+## 화술 = 기술 + 향로(손님이 오래 참음)
+func charm_lv() -> int:
+	return int(skills["charm"]) + int(equip.get("censer", 0))
 
 
 func trend_of(cat: String) -> float:
@@ -131,7 +145,7 @@ func val(it: Dictionary, genuine := false) -> float:
 
 
 func est_w() -> float:
-	return maxf(0.06, 0.55 - skills["appraise"] * 0.07 - (0.2 if has_staff("expert") else 0.0))
+	return maxf(0.06, 0.55 - app_lv() * 0.07 - (0.2 if has_staff("expert") else 0.0))
 
 
 ## 추정가 [하한, 상한]. 실제 가치(진품 기준)는 항상 이 범위 안에 있다.
@@ -151,7 +165,7 @@ func inspect(it: Dictionary) -> void:
 	if int(it.get("chk", 0)) >= lvl:
 		return
 	it["chk"] = lvl
-	var p: float = (0.75 + skills["appraise"] * 0.05) if has_staff("expert") else skills["appraise"] * 0.08
+	var p: float = (0.75 + app_lv() * 0.05) if has_staff("expert") else app_lv() * 0.08
 	if it["fake"]:
 		it["suspect"] = rng.randf() < p
 	else:
@@ -331,7 +345,7 @@ func gen_customer() -> Dictionary:
 		var it := gen_item(0.05)
 		c["item"] = it
 		var per := val(it, true) * (0.6 if tr.has("naive") else 1.0) * rnd(0.85, 1.15)
-		neg.setup_seller(per * 0.62, tr, skills["haggle"], skills["charm"], min_adj)
+		neg.setup_seller(per * 0.62, tr, skills["haggle"], charm_lv(), min_adj)
 		c["msg"] = intro + line("pawn_open", -1, it["name"]) + tic()
 		c["price_msg"] = line("pawn_price", neg.ask)
 		draft = r10(neg.ask * 0.6)
@@ -339,7 +353,7 @@ func gen_customer() -> Dictionary:
 		var it := gen_item(0.5 if tr.has("scammer") else 0.1)
 		c["item"] = it
 		var per := val(it, true) * (0.6 if tr.has("naive") else 1.0) * (rnd(0.95, 1.05) if tr.has("expert") else rnd(0.8, 1.2))
-		neg.setup_seller(per, tr, skills["haggle"], skills["charm"], min_adj)
+		neg.setup_seller(per, tr, skills["haggle"], charm_lv(), min_adj)
 		var m := ""
 		if tr.has("scammer"):
 			m = line("sell_scammer", -1, it["name"])
@@ -364,7 +378,7 @@ func gen_customer() -> Dictionary:
 			c["msg"] = intro + line("buy_fake_spotted", -1, it["name"])
 			neg.setup_buyer(10.0, 0, tr)
 		else:
-			neg.setup_buyer(val(it, true), int(it["r"]), tr, skills["haggle"], skills["charm"], min_adj)
+			neg.setup_buyer(val(it, true), int(it["r"]), tr, skills["haggle"], charm_lv(), min_adj)
 			var m := ""
 			if tr.has("collector") and int(it["r"]) >= 2:
 				m = line("buy_collector", -1, it["name"])
@@ -600,6 +614,114 @@ func trip_buy() -> bool:
 	collect(it)
 	book("bought", price)
 	trip_offer = {}
+	return true
+
+
+# ---------------------------------------------------------------- 가게 준비 (장소별 기능)
+const EQUIP := {
+	"lens": {"n": "감정 렌즈", "d": "옥빛 렌즈로 견적 범위가 좁아지고 가짜가 잘 보인다", "cost": [400, 1500, 5000]},
+	"shelf": {"n": "성옥 진열장", "d": "창고 칸이 2칸씩 늘어난다", "cost": [300, 1200, 4000]},
+	"censer": {"n": "청동 향로", "d": "향이 오래 타서 손님이 더 오래 흥정한다", "cost": [500, 2000, 6000]},
+}
+
+
+## 장소에 처음 가면 견문록에 적는다. 새로 적었으면 설명을 돌려준다.
+func visit(id: String) -> String:
+	if not D.trips.has(id) or journal.has(id):
+		return ""
+	journal.append(id)
+	xp += 10
+	return String(D.trips[id]["lore"])
+
+
+func equip_cost(k: String) -> int:
+	var lv := int(equip.get(k, 0))
+	var c: Array = EQUIP[k]["cost"]
+	return -1 if lv >= c.size() else int(c[lv])
+
+
+func equip_up(k: String) -> bool:
+	var c := equip_cost(k)
+	if c < 0 or money < c or phase != "morning":
+		return false
+	money -= c
+	book("fees", c)
+	equip[k] = int(equip.get(k, 0)) + 1
+	toast("%s %d단계!" % [EQUIP[k]["n"], equip[k]])
+	return true
+
+
+## 옥맥공방 즉시 수리(직원 없이도): 상태 한 단계, 수리비는 직원 수리보다 비쌈
+func repair_cost(it: Dictionary) -> int:
+	return r10(val(it, true) * 0.16)
+
+
+func repair_now(id) -> bool:
+	var it := find_item(id)
+	if it.is_empty() or int(it["c"]) >= 4 or is_pawned(it) or phase != "morning":
+		return false
+	var c := repair_cost(it)
+	if money < c:
+		toast("수리비가 모자라요")
+		return false
+	money -= c
+	book("fees", c)
+	it["c"] = int(it["c"]) + 1
+	return true
+
+
+## 월류시장·천문항의 오늘 매물
+func stall(id: String) -> Array:
+	var st: Dictionary = stalls.get(id, {})
+	if int(st.get("day", -1)) != day:
+		var lst: Array = []
+		for i in (4 if id == "market" else 3):
+			var it := gen_item(0.3) if id == "market" else gen_item(0.05, 2)
+			var pr := r10(val(it, true) * (rnd(0.45, 0.75) if id == "market" else rnd(0.85, 1.05)))
+			lst.append({"item": it, "price": pr})
+		st = {"day": day, "list": lst}
+		stalls[id] = st
+	return st["list"]
+
+
+func stall_buy(id: String, i: int) -> bool:
+	var lst := stall(id)
+	if i < 0 or i >= lst.size() or phase != "morning":
+		return false
+	var o: Dictionary = lst[i]
+	var price := int(o["price"])
+	if money < price or inv.size() >= cap():
+		toast("돈이나 창고 자리가 모자라요")
+		return false
+	var it: Dictionary = o["item"]
+	money -= price
+	it["paid"] = price
+	inv.append(it)
+	collect(it)
+	book("bought", price)
+	lst.remove_at(i)
+	return true
+
+
+## 설운관 항로 관측(하루 한 번)
+func forecast() -> String:
+	if info_day == day or phase != "morning" or money < 60:
+		return ""
+	money -= 60
+	book("fees", 60)
+	info_day = day
+	var cn: String = D.items["categories"][next_up]["n"] if D.items["categories"].has(next_up) else "?"
+	return "관측소 연구자 말로는 내일 들어올 화물선이 적어 「%s」 쪽 물건이 귀해진단다." % cn
+
+
+## 청경농원 홍보(하루 한 번): 오늘 손님 +2
+func promote() -> bool:
+	if promo_day == day or phase != "morning" or money < 150:
+		return false
+	money -= 150
+	book("fees", 150)
+	promo_day = day
+	today["bonus"] = int(today.get("bonus", 0)) + 2
 	return true
 
 
@@ -1258,8 +1380,8 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "story_seen", "trip_day", "journal", "trip_offer"]
-const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell", "trip_day"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "story_seen", "trip_day", "journal", "trip_offer", "equip", "stalls", "info_day", "promo_day"]
+const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell", "trip_day", "info_day", "promo_day"]
 
 
 func to_dict() -> Dictionary:
