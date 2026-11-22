@@ -233,8 +233,7 @@ func _act(cb: Callable) -> void:
 	g.save_game()
 	render()
 	_fx_for(before, after)
-	if not _maybe_story():
-		_tutorial()
+	_tutorial()
 	_schedule_next()
 
 
@@ -512,8 +511,6 @@ func _close_title() -> void:
 		tw.tween_property(t0, "modulate:a", 0.0, 0.35)
 		tw.tween_callback(t0.queue_free)
 	render()
-	if _maybe_story():
-		return
 	_tutorial()
 	if g.phase == "night":
 		show_receipt()
@@ -1375,6 +1372,31 @@ func _render_morning() -> void:
 	_render_newspaper()
 	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "閉 · 닫힘", "패를 뒤집어 문을 엽니다", func(): g.flip_open())
 	_jbtn(Rect2(100, DESK_Y + 300, 340, 52), "가게 준비 · 운경 둘러보기", func(): show_map(), "jade", 19)
+	_goal_bar(Rect2(40, DESK_Y + 368, 460, 46))
+
+
+## 다음 목표: 더 큰 가게로 옮길 돈까지 얼마 남았나
+func _goal_bar(r: Rect2) -> void:
+	var gl := g.goal()
+	if gl.is_empty():
+		lbl("운경 대전당 주인 · 흥정왕", r.position, Vector2(r.size.x, 24), 16, GOLD, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+		return
+	var cost: int = gl["cost"]
+	var f := clampf(float(g.money) / float(cost), 0.0, 1.0)
+	var txt := "다음 가게 「%s」 %s / %s" % [gl["n"], GameState.fmt(g.money), GameState.fmt(cost)]
+	if f >= 1.0:
+		txt = "「%s」로 옮길 수 있어요 · 운경 상단 거리" % gl["n"]
+	lbl(txt, r.position, Vector2(r.size.x, 22), 14, CREAM if f < 1.0 else GOLD, font_b, HORIZONTAL_ALIGNMENT_CENTER)
+	var bg := ColorRect.new()
+	bg.color = Color(0, 0, 0, 0.45)
+	bg.position = r.position + Vector2(20, 28)
+	bg.size = Vector2(r.size.x - 40, 8)
+	dyn.add_child(bg)
+	var fg := ColorRect.new()
+	fg.color = Color("#d9a441") if f >= 1.0 else Color("#5fae8a")
+	fg.position = bg.position
+	fg.size = Vector2(bg.size.x * f, 8)
+	dyn.add_child(fg)
 
 
 ## 아침 방문(榜文): 「은하 일보」. 시세·경매·구인·팁을 붙인 종이 쪽지.
@@ -1762,64 +1784,6 @@ func _recolor_btns(v: Control) -> void:
 			c.add_theme_color_override("font_color", CREAM)
 
 
-# ---------------------------------------------------------------- 이야기
-## 아침에 조건을 채운 이야기 장면이 있으면 띄운다.
-func _maybe_story() -> bool:
-	if modal.visible or title != null:
-		return false
-	var id := g.story_due()
-	if id == "":
-		return false
-	show_story(id, 0)
-	return true
-
-
-## 이야기 장면: 인물 그림 + 제목 + 쪽 넘김 + (마지막 쪽) 선택지
-func show_story(id: String, page: int) -> void:
-	var b := g.story_beat(id)
-	var pages: Array = b["pages"]
-	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"), false)
-	var who := String(b.get("who", ""))
-	var art := _char_tex(who if who != "granny" else "granny_junk", "ok")
-	if art == null and who == "mukhyang":
-		art = _char_tex("v_rival", "ok")
-	if art != null:
-		var pr := TextureRect.new()
-		pr.texture = art
-		pr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		pr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		pr.custom_minimum_size = Vector2(0, 230)
-		v.add_child(pr)
-	if b.has("act"):
-		t(v, b["act"], 13, null, Color("#9a5a30"))
-	t(v, b["title"], 24, font_k)
-	t(v, pages[page], 17)
-	t(v, "%d / %d" % [page + 1, pages.size()], 12)
-	if page + 1 < pages.size():
-		btn(v, "다음", func(): show_story(id, page + 1))
-	elif b.has("opts"):
-		for i in b["opts"].size():
-			var o: Array = b["opts"][i]
-			btn(v, o[0], func():
-				var res := g.story_done(id, i)
-				g.save_game()
-				_story_result(b, res), Color("#8a3020"))
-	else:
-		btn(v, String(b.get("btn", "고개를 끄덕인다")), func():
-			g.story_done(id)
-			g.save_game()
-			close_modal(), Color("#8a3020"))
-
-
-func _story_result(b: Dictionary, res: String) -> void:
-	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"), false)
-	t(v, b["title"], 24, font_k)
-	t(v, res, 17)
-	if b.get("ending", false):
-		t(v, "— 제3막 끝. 장사는 계속된다 —", 16, font_k)
-	btn(v, String(b.get("btn", "계속")), func(): close_modal(), Color("#8a3020"))
-
-
 ## 장부: 모든 메뉴를 한곳에
 func show_menu() -> void:
 	var v := sheet(HANJI, INK, INK, true, 500)
@@ -1837,8 +1801,6 @@ func close_modal() -> void:
 		c.queue_free()
 	render()
 	_schedule_next()
-	if title == null:
-		_maybe_story()
 
 
 func sheet(bgc: Color, ink: Color, border := Color("#6b4126"), closable := true, wdt := 720.0) -> VBoxContainer:

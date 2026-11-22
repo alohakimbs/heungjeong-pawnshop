@@ -4,6 +4,7 @@
 사용자(Vincent)는 한국어로 소통하는 개인 개발자이며, 구글 플레이 개인 개발자 계정으로 다른 게임을 출시한 경험이 있다.
 
 ## 원칙
+- **이야기(스토리 장면)는 넣지 않는다**(2026-11-22 사용자 결정). 목표는 딜러스라이프처럼 돈 벌기 → 가게 이전·장비 강화. 세계관은 배경·손님·장소 분위기로만 쓴다.
 - 규칙·구조는 원작을 따르되 이름·그림·대사·캐릭터는 전부 자체 제작한다. 원작의 이름·문구·그림을 가져오지 않는다.
 - 게임 로직은 화면과 분리하고 헤드리스 테스트로 검증한다. 테스트가 깨진 상태로 main에 푸시하지 않는다.
 - 콘텐츠(물건·손님·이벤트)는 `godot/data/*.json`에 둔다.
@@ -33,7 +34,7 @@
     - (2026-11-21 변경) 시트 방식: 손님·단골은 `키.png` 한 장에 2x2 표정(왼위 ok, 오른위 happy, 왼아래 angry, 오른아래 meh). 직원 `staff_1.png`(expert, restorer, profiler, analyst) `staff_2.png`(clerk, guard), 불청객 `visit_1.png`(insurance, grandma, tax, blackout) `visit_2.png`(fortune, rival, puppy, blogger) `visit_3.png`(rain) (선택: `visit_4.png` scholar, ricecake, peddler, goblin · `visit_5.png` errand, inspector, herbal — 오면 `v_키_ok.png`로 넣고 events.json의 `art` 키 삭제) — 2x2 칸 순서 왼위→오른위→왼아래→오른아래. 칸 단위로 잘라 쓴다. 단골 고물 할멈은 `granny_junk`(specials.json의 granny). 그림이 들어오면: 내려받기 → 배경 정리·크기 맞춤 → `godot/assets/chars/` → SvgArt 대신 텍스처 사용(없는 캐릭터는 코드 그림 유지) → 스크린샷 확인.
   - 계산대 소품 `props.png`(2x2: chest, books, cushion, seal) → `godot/assets/ui/` 적용 완료 (2026-11-22)
   - 수묵_최종: 19kPE_Bxa6CKxM-ngt3E9WgLLsgr2Vc1V — **최종 화풍 「수묵 담채 반실사」(2026-11-22 결정)로 전부 새로 그린 그림**. 지시서 `docs/art/chatgpt_sumuk_final.md`. 인물 시트는 2x2 표정·무릎 위까지(반신). 새 배치: staff_1/2 그대로, visit_1(insurance,grandma,tax,blackout) visit_2(fortune,rival,puppy,blogger) visit_3(rain,scholar,ricecake,peddler) visit_4(goblin,errand,inspector,herbal) → `v_키_ok.png`, events.json `art` 키 삭제. fox=홍란, mrq=백운(청운 도사). 들어오면 기존 그림을 전부 교체. 반신이라 손님 표시 크기·위치 다시 맞출 것.
-  - 봉래_수정본(폐기 — 수묵_최종으로 대체): 1yT_4BHOxH1vuZVe16GMYptGWUI-g9wy0 — 기존 그림 전체를 봉래 세계관으로 고친 것(같은 파일 이름). 지시서 `docs/art/chatgpt_rework_bongnae.md`. 들어오면 캐릭터·물건·배경을 같은 방법으로 잘라 교체. `mukhyang.png`(이야기 맞수, 2x2 표정) → `mukhyang_표정.png`
+  - 봉래_수정본(폐기 — 수묵_최종으로 대체): 1yT_4BHOxH1vuZVe16GMYptGWUI-g9wy0 — 기존 그림 전체를 봉래 세계관으로 고친 것(같은 파일 이름). 지시서 `docs/art/chatgpt_rework_bongnae.md`. 들어오면 캐릭터·물건·배경을 같은 방법으로 잘라 교체. `mukhyang.png`(맞수 상인, 2x2 표정) → `mukhyang_표정.png`
   - 물건·배경_원본: 1KcArXXuKToAANwbzPHqJckFBBTcDMqNn (프롬프트 `docs/art/chatgpt_prompts_items_bg.md`). `items_<종류키>.png` 3x3(행 순서 = items.json 순서) → 잘라서 `godot/assets/items/<아이콘키>.png`; `bg_0~4.png`(2:3) → `godot/assets/bg/bg_N.png`. 코드는 파일이 있으면 자동 사용. import는 손실 압축(compress/mode=1, 0.85)으로 바꿀 것.
 - 03_빌드: 1DsEfCHNQDot8wRVm_UP80NnQ_Hgi7emI
 - 04_백업: 1RDWaCyc3hwj5GowVLpxpVm_FEId9goG2

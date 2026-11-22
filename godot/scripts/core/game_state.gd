@@ -46,7 +46,6 @@ var draft := 0  # 계산기에 찍힌 금액
 var plan_buy := 0  # 오늘 남은 사러 올 손님
 var plan_sell := 0  # 오늘 남은 팔러(맡기러) 올 손님
 var later: Array = []  # 「나중에」로 미룬 손님: [{cur, neg}]
-var story_seen: Array = []  # 본 이야기 장면 id
 var trip_day := 0  # 마지막으로 나들이한 날
 var journal: Array = []  # 견문록: 가 본 곳 id
 var trip_offer: Dictionary = {}  # (옛 나들이) 살 수 있는 물건
@@ -725,57 +724,11 @@ func promote() -> bool:
 	return true
 
 
-# ---------------------------------------------------------------- 이야기
-## 조건을 채운 다음 이야기 장면(아침에만). 없으면 "".
-func story_due() -> String:
-	if phase != "morning":
-		return ""
-	for b in D.story:
-		if story_seen.has(b["id"]):
-			continue
-		var w: Dictionary = b["when"]
-		if day < int(w.get("day", 0)) or shop < int(w.get("shop", 0)):
-			continue
-		var af := String(b.get("after", ""))
-		if af == "finale":
-			if not stats.has("ending") or day < int(stats.get("ending_day", 0)) + int(b.get("day_after", 0)):
-				continue
-		elif af != "" and not story_seen.has(af):
-			continue
-		var ok := true
-		var rq: Dictionary = b.get("req", {})
-		for k in rq:
-			ok = ok and int(stats.get("story_" + k, -1)) == int(rq[k])
-		if ok:
-			return b["id"]
-	return ""
-
-
-func story_beat(id: String) -> Dictionary:
-	for b in D.story:
-		if b["id"] == id:
-			return b
-	return {}
-
-
-## 장면을 봤다고 기록하고 보상을 준다. opt: 고른 선택지 번호(없으면 -1). 선택지의 결과 문장을 돌려준다.
-func story_done(id: String, opt := -1) -> String:
-	var b := story_beat(id)
-	if b.is_empty() or story_seen.has(id):
-		return ""
-	story_seen.append(id)
-	var rw: Dictionary = b.get("reward", {})
-	var out := ""
-	if opt >= 0 and b.has("opts"):
-		rw = b["opts"][opt][2]
-		out = b["opts"][opt][1]
-		stats["story_" + id] = opt
-	money += int(rw.get("money", 0))
-	rep += int(rw.get("rep", 0))
-	if b.get("ending", false):
-		stats["ending"] = opt
-		stats["ending_day"] = day
-	return out
+## 다음 목표: 옮겨 갈 다음 가게 (마지막 가게면 빈 사전)
+func goal() -> Dictionary:
+	if shop + 1 >= D.shops.size():
+		return {}
+	return D.shops[shop + 1]
 
 
 ## 오늘 남은 손님 수 (지금 손님 제외): [사러 올, 팔러 올]
@@ -1393,7 +1346,7 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "story_seen", "trip_day", "journal", "trip_offer", "equip", "stalls", "info_day", "promo_day"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "trip_day", "journal", "trip_offer", "equip", "stalls", "info_day", "promo_day"]
 const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell", "trip_day", "info_day", "promo_day"]
 
 

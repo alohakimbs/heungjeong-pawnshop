@@ -14,7 +14,6 @@ func _process(_d):
 	match step:
 		3: shot("title")
 		5:
-			g.story_seen.append("letter")
 			g.stats["tut"] = ["morning", "intro", "look", "haggle"]
 			main._close_title()
 			g.event = ""
