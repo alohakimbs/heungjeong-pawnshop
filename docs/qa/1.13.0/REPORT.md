@@ -24,12 +24,12 @@
 | 기존 smart | 90 | 30/32 | 41,100.0 | 0/30 |
 | 기존 smart | 120 | 30/32 | 254,540.0 | 13/30 |
 
-- 기존 smart: 파산 2/32, 규칙 위반 0건.
 | 성장 growth | 30 | 32/32 | 4,825.5 | 0/32 |
 | 성장 growth | 60 | 32/32 | 18,776.0 | 0/32 |
 | 성장 growth | 90 | 32/32 | 135,993.5 | 0/32 |
 | 성장 growth | 120 | 32/32 | 180,396.5 | 26/32 |
 
+- 기존 smart: 파산 2/32, 규칙 위반 0건.
 - 성장 growth: 파산 0/32, 규칙 위반 0건.
 
 ## 해석과 한계
@@ -87,3 +87,13 @@ python3 tools/prepare_store_art.py
 파산 0/8, 진단 규칙 위반 0건. 마지막 가게 확장 완료 8/8.
 
 최고 목표의 가격은 변경하지 않음. 집/우주선 단계는 자동 구매 정책의 행동 결과이며, 실제 유저의 선호·재미·적절한 플레이 시간을 증명하지 않음.
+
+
+## Android 빌드 실측
+
+- CI: https://github.com/alohakimbs/heungjeong-pawnshop/actions/runs/44988962804
+- 소스 커밋: ae286144052b63b6633936fc797deaaf01667e69. 테스트 129개·APK 빌드 모두 성공.
+- APK 84,087,802 bytes (84.1MB). 이전 98,314,494 bytes 대비 14.47% 감소.
+- 실제 manifest: com.alohakimbs.heungjeong / versionName 1.13.0 / versionCode 32 / targetSdk 36.
+- arm64-v8a·armeabi-v7a 포함. ZIP 무결성 검사 통과. 실기기 설치·조작·성능은 미검증.
+- SHA-256: 1504bc762dd6947607848eb86d1026ecac73192986d187d071c41547732de805.
