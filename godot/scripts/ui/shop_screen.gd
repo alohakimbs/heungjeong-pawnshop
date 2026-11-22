@@ -17,9 +17,9 @@ const HANJI := Color("#f1e6cb")
 const LACQUER := Color("#2b1d1f")
 const GOLD := Color("#d9a441")
 const SEAL := Color("#b8322a")
-const PRICE_POS := Vector2(110, 862)
+const PRICE_POS := Vector2(110, 894)
 const COUNTER_Y := 660.0
-const DESK_Y := 740.0
+const DESK_Y := 772.0
 
 var g: GameState
 var D
@@ -412,7 +412,11 @@ func _tutorial() -> void:
 		return
 	seen.append(key)
 	g.stats["tut"] = seen
-	toast(msg)
+	# 화면을 가리지 않도록 잠깐 뜨는 안내 쪽지(누르면 닫힘) — 선택지 위에 덮이지 않게 작은 창으로
+	var v := sheet(Color("#f3e6c6"), INK, Color("#5a2a1c"), false, 470.0)
+	t(v, "안내", 20, font_k)
+	t(v, msg, 16)
+	btn(v, "알겠소", func(): close_modal(), Color("#8a3020"))
 
 
 ## 타이틀: 대전당 배경 + 이름 + 이어하기/새로 시작
@@ -642,45 +646,45 @@ func _back_svg() -> String:
 
 
 ## 카운터(손님 아랫몸을 가림): 짙은 나무 + 놋쇠 장식 + 가운데 보자기
+## 계산대 = 주인 쪽에서 내려다본 커다란 나무 탁자 하나.
+## 손님은 탁자 뒤 모서리(COUNTER_Y) 너머에 서고, 물건·장부·도장은 모두 이 탁자 위에 놓인다.
 func _front_svg() -> String:
-	var it := g.cur_item()
 	var y0 := COUNTER_Y
-	var dy := DESK_Y
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
 	var n := func(v: float) -> String: return SvgArt.n(v)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
 	var s := '<defs>'
-	s += '<linearGradient id="cf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a3a22"/><stop offset="1" stop-color="#2e170c"/></linearGradient>'
-	s += '<linearGradient id="ct" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b0723e"/><stop offset="1" stop-color="#6a3a1e"/></linearGradient>'
-	s += '<linearGradient id="dk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4a2a"/><stop offset="1" stop-color="#4a2a16"/></linearGradient>'
-	s += '<radialGradient id="lamp" cx="0.5" cy="0.05" r="0.9"><stop offset="0" stop-color="#ffd890" stop-opacity="0.35"/><stop offset="1" stop-color="#000" stop-opacity="0.45"/></radialGradient>'
-	s += '<radialGradient id="silk" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#fff" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0.25"/></radialGradient>'
+	s += '<linearGradient id="tt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a6438"/><stop offset="0.35" stop-color="#7a4a28"/><stop offset="1" stop-color="#3e2212"/></linearGradient>'
+	s += '<radialGradient id="glow" cx="0.5" cy="0.12" r="0.75"><stop offset="0" stop-color="#ffd890" stop-opacity="0.32"/><stop offset="0.6" stop-color="#ffd890" stop-opacity="0.05"/><stop offset="1" stop-color="#000" stop-opacity="0.35"/></radialGradient>'
+	s += '<linearGradient id="lip" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8925a"/><stop offset="1" stop-color="#6a3c1e"/></linearGradient>'
 	s += '</defs>'
-	# --- 계산대 앞판
-	s += '<rect x="0" y="%s" width="540" height="%s" fill="url(#cf)"/>' % [n.call(y0 + 22), n.call(dy - y0 - 22)]
-	var x := 0.0
-	while x < 540:
-		s += '<path d="M%s,%s V%s" stroke="#1a0c06" stroke-width="2" opacity="0.6"/>' % [n.call(x), n.call(y0 + 22), n.call(dy)]
-		for k in 3:
-			var gy := y0 + 40 + rng.randf() * (dy - y0 - 60)
-			s += '<path d="M%s,%s q%s,%s %s,%s" stroke="#000" stroke-width="1" fill="none" opacity="0.18"/>' % [n.call(x + 8), n.call(gy), n.call(20), n.call(rng.randf_range(-6, 6)), n.call(54), n.call(rng.randf_range(-4, 4))]
-		x += 67.5
-	# 단청 띠
-	s += '<rect x="0" y="%s" width="540" height="16" fill="#2f6a5a"/>' % n.call(y0 + 8)
-	var bx := 0.0
-	while bx < 540:
-		s += '<path d="M%s,%s h18 l6,8 l-6,8 h-18 l6,-8 Z" fill="#c8402e"/><circle cx="%s" cy="%s" r="3" fill="#f0c860"/><path d="M%s,%s h10" stroke="#3a5aa0" stroke-width="3"/>' % [n.call(bx + 4), n.call(y0 + 8), n.call(bx + 34), n.call(y0 + 16), n.call(bx + 40), n.call(y0 + 16)]
-		bx += 54
-	s += '<path d="M0,%s H540 M0,%s H540" stroke="#1a0c06" stroke-width="2.5"/>' % [n.call(y0 + 8), n.call(y0 + 24)]
-	# 계산대 상판
-	s += '<rect x="-4" y="%s" width="548" height="22" rx="3" fill="url(#ct)" stroke="#1a0c06" stroke-width="3"/>' % n.call(y0 - 12)
-	s += '<path d="M4,%s H536" stroke="#f0c890" stroke-width="2" opacity="0.55"/>' % n.call(y0 - 8)
+	# 손님 쪽으로 드리운 그림자(탁자 뒤)
+	s += '<rect x="0" y="%s" width="540" height="12" fill="#000" opacity="0.35"/>' % n.call(y0 - 12)
+	# 탁자 윗면: 화면 아래까지 이어진 한 장의 판(원근: 뒤가 좁고 앞이 넓은 널빤지)
+	s += '<rect x="0" y="%s" width="540" height="%s" fill="url(#tt)"/>' % [n.call(y0), n.call(H - y0)]
+	var vx := 270.0
+	var k := 0.62  # 뒤 모서리 폭 비율
+	for i in range(-3, 11):
+		var xb := i * 70.0 - 40.0
+		var xt := vx + (xb - vx) * k
+		s += '<path d="M%s,%s L%s,%s" stroke="#2a1508" stroke-width="2" opacity="0.55"/>' % [n.call(xt), n.call(y0), n.call(xb), n.call(H)]
+		# 나뭇결
+		for g2 in 3:
+			var t := rng.randf_range(0.08, 0.95)
+			var yy := y0 + (H - y0) * t
+			var xa := lerpf(xt, xb, t) + rng.randf_range(8, 30)
+			s += '<path d="M%s,%s q%s,%s %s,%s" stroke="#1a0c04" stroke-width="1.1" fill="none" opacity="0.18"/>' % [n.call(xa), n.call(yy), n.call(6), n.call(rng.randf_range(10, 40)), n.call(rng.randf_range(-4, 4)), n.call(rng.randf_range(30, 80))]
+	# 등불 빛과 가장자리 어둠
+	s += '<rect x="0" y="%s" width="540" height="%s" fill="url(#glow)"/>' % [n.call(y0), n.call(H - y0)]
+	# 뒤 모서리: 두툼한 테두리(손님 쪽 끝) + 놋쇠 띠
+	s += '<rect x="-4" y="%s" width="548" height="16" rx="3" fill="url(#lip)" stroke="#1a0c06" stroke-width="2.5"/>' % n.call(y0 - 8)
+	s += '<path d="M0,%s H540" stroke="#d9a441" stroke-width="2" opacity="0.85"/>' % n.call(y0 + 5)
+	s += '<path d="M0,%s H540" stroke="#fff0c8" stroke-width="1.5" opacity="0.45"/>' % n.call(y0 - 5)
 	if ResourceLoader.exists("res://assets/ui/chest.png"):
-		pass  # 손그림 궤짝·장부·방석은 _render_counter에서 그림 위에 얹는다
+		pass
 	else:
-		s += _props_svg(it, y0)
-	s += '<rect x="0" y="%s" width="540" height="%s" fill="url(#dk)"/>' % [n.call(dy), n.call(H - dy)]
-	return s + _desk_svg(dy, rng)
+		s += _props_svg(g.cur_item(), y0)
+	return s
 
 
 func _props_svg(it: Dictionary, y0: float) -> String:
@@ -786,20 +790,20 @@ func _render_counter() -> void:
 	var it := g.cur_item()
 	var full := g.inv.size() >= g.cap()
 	if ResourceLoader.exists("res://assets/ui/chest.png"):
-		pic(load("res://assets/ui/chest.png"), Vector2(12, COUNTER_Y - 92), Vector2(144, 89))
-		pic(load("res://assets/ui/books.png"), Vector2(404, COUNTER_Y - 98), Vector2(124, 97))
+		pic(load("res://assets/ui/chest.png"), Vector2(10, COUNTER_Y + 4), Vector2(150, 93))
+		pic(load("res://assets/ui/books.png"), Vector2(400, COUNTER_Y + 2), Vector2(130, 101))
 		if not it.is_empty() and g.phase == "open":
-			var cu := pic(load("res://assets/ui/cushion.png"), Vector2(165, COUNTER_Y - 62), Vector2(210, 103))
+			var cu := pic(load("res://assets/ui/cushion.png"), Vector2(160, COUNTER_Y + 2), Vector2(220, 108))
 			cu.modulate = Color(str(D.items["rarity"][int(it["r"])]["c"])).lerp(Color.WHITE, 0.45)
-	_obj_tag(Vector2(30, COUNTER_Y - 118), "창고 %d/%d" % [g.inv.size(), g.cap()], Color("#9a2a1a") if full else INK)
-	_obj_tag(Vector2(424, COUNTER_Y - 122), "장부" + (" ●" if g.sp > 0 else ""), SEAL if g.sp > 0 else INK)
-	hot(Rect2(14, COUNTER_Y - 110, 140, 130), "창고 열기", func(): show_inv())
-	hot(Rect2(396, COUNTER_Y - 110, 140, 130), "장부 열기", func(): show_menu())
+	_obj_tag(Vector2(34, COUNTER_Y - 16), "창고 %d/%d" % [g.inv.size(), g.cap()], Color("#9a2a1a") if full else INK)
+	_obj_tag(Vector2(430, COUNTER_Y - 20), "장부" + (" ●" if g.sp > 0 else ""), SEAL if g.sp > 0 else INK)
+	hot(Rect2(8, COUNTER_Y - 20, 156, 120), "창고 열기", func(): show_inv())
+	hot(Rect2(396, COUNTER_Y - 24, 140, 128), "장부 열기", func(): show_menu())
 	if not it.is_empty() and g.phase == "open":
-		pic(_icon(it["e"]), Vector2(195, COUNTER_Y - 152), Vector2(150, 150))
+		pic(_icon(it["e"]), Vector2(195, COUNTER_Y - 88), Vector2(150, 150))
 		if it["known"] and it["fake"]:
-			lbl("가품", Vector2(220, COUNTER_Y - 90), Vector2(100, 44), 28, SEAL, font_k, HORIZONTAL_ALIGNMENT_CENTER, -14)
-		hot(Rect2(180, COUNTER_Y - 160, 180, 180), "물건 살펴보기", func(): show_inspect(it))
+			lbl("가품", Vector2(220, COUNTER_Y - 30), Vector2(100, 44), 28, SEAL, font_k, HORIZONTAL_ALIGNMENT_CENTER, -14)
+		hot(Rect2(170, COUNTER_Y - 90, 200, 190), "물건 살펴보기", func(): show_inspect(it))
 
 
 func _on_sign_drag(ev: InputEvent) -> void:
