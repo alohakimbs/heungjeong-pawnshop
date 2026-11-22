@@ -334,7 +334,7 @@ func test_sim_smart() -> void:
 func test_story() -> void:
 	print("[이야기: 봉래 성계]")
 	var g := GameState.new(data)
-	check(data.story.size() >= 6, "이야기 장면 %d개" % data.story.size())
+	check(data.story.size() >= 12, "이야기 장면 %d개(3막 + 에필로그)" % data.story.size())
 	var ok := true
 	for b in data.story:
 		ok = ok and b["pages"].size() > 0 and b.has("title") and b.has("when")
@@ -354,12 +354,25 @@ func test_story() -> void:
 	g.shop = 4
 	g.day = 40
 	var guard := 0
-	while g.story_due() != "finale" and guard < 10:
+	while not g.story_due().begins_with("finale") and guard < 20:
 		g.story_done(g.story_due(), 0)
 		guard += 1
-	check(g.story_due() == "finale", "대전당에서 운해 교역회(마지막 장)")
-	g.story_done("finale", 1)
-	check(g.stats.get("ending", -1) == 1 and g.story_due() == "", "결말 기록, 이후 자유 장사")
+	check(g.story_due() == "finale_ally", "묵향에게 알렸으면 회합에서 묵향이 곁에 섬(갈래)")
+	g.story_done("finale_ally", 1)
+	check(g.stats.get("ending", -1) == 1 and g.story_due() == "", "결말 기록")
+	g.day += 3
+	check(g.story_due() == "epilogue", "결말 사흘 뒤 에필로그")
+	g.story_done("epilogue")
+	check(g.story_due() == "", "이후 자유 장사")
+	var g2 := GameState.new(data)
+	for id in ["letter", "wang", "hongran", "muk1", "fakes", "shop1", "workshop", "shop2"]:
+		g2.story_done(id, 0)
+	g2.story_done("reveal", 1)
+	g2.story_done("dosa")
+	g2.story_done("observatory")
+	g2.shop = 4
+	g2.day = 50
+	check(g2.story_due() == "finale_rival", "증거를 모았으면 회합에서 묵향과 맞섬(다른 갈래)")
 	g.phase = "open"
 	check(g.story_due() == "", "이야기는 아침에만")
 

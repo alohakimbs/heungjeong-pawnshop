@@ -1790,6 +1790,8 @@ func show_story(id: String, page: int) -> void:
 		pr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		pr.custom_minimum_size = Vector2(0, 230)
 		v.add_child(pr)
+	if b.has("act"):
+		t(v, b["act"], 13, null, Color("#9a5a30"))
 	t(v, b["title"], 24, font_k)
 	t(v, pages[page], 17)
 	t(v, "%d / %d" % [page + 1, pages.size()], 12)
@@ -1814,7 +1816,7 @@ func _story_result(b: Dictionary, res: String) -> void:
 	t(v, b["title"], 24, font_k)
 	t(v, res, 17)
 	if b.get("ending", false):
-		t(v, "— 흥정왕 전당포, 끝. 장사는 계속된다 —", 16, font_k)
+		t(v, "— 제3막 끝. 장사는 계속된다 —", 16, font_k)
 	btn(v, String(b.get("btn", "계속")), func(): close_modal(), Color("#8a3020"))
 
 

@@ -734,7 +734,19 @@ func story_due() -> String:
 		if story_seen.has(b["id"]):
 			continue
 		var w: Dictionary = b["when"]
-		if day >= int(w.get("day", 0)) and shop >= int(w.get("shop", 0)):
+		if day < int(w.get("day", 0)) or shop < int(w.get("shop", 0)):
+			continue
+		var af := String(b.get("after", ""))
+		if af == "finale":
+			if not stats.has("ending") or day < int(stats.get("ending_day", 0)) + int(b.get("day_after", 0)):
+				continue
+		elif af != "" and not story_seen.has(af):
+			continue
+		var ok := true
+		var rq: Dictionary = b.get("req", {})
+		for k in rq:
+			ok = ok and int(stats.get("story_" + k, -1)) == int(rq[k])
+		if ok:
 			return b["id"]
 	return ""
 
@@ -762,6 +774,7 @@ func story_done(id: String, opt := -1) -> String:
 	rep += int(rw.get("rep", 0))
 	if b.get("ending", false):
 		stats["ending"] = opt
+		stats["ending_day"] = day
 	return out
 
 
