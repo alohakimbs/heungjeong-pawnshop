@@ -552,11 +552,11 @@ func trip(id: String) -> String:
 		"market":
 			var it := gen_item(0.3)
 			trip_offer = {"item": it, "price": r10(val(it, true) * rnd(0.45, 0.75))}
-			out = "좌판 할아범이 「%s」을(를) 떨이로 내놓았다. 진짜인지는 장담 못 한다나." % it["name"]
-		"ring":
+			out = "노점선 할아범이 「%s」을(를) 떨이로 내놓았다. 진짜인지는 장담 못 한다나." % it["name"]
+		"port":
 			var it2 := gen_item(0.05, 2)
 			trip_offer = {"item": it2, "price": r10(val(it2, true) * rnd(0.85, 1.05))}
-			out = "막 닿은 상선에서 낯선 「%s」이(가) 나왔다. 귀하지만 값도 만만치 않다." % it2["name"]
+			out = "막 접안한 성간 화물선에서 낯선 「%s」이(가) 나왔다. 귀하지만 값도 만만치 않다." % it2["name"]
 		"workshop":
 			var worst: Dictionary = {}
 			for i in inv:
@@ -573,12 +573,13 @@ func trip(id: String) -> String:
 					out = "장인이 「%s」의 옥 부품을 갈아 끼웠다. 상태가 「%s」(으)로 좋아졌다. 수리비 %s." % [worst["name"], D.items["condition"][int(worst["c"])]["n"], fmt(cost)]
 				else:
 					out = "고칠 물건은 있는데 수리비가 모자랐다."
-		"dock":
+		"observatory":
 			var cn: String = D.items["categories"][next_up]["n"] if D.items["categories"].has(next_up) else "?"
-			out = "뱃사람들 말로는 내일 「%s」 쪽 물건이 귀해진단다. 미리 챙겨 두면 좋겠다." % cn
-		"terrace":
-			rep += 2
-			out = "회랑 정원에서 단골들과 차를 마셨다. 소문이 좋게 퍼져 평판이 조금 올랐다."
+			out = "관측소 연구자 말로는 내일 들어올 화물선이 적어 「%s」 쪽 물건이 귀해진단다. 미리 챙겨 두면 좋겠다." % cn
+		"farm":
+			today["bonus"] = int(today.get("bonus", 0)) + 2
+			rep += 1
+			out = "농원 사람들과 수확을 거들며 가게 이야기를 했다. 오늘 장 보러 들르겠다는 손님이 늘었다(손님 +2)."
 	if first:
 		out += "\n\n[견문록에 새로 적음] " + String(t["lore"])
 	return out

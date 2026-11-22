@@ -1486,25 +1486,122 @@ func show_map(result := "") -> void:
 	bgc.color = Color("#0d0b0e")
 	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
 	modal.add_child(bgc)
-	# 지도: 운경 전경을 좌우로 끌어 둘러본다
-	var mh := vs.y * 0.56
+	var hd := Label.new()
+	hd.text = "운경 나들이   ·   견문록 %d/%d" % [g.journal.size(), D.trips.size()]
+	hd.position = Vector2(16, 12)
+	hd.size = Vector2(vs.x - 32, 30)
+	hd.add_theme_font_override("font", font_k)
+	hd.add_theme_font_size_override("font_size", 19)
+	hd.add_theme_color_override("font_color", Color("#f3d68a"))
+	modal.add_child(hd)
+	if _map_sel == "":
+		_map_list(vs)
+	else:
+		_map_scene(vs, result)
+
+
+## 갈 곳 고르기: 장소마다 컨셉 아트 카드
+func _map_list(vs: Vector2) -> void:
+	var sc := ScrollContainer.new()
+	sc.position = Vector2(0, 50)
+	sc.size = Vector2(vs.x, vs.y - 120)
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	modal.add_child(sc)
+	var v := VBoxContainer.new()
+	v.custom_minimum_size = Vector2(vs.x, 0)
+	v.add_theme_constant_override("separation", 12)
+	sc.add_child(v)
+	var sub := Label.new()
+	sub.text = "부상열차를 타고 하루 한 번, 운경 밖 한 곳에 다녀올 수 있소." if g.can_trip() else "오늘은 이미 다녀왔소. 구경만 할 수 있소."
+	sub.add_theme_font_override("font", font_b)
+	sub.add_theme_font_size_override("font_size", 14)
+	sub.add_theme_color_override("font_color", CREAM)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(sub)
+	for id in D.trips:
+		var tp: Dictionary = D.trips[id]
+		var card := Button.new()
+		card.custom_minimum_size = Vector2(vs.x - 24, (vs.x - 24) * 0.42)
+		card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		card.focus_mode = Control.FOCUS_NONE
+		card.clip_contents = true
+		var st := _jstyle(Color("#13201d"), Color("#c9a24a"), 2, 8)
+		st.set_content_margin_all(0)
+		for k in ["normal", "hover", "pressed"]:
+			card.add_theme_stylebox_override(k, st)
+		var pic2 := TextureRect.new()
+		pic2.texture = load("res://assets/places/%s.jpg" % tp["img"])
+		pic2.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pic2.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		pic2.set_anchors_preset(Control.PRESET_FULL_RECT)
+		pic2.offset_left = 3
+		pic2.offset_top = 3
+		pic2.offset_right = -3
+		pic2.offset_bottom = -3
+		pic2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(pic2)
+		var band := ColorRect.new()
+		band.color = Color(0.05, 0.08, 0.07, 0.72)
+		band.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+		band.offset_top = -56
+		band.offset_bottom = -3
+		band.offset_left = 3
+		band.offset_right = -3
+		band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(band)
+		var nm := Label.new()
+		nm.text = "%s   %s" % [tp["n"], ("✓ 견문록" if g.journal.has(id) else "")]
+		nm.add_theme_font_override("font", font_k)
+		nm.add_theme_font_size_override("font_size", 20)
+		nm.add_theme_color_override("font_color", Color("#f6ead0"))
+		nm.position = Vector2(14, card.custom_minimum_size.y - 54)
+		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(nm)
+		var sb2 := Label.new()
+		sb2.text = "%s · 운임 %s" % [tp["sub"], GameState.fmt(int(tp["fare"]))]
+		sb2.add_theme_font_override("font", font_b)
+		sb2.add_theme_font_size_override("font_size", 13)
+		sb2.add_theme_color_override("font_color", Color("#9fd8c6"))
+		sb2.position = Vector2(14, card.custom_minimum_size.y - 26)
+		sb2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(sb2)
+		card.pressed.connect(func():
+			_map_sel = id
+			_map_x = -1.0
+			show_map())
+		v.add_child(card)
+	var back := Button.new()
+	back.text = "가게로 돌아가기"
+	back.position = Vector2(24, vs.y - 62)
+	back.size = Vector2(vs.x - 48, 48)
+	back.focus_mode = Control.FOCUS_NONE
+	back.add_theme_font_override("font", font_k)
+	back.add_theme_font_size_override("font_size", 18)
+	back.add_theme_color_override("font_color", Color("#f3e6c6"))
+	for k in ["normal", "hover", "pressed"]:
+		back.add_theme_stylebox_override(k, _jstyle(Color("#16221f"), Color("#b8963e"), 2, 6))
+	back.pressed.connect(func(): close_modal())
+	modal.add_child(back)
+
+
+## 한 장소에 와 있는 장면: 컨셉 아트를 좌우로 끌어 둘러보고, 아래에서 할 일을 고른다
+func _map_scene(vs: Vector2, result: String) -> void:
+	var tp: Dictionary = D.trips[_map_sel]
+	var tex: Texture2D = load("res://assets/places/%s.jpg" % tp["img"])
+	var mh := vs.y * 0.5
 	var clip := Control.new()
-	clip.position = Vector2(0, 54)
+	clip.position = Vector2(0, 50)
 	clip.size = Vector2(vs.x, mh)
 	clip.clip_contents = true
 	modal.add_child(clip)
-	var tex: Texture2D = load("res://assets/bg/title_city.png")
 	var mw := mh * tex.get_width() / float(tex.get_height())
-	var sc := mh / float(tex.get_height())
 	var img := TextureRect.new()
 	img.texture = tex
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_SCALE
 	img.size = Vector2(mw, mh)
 	if _map_x < 0:
-		_map_x = -(mw - vs.x) * 0.35
-		if _map_sel != "" and D.trips.has(_map_sel):
-			_map_x = -(float(D.trips[_map_sel]["pos"][0]) * sc - vs.x / 2.0)
+		_map_x = -(mw - vs.x) * 0.5
 	img.position.x = clampf(_map_x, vs.x - mw, 0)
 	clip.add_child(img)
 	clip.gui_input.connect(func(ev):
@@ -1516,47 +1613,9 @@ func show_map(result := "") -> void:
 		if dx != 0.0:
 			img.position.x = clampf(img.position.x + dx, vs.x - mw, 0)
 			_map_x = img.position.x)
-	for id in D.trips:
-		var tp: Dictionary = D.trips[id]
-		var p := Vector2(tp["pos"][0], tp["pos"][1]) * sc
-		var mk := Button.new()
-		mk.position = p - Vector2(17, 17)
-		mk.size = Vector2(34, 34)
-		mk.focus_mode = Control.FOCUS_NONE
-		var on: bool = id == _map_sel
-		var st := _jstyle(Color("#1e4a3f") if not on else Color("#9a2e22"), Color("#bff5e2") if not on else Color("#f3d68a"), 3, 17)
-		for k in ["normal", "hover", "pressed"]:
-			mk.add_theme_stylebox_override(k, st)
-		mk.text = "✓" if g.journal.has(id) else ""
-		mk.add_theme_color_override("font_color", Color("#f3d68a"))
-		mk.pressed.connect(func():
-			_map_sel = id
-			_map_x = -(p.x - vs.x / 2.0)
-			show_map())
-		img.add_child(mk)
-		var nl := Label.new()
-		nl.text = tp["n"]
-		nl.position = p + Vector2(-60, 18)
-		nl.size = Vector2(120, 22)
-		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		nl.add_theme_font_override("font", font_k)
-		nl.add_theme_font_size_override("font_size", 14)
-		nl.add_theme_color_override("font_color", Color("#fff6dc"))
-		nl.add_theme_constant_override("outline_size", 5)
-		nl.add_theme_color_override("font_outline_color", Color("#0d1a17"))
-		img.add_child(nl)
-	# 위 제목
-	var hd := Label.new()
-	hd.text = "운경 나들이   ·   견문록 %d/%d" % [g.journal.size(), D.trips.size()]
-	hd.position = Vector2(16, 12)
-	hd.size = Vector2(vs.x - 32, 30)
-	hd.add_theme_font_override("font", font_k)
-	hd.add_theme_font_size_override("font_size", 19)
-	hd.add_theme_color_override("font_color", Color("#f3d68a"))
-	modal.add_child(hd)
 	var hint := Label.new()
-	hint.text = "← 지도를 끌어 둘러보세요 →"
-	hint.position = Vector2(0, 54 + mh - 26)
+	hint.text = "← 끌어서 둘러보기 →"
+	hint.position = Vector2(0, 50 + mh - 26)
 	hint.size = Vector2(vs.x, 22)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.add_theme_font_size_override("font_size", 13)
@@ -1564,20 +1623,23 @@ func show_map(result := "") -> void:
 	hint.add_theme_constant_override("outline_size", 4)
 	hint.add_theme_color_override("font_outline_color", Color("#0d1a17"))
 	modal.add_child(hint)
-	# 아래 판
 	var panel := PanelContainer.new()
 	var psb := _jstyle(Color("#13201d"), Color("#c9a24a"), 2, 8)
 	psb.set_content_margin_all(16)
 	panel.add_theme_stylebox_override("panel", psb)
-	panel.position = Vector2(12, 54 + mh + 10)
-	panel.size = Vector2(vs.x - 24, vs.y - mh - 76)
+	panel.position = Vector2(12, 50 + mh + 10)
+	panel.size = Vector2(vs.x - 24, vs.y - mh - 72)
 	modal.add_child(panel)
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(sc)
 	var v := VBoxContainer.new()
 	v.set_meta("ink", CREAM)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.add_theme_constant_override("separation", 6)
-	panel.add_child(v)
+	sc.add_child(v)
+	t(v, "%s  ·  %s" % [tp["n"], tp["sub"]], 21, font_k)
 	if result != "":
-		t(v, D.trips[_map_sel]["n"] if _map_sel != "" else "나들이", 20, font_k)
 		t(v, result, 15)
 		if not g.trip_offer.is_empty():
 			var it: Dictionary = g.trip_offer["item"]
@@ -1589,26 +1651,22 @@ func show_map(result := "") -> void:
 			btn(v, "지나친다", func():
 				g.trip_offer = {}
 				show_map("구경만 하고 돌아섰다."))
-		btn(v, "가게로 돌아가기", func(): close_modal())
-		_recolor_btns(v)
-		return
-	if _map_sel == "":
-		t(v, "부상열차를 타고 운경 한 곳에 다녀올 수 있습니다(하루 한 번).", 15)
-		t(v, "지도에서 옥빛 표시를 눌러 갈 곳을 고르세요.", 15)
 	else:
-		var tp2: Dictionary = D.trips[_map_sel]
-		t(v, tp2["n"], 21, font_k)
-		t(v, tp2["d"], 15)
+		t(v, tp["d"], 15)
 		if g.can_trip():
-			btn(v, "부상열차 타고 가기 · 운임 %s" % GameState.fmt(int(tp2["fare"])), func():
+			btn(v, "부상열차 타고 가기 · 운임 %s" % GameState.fmt(int(tp["fare"])), func():
 				var r := g.trip(_map_sel)
 				g.save_game()
 				render()
-				show_map(r if r != "" else "운임이 모자라 다음에 가기로 했다."), Color("#9a2e22"), Color.WHITE, g.money >= int(tp2["fare"]))
+				show_map(r if r != "" else "운임이 모자라 다음에 가기로 했다."), Color("#9a2e22"), Color.WHITE, g.money >= int(tp["fare"]))
 		else:
 			t(v, "오늘은 이미 다녀왔소. 내일 아침에 다시.", 14)
-	btn(v, "가게로 돌아가기", func(): close_modal())
-	_recolor_btns(v)
+	btn(v, "다른 곳 보기", func():
+		_map_sel = ""
+		show_map())
+	btn(v, "가게로 돌아가기", func():
+		_map_sel = ""
+		close_modal())
 
 
 ## 어두운 판 위의 btn 글자를 금빛으로

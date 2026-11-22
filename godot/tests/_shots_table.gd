@@ -41,11 +41,13 @@ func _process(_d):
 			main.render()
 		45: shot("morning")
 		46:
-			main._map_sel = "ring"
+			main._map_sel = ""
 			main.show_map()
 		52: shot("map")
 		53:
-			var r = g.trip("ring")
+			main._map_sel = "port"
+			main._map_x = -1.0
+			var r = g.trip("port")
 			main.show_map(r)
 		60: shot("map_result")
 		61: quit()

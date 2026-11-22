@@ -376,17 +376,22 @@ func test_trips() -> void:
 	check(not g.trip_offer.is_empty(), "장터에서 살 물건을 만남")
 	var n := g.inv.size()
 	check(g.trip_buy() and g.inv.size() == n + 1, "나들이 물건 사기")
-	check(not g.can_trip() and g.trip("dock") == "", "하루 한 번만")
+	check(not g.can_trip() and g.trip("observatory") == "", "하루 한 번만")
 	g.day += 1
-	check(g.can_trip() and g.trip("dock").contains("내일"), "화물 부두: 내일 시세 소문")
+	check(g.can_trip() and g.trip("observatory").contains("내일"), "설운관: 내일 시세 소식")
 	g.day += 1
 	g.inv[0]["c"] = 0
 	g.money = 100000
 	g.trip("workshop")
-	check(int(g.inv[0]["c"]) == 1, "옥빛 정비소: 물건 상태 한 단계 수리")
+	check(int(g.inv[0]["c"]) == 1, "옥맥공방: 물건 상태 한 단계 수리")
 	g.day += 1
-	g.trip("ring")
-	check(not g.trip_offer.is_empty() and int(g.trip_offer["item"]["r"]) >= 0, "고리 교역항: 귀한 물건")
+	g.trip("port")
+	check(not g.trip_offer.is_empty(), "천문항: 귀한 물건")
+	g.day += 1
+	g.trip_offer = {}
+	var b0 := int(g.today.get("bonus", 0))
+	g.trip("farm")
+	check(int(g.today.get("bonus", 0)) == b0 + 2, "청경농원: 오늘 손님 +2")
 	g.phase = "open"
 	check(not g.can_trip(), "영업 중엔 나들이 불가")
 	var all_ok := true
@@ -394,7 +399,8 @@ func test_trips() -> void:
 		var tp: Dictionary = data.trips[k]
 		for bad in ["조선", "한양", "결계", "청룡항", "황룡성"]:
 			all_ok = all_ok and not String(tp["d"]).contains(bad) and not String(tp["lore"]).contains(bad)
-	check(all_ok, "나들이 글은 세계관 기준 문서 범위")
+		all_ok = all_ok and ResourceLoader.exists("res://assets/places/%s.jpg" % tp["img"])
+	check(all_ok, "나들이 장소마다 컨셉 아트 배경, 세계관 범위의 글")
 
 
 func test_later() -> void:
