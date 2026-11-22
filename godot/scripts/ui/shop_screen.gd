@@ -1383,9 +1383,10 @@ func _goal_bar(r: Rect2) -> void:
 		return
 	var cost: int = gl["cost"]
 	var f := clampf(float(g.money) / float(cost), 0.0, 1.0)
-	var txt := "다음 가게 「%s」 %s / %s" % [gl["n"], GameState.fmt(g.money), GameState.fmt(cost)]
+	var what := "가게 확장 %d/%d 「%s」" % [gl["step"], gl["of"], gl["n"]] if gl["kind"] == "up" else "가게 이전 「%s」" % gl["n"]
+	var txt := "%s %s / %s" % [what, GameState.fmt(g.money), GameState.fmt(cost)]
 	if f >= 1.0:
-		txt = "「%s」로 옮길 수 있어요 · 운경 상단 거리" % gl["n"]
+		txt = "%s 가능 · 운경 상단 거리에서" % what
 	lbl(txt, r.position, Vector2(r.size.x, 22), 14, CREAM if f < 1.0 else GOLD, font_b, HORIZONTAL_ALIGNMENT_CENTER)
 	var bg := ColorRect.new()
 	bg.color = Color(0, 0, 0, 0.45)
@@ -1685,17 +1686,37 @@ func _place_actions(v: VBoxContainer, id: String) -> void:
 		return
 	match id:
 		"unkyeong":
-			t(v, "— 가게 이전 —", 16, font_k, Color("#f3d68a"))
 			var cs := g.shop_info()
-			t(v, "지금: %s · 창고 %d칸 · 손님 %d명" % [cs["n"], g.cap(), int(cs["cust"])], 14)
+			t(v, "— 가게 확장 (%d/%d) —" % [g.shop_up, g.ups_total()], 16, font_k, Color("#f3d68a"))
+			t(v, "지금: %s · 창고 %d칸 · 손님 %d명 · 평판 %d" % [cs["n"], g.cap(), g.cust_base(), g.rep], 14)
+			var ups: Array = cs.get("ups", [])
+			var eff := {"room": "창고 +3칸", "seat": "손님 +1명", "sign": "평판 +10"}
+			for i in ups.size():
+				var u: Dictionary = ups[i]
+				if i < g.shop_up:
+					t(v, "✓ %s (%s)" % [u["n"], eff[u["k"]]], 14, null, Color("#9fd8c6"))
+				elif i == g.shop_up:
+					btn(v, "%s · %s  (%s)" % [u["n"], GameState.fmt(int(u["cost"])), eff[u["k"]]], func():
+						if g.expand():
+							render()
+							again.call("%s을(를) 마쳤다. 가게가 한결 넓어졌다." % u["n"]), Color("#9a2e22"), Color.WHITE, g.money >= int(u["cost"]))
+				else:
+					t(v, "· %s · %s" % [u["n"], GameState.fmt(int(u["cost"]))], 14, null, Color("#8a9a94"))
 			if g.shop + 1 < D.shops.size():
 				var nx: Dictionary = D.shops[g.shop + 1]
+				t(v, "— 가게 이전 —", 16, font_k, Color("#f3d68a"))
 				btn(v, "%s(으)로 이전 계약 · %s" % [nx["n"], GameState.fmt(int(nx["cost"]))], func():
 					if g.move_shop():
 						render()
 						again.call("이전 계약을 마쳤다! 새 가게에서 문을 연다."), Color("#9a2e22"), Color.WHITE, g.can_move())
-			else:
-				t(v, "이미 운경 대전당이오. 더 갈 곳이 없소.", 14)
+				if g.shop_up < g.ups_total():
+					t(v, "확장을 모두 마쳐야 이전 계약을 할 수 있소.", 13, null, Color("#e8a080"))
+			elif g.shop_up >= g.ups_total():
+				t(v, "운경 대전당을 다 키웠소. 그대가 흥정왕이오.", 14)
+			t(v, "— 부동산 (집 · 창밖 풍경) —", 16, font_k, Color("#f3d68a"))
+			t(v, "지금 집: %s · 집 2단계마다 화술 +1" % g.belong(g.home)["n"], 14)
+			_belong_buttons(v, "home", again)
+			_belong_buttons(v, "view", again)
 			t(v, "— 인력 중개소 (일꾼 %d/%d) —" % [g.staff.size(), g.staff_slots()], 16, font_k, Color("#f3d68a"))
 			for k in D.staff:
 				var sd: Dictionary = D.staff[k]
@@ -1723,6 +1744,9 @@ func _place_actions(v: VBoxContainer, id: String) -> void:
 					else:
 						again.call(""), Color("#16221f"), Color.WHITE, g.money >= int(o["price"]) and g.inv.size() < g.cap())
 			if id == "port":
+				t(v, "— 우주선 조선소 —", 16, font_k, Color("#f3d68a"))
+				t(v, "가진 우주선 단계만큼 천문항 귀한 매물이 늘어나오.", 13, null, Color("#9fb8b0"))
+				_belong_buttons(v, "ship", again)
 				if g.is_auction_today() and not g.auction_done:
 					btn(v, "성간 경매장에 들어간다 (참가비 %s)" % GameState.fmt(g.auction_fee()), func():
 						_map_sel = ""
@@ -1731,6 +1755,9 @@ func _place_actions(v: VBoxContainer, id: String) -> void:
 				else:
 					t(v, "성간 경매는 신문에 공고가 난 날 열리오.", 13)
 		"workshop":
+			t(v, "— 탈것 공방 —", 16, font_k, Color("#f3d68a"))
+			t(v, "가장 좋은 탈것 단계마다 월류시장·천문항 매물 3%% 할인 (지금 %d%%)" % (3 * g.best_lv("ride")), 13, null, Color("#9fb8b0"))
+			_belong_buttons(v, "ride", again)
 			t(v, "— 장비 강화 —", 16, font_k, Color("#f3d68a"))
 			for k in GameState.EQUIP:
 				var eq: Dictionary = GameState.EQUIP[k]
@@ -1777,6 +1804,90 @@ func _place_actions(v: VBoxContainer, id: String) -> void:
 						again.call("홍보비가 모자랐다."), Color("#9a2e22"), Color.WHITE, g.money >= 150)
 
 
+## 살림 사기 버튼 줄 (가진 것은 표시만)
+func _belong_buttons(v: VBoxContainer, cat: String, again: Callable) -> void:
+	for b in D.belong[cat]:
+		var id: String = b["id"]
+		var c := int(b["cost"])
+		if c <= 0:
+			continue
+		if g.owns(id):
+			t(v, "✓ %s (가지고 있음)" % b["n"], 14, null, Color("#9fd8c6"))
+			continue
+		var label := "%s · %s" % [b["n"], GameState.fmt(c)]
+		var ok := g.money >= c
+		if cat == "home":
+			label += "  (옛 집 %s에 되팖)" % GameState.fmt(g.resale(g.home)) if g.home != "backroom" else ""
+			ok = g.money + g.resale(g.home) >= c
+		if cat == "view" and g.home_lv() < int(b["need"]):
+			label = "%s · 집 %d단계부터" % [b["n"], int(b["need"])]
+			ok = false
+		btn(v, label, func():
+			if g.buy_belong(id):
+				render()
+				again.call("%s을(를) 장만했다. 「장부 › 내 살림」에서 볼 수 있소." % b["n"])
+			else:
+				again.call(""), Color("#16221f"), Color.WHITE, ok)
+		if b.has("d"):
+			t(v, b["d"], 12, null, Color("#9fb8b0"))
+
+
+## 내 살림: 집 창밖 풍경 + 가진 것들. 급전이 필요하면 되팔기.
+func show_home(msg := "") -> void:
+	var v := sheet(Color("#13201d"), CREAM, Color("#c9a24a"), true, 500)
+	v.set_meta("ink", CREAM)
+	var vw := g.belong(g.view)
+	var tex: Texture2D = load("res://assets/places/%s.jpg" % vw.get("img", "unkyeong"))
+	if tex != null:
+		var pr := TextureRect.new()
+		pr.texture = tex
+		pr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		pr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		pr.custom_minimum_size = Vector2(0, 220)
+		pr.clip_contents = true
+		v.add_child(pr)
+	var hm := g.belong(g.home)
+	t(v, hm["n"], 26, font_k, Color("#f3d68a"), HORIZONTAL_ALIGNMENT_CENTER)
+	t(v, "창밖: %s · %s" % [vw["n"], hm["d"]], 14, null, null, HORIZONTAL_ALIGNMENT_CENTER)
+	if msg != "":
+		t(v, msg, 15, null, Color("#f3d68a"))
+	var eff: Array = []
+	if g.home_lv() >= 2:
+		eff.append("화술 +%d" % (g.home_lv() / 2))
+	if g.best_lv("ride") > 0:
+		eff.append("시장 매물 %d%% 할인" % (3 * g.best_lv("ride")))
+	if g.best_lv("ship") > 0:
+		eff.append("천문항 매물 +%d" % g.best_lv("ship"))
+	t(v, "살림 효과: " + (" · ".join(eff) if not eff.is_empty() else "아직 없음 — 운경 상단 거리·옥맥공방·천문항에서 장만"), 14, null, Color("#9fd8c6"))
+	var mine: Array = []
+	for vid in g.owned:
+		if g.belong(vid).get("cat", "") == "view":
+			mine.append(vid)
+	if not mine.is_empty():
+		t(v, "— 창밖 풍경 바꾸기 —", 16, font_k, Color("#f3d68a"))
+		for vid in ["unkyeong"] + mine:
+			var vb := g.belong(vid)
+			btn(v, ("▶ " if vid == g.view else "") + String(vb["n"]), func():
+				g.set_view(vid)
+				g.save_game()
+				show_home(), Color("#16221f"), Color.WHITE, vid != g.view and g.home_lv() >= int(vb["need"]))
+	t(v, "— 급전: 되팔기 (산 값의 %d%%) —" % int(round(float(D.belong["resale"]) * 100)), 16, font_k, Color("#f3d68a"))
+	var sellable: Array = []
+	if g.home != "backroom":
+		sellable.append(g.home)
+	sellable.append_array(g.owned)
+	if sellable.is_empty():
+		t(v, "팔 살림이 없소.", 14)
+	for sid in sellable:
+		var sb := g.belong(sid)
+		btn(v, "%s 팔기 → %s" % [sb["n"], GameState.fmt(g.resale(sid))], func():
+			var m := g.sell_belong(sid)
+			g.save_game()
+			render()
+			show_home("%s을(를) 팔아 %s을 마련했다." % [sb["n"], GameState.fmt(m)]), Color("#9a2e22"), Color.WHITE)
+	_recolor_btns(v)
+
+
 ## 어두운 판 위의 btn 글자를 금빛으로
 func _recolor_btns(v: Control) -> void:
 	for c in v.get_children():
@@ -1789,7 +1900,7 @@ func show_menu() -> void:
 	var v := sheet(HANJI, INK, INK, true, 500)
 	t(v, "장부", 30, font_k, null, HORIZONTAL_ALIGNMENT_CENTER)
 	t(v, "Lv.%d · 평판 %d · 금고 %s" % [g.lv, g.rep, GameState.fmt(g.money)], 15, font_b, null, HORIZONTAL_ALIGNMENT_CENTER)
-	for e in [["창고", "사들인 물건 · 감정 · 수리 · 도매 처분", func(): show_inv()], ["사장 수첩", "기술 올리기 · 가게 이전 · 단골 · 설정" + (" ●" if g.sp > 0 else ""), func(): show_ledger()], ["셈판", "오늘 · 최근 7일 · 전체 수입과 지출", func(): show_stats("today")], ["보물 도감", "모은 물건 %d/%d" % [g.collection.size(), g.collection_total()], func(): show_collection()], ["일꾼", "고용한 직원 %d/%d" % [g.staff.size(), g.staff_slots()], func(): show_staff()]]:
+	for e in [["창고", "사들인 물건 · 감정 · 수리 · 도매 처분", func(): show_inv()], ["사장 수첩", "기술 올리기 · 가게 이전 · 단골 · 설정" + (" ●" if g.sp > 0 else ""), func(): show_ledger()], ["셈판", "오늘 · 최근 7일 · 전체 수입과 지출", func(): show_stats("today")], ["보물 도감", "모은 물건 %d/%d" % [g.collection.size(), g.collection_total()], func(): show_collection()], ["일꾼", "고용한 직원 %d/%d" % [g.staff.size(), g.staff_slots()], func(): show_staff()], ["내 살림", "%s · 탈것·우주선 %d · 급전 되팔기" % [g.belong(g.home)["n"], g.owned.filter(func(x): return g.belong(x).get("cat", "") != "view").size()], func(): show_home()]]:
 		var b := btn(v, "%s\n%s" % [e[0], e[1]], e[2], Color("#3a2430"), HANJI)
 		b.custom_minimum_size = Vector2(0, 74)
 
@@ -2251,11 +2362,11 @@ func show_ledger() -> void:
 		b.custom_minimum_size = Vector2(70, 46)
 	var cs := g.shop_info()
 	t(v, "가게", 21, font_k)
-	t(v, "지금: %s · 임대료 %s/일 · 창고 %d칸 · 손님 %d명" % [cs["n"], GameState.fmt(cs["rent"]), g.cap(), int(cs["cust"])], 15)
+	t(v, "지금: %s · 확장 %d/%d · 임대료 %s/일 · 창고 %d칸 · 손님 %d명" % [cs["n"], g.shop_up, g.ups_total(), GameState.fmt(cs["rent"]), g.cap(), g.cust_base()], 15)
 	if g.shop + 1 < D.shops.size():
 		var nx: Dictionary = D.shops[g.shop + 1]
 		t(v, "다음: %s · 창고 %d칸 · 손님 %d명 · 임대료 %s/일" % [nx["n"], int(nx["st"]), int(nx["cust"]), GameState.fmt(nx["rent"])], 14)
-		t(v, "가게 이전 계약은 아침에 「운경 상단 거리」에서 합니다 (%s)." % GameState.fmt(nx["cost"]), 14)
+		t(v, "가게 확장과 이전 계약은 아침에 「운경 상단 거리」에서 합니다 (확장을 다 마친 뒤 이전 %s)." % GameState.fmt(nx["cost"]), 14)
 	else:
 		t(v, "최고의 가게! 이 거리의 흥정왕입니다.", 16, font_b)
 	t(v, "단골 수첩", 21, font_k)

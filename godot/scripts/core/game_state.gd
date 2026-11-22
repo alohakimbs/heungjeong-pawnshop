@@ -47,6 +47,10 @@ var plan_buy := 0  # 오늘 남은 사러 올 손님
 var plan_sell := 0  # 오늘 남은 팔러(맡기러) 올 손님
 var later: Array = []  # 「나중에」로 미룬 손님: [{cur, neg}]
 var trip_day := 0  # 마지막으로 나들이한 날
+var shop_up := 0  # 지금 가게에서 마친 확장 단계 수 (이전하면 0)
+var home := "backroom"  # 사는 집
+var view := "unkyeong"  # 집 창밖 풍경
+var owned: Array = []  # 산 살림 id (창밖 풍경·탈것·우주선)
 var journal: Array = []  # 견문록: 가 본 곳 id
 var trip_offer: Dictionary = {}  # (옛 나들이) 살 수 있는 물건
 var equip := {"lens": 0, "shelf": 0, "censer": 0}  # 옥맥공방에서 강화하는 장비
@@ -118,7 +122,21 @@ func shop_info() -> Dictionary:
 
 
 func cap() -> int:
-	return int(shop_info()["st"]) + 2 * int(equip.get("shelf", 0))
+	return int(shop_info()["st"]) + 2 * int(equip.get("shelf", 0)) + 3 * _ups_done("room")
+
+
+## 지금 가게에서 마친 확장 중 종류 k의 수
+func _ups_done(k: String) -> int:
+	var n := 0
+	var ups: Array = shop_info().get("ups", [])
+	for i in mini(shop_up, ups.size()):
+		if ups[i]["k"] == k:
+			n += 1
+	return n
+
+
+func cust_base() -> int:
+	return int(shop_info()["cust"]) + _ups_done("seat")
 
 
 ## 감정 실력 = 기술 + 감정 렌즈
@@ -128,7 +146,7 @@ func app_lv() -> int:
 
 ## 화술 = 기술 + 향로(손님이 오래 참음)
 func charm_lv() -> int:
-	return int(skills["charm"]) + int(equip.get("censer", 0))
+	return int(skills["charm"]) + int(equip.get("censer", 0)) + home_lv() / 2
 
 
 func trend_of(cat: String) -> float:
@@ -674,9 +692,10 @@ func stall(id: String) -> Array:
 	var st: Dictionary = stalls.get(id, {})
 	if int(st.get("day", -1)) != day:
 		var lst: Array = []
-		for i in (4 if id == "market" else 3):
+		var disc := 1.0 - 0.03 * best_lv("ride")
+		for i in (4 if id == "market" else 3 + best_lv("ship")):
 			var it := gen_item(0.3) if id == "market" else gen_item(0.05, 2)
-			var pr := r10(val(it, true) * (rnd(0.45, 0.75) if id == "market" else rnd(0.85, 1.05)))
+			var pr := r10(val(it, true) * disc * (rnd(0.45, 0.75) if id == "market" else rnd(0.85, 1.05)))
 			lst.append({"item": it, "price": pr})
 		st = {"day": day, "list": lst}
 		stalls[id] = st
@@ -724,11 +743,101 @@ func promote() -> bool:
 	return true
 
 
-## 다음 목표: 옮겨 갈 다음 가게 (마지막 가게면 빈 사전)
+## 다음 목표: 가게 확장 다음 단계 → 다 하면 이전 → 마지막 가게까지 다 하면 빈 사전
 func goal() -> Dictionary:
+	var u := next_up_step()
+	if not u.is_empty():
+		return {"kind": "up", "n": u["n"], "cost": int(u["cost"]), "step": shop_up + 1, "of": ups_total()}
 	if shop + 1 >= D.shops.size():
 		return {}
-	return D.shops[shop + 1]
+	var nx: Dictionary = D.shops[shop + 1]
+	return {"kind": "move", "n": nx["n"], "cost": int(nx["cost"])}
+
+
+# ---------------------------------------------------------------- 살림 (집·창밖 풍경·탈것·우주선)
+## id로 살림 찾기: {cat, ...데이터}
+func belong(id: String) -> Dictionary:
+	for cat in ["home", "view", "ride", "ship"]:
+		for b in D.belong[cat]:
+			if b["id"] == id:
+				var o: Dictionary = b.duplicate()
+				o["cat"] = cat
+				return o
+	return {}
+
+
+func home_lv() -> int:
+	return int(belong(home).get("lv", 0))
+
+
+func owns(id: String) -> bool:
+	return id == home or owned.has(id) or (id == "unkyeong")
+
+
+## 가진 탈것·우주선 중 가장 높은 단계
+func best_lv(cat: String) -> int:
+	var b := 0
+	for id in owned:
+		var o := belong(id)
+		if o.get("cat", "") == cat:
+			b = maxi(b, int(o["lv"]))
+	return b
+
+
+func resale(id: String) -> int:
+	return r10(int(belong(id).get("cost", 0)) * float(D.belong["resale"]))
+
+
+## 살림 사기 (아침 가게 준비 때만). 새 집을 사면 옛 집은 되팔린다.
+func buy_belong(id: String) -> bool:
+	var o := belong(id)
+	if o.is_empty() or owns(id) or phase != "morning":
+		return false
+	var c := int(o["cost"])
+	var back := resale(home) if o["cat"] == "home" else 0
+	if o["cat"] == "view" and home_lv() < int(o["need"]):
+		toast("더 좋은 집이 있어야 그 풍경이 보여요")
+		return false
+	if money + back < c:
+		toast("돈이 모자라요")
+		return false
+	money += back - c
+	book("fees", c - back)
+	if o["cat"] == "home":
+		home = id
+	else:
+		owned.append(id)
+		if o["cat"] == "view":
+			view = id
+	toast("%s 장만!" % o["n"])
+	return true
+
+
+## 급전: 살림을 되팔아 돈 마련 (언제든). 집을 팔면 가게 뒷방으로.
+func sell_belong(id: String) -> int:
+	var o := belong(id)
+	if o.is_empty() or int(o["cost"]) <= 0 or not owns(id):
+		return 0
+	var m := resale(id)
+	money += m
+	if o["cat"] == "home":
+		home = "backroom"
+		var v := belong(view)
+		if int(v.get("need", 0)) > 0:
+			view = "unkyeong"
+	else:
+		owned.erase(id)
+		if view == id:
+			view = "unkyeong"
+	toast("%s을(를) %s에 팔았다" % [o["n"], fmt(m)])
+	return m
+
+
+func set_view(id: String) -> bool:
+	if not owns(id) or belong(id).get("cat", "") != "view" or home_lv() < int(belong(id).get("need", 0)):
+		return false
+	view = id
+	return true
 
 
 ## 오늘 남은 손님 수 (지금 손님 제외): [사러 올, 팔러 올]
@@ -957,7 +1066,30 @@ func skill_up(k: String) -> bool:
 
 
 func can_move() -> bool:
-	return shop + 1 < D.shops.size() and money >= int(D.shops[shop + 1]["cost"])
+	return shop + 1 < D.shops.size() and shop_up >= ups_total() and money >= int(D.shops[shop + 1]["cost"])
+
+
+func ups_total() -> int:
+	return (shop_info().get("ups", []) as Array).size()
+
+
+## 다음 가게 확장 단계 (다 했으면 빈 사전)
+func next_up_step() -> Dictionary:
+	var ups: Array = shop_info().get("ups", [])
+	return {} if shop_up >= ups.size() else ups[shop_up]
+
+
+func expand() -> bool:
+	var u := next_up_step()
+	if u.is_empty() or money < int(u["cost"]):
+		return false
+	money -= int(u["cost"])
+	book("fees", int(u["cost"]))
+	shop_up += 1
+	if u["k"] == "sign":
+		rep += 10
+	toast("가게 확장: %s!" % u["n"])
+	return true
 
 
 func move_shop() -> bool:
@@ -965,6 +1097,7 @@ func move_shop() -> bool:
 		return false
 	money -= int(D.shops[shop + 1]["cost"])
 	shop += 1
+	shop_up = 0
 	if shop == D.shops.size() - 1:
 		won = true
 	toast("%s(으)로 이전!" % shop_info()["n"])
@@ -1104,7 +1237,7 @@ func _visit_apply(b: Dictionary) -> Dictionary:
 
 func open_shop() -> void:
 	phase = "open"
-	queue = maxi(2, int(shop_info()["cust"]) + (2 if has_staff("clerk") else 0) + rep / 25 + int(today.get("bonus", 0)))
+	queue = maxi(2, cust_base() + (2 if has_staff("clerk") else 0) + rep / 25 + int(today.get("bonus", 0)))
 	plan_buy = int(round(queue * rnd(0.35, 0.5)))
 	plan_sell = queue - plan_buy
 	later = []
@@ -1346,8 +1479,8 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "trip_day", "journal", "trip_offer", "equip", "stalls", "info_day", "promo_day"]
-const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell", "trip_day", "info_day", "promo_day"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "trip_day", "journal", "trip_offer", "equip", "stalls", "info_day", "promo_day", "shop_up", "home", "view", "owned"]
+const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell", "trip_day", "info_day", "promo_day", "shop_up"]
 
 
 func to_dict() -> Dictionary:

@@ -332,14 +332,47 @@ func test_sim_smart() -> void:
 
 
 func test_goal() -> void:
-	print("[목표: 돈 벌어 가게 키우기]")
+	print("[목표: 가게 확장 단계 → 이전, 살림 사고 되팔기]")
 	var g := GameState.new(data)
-	var gl: Dictionary = g.goal()
-	check(gl.get("n", "") == data.shops[1]["n"], "첫 목표는 두 번째 가게")
-	g.shop = data.shops.size() - 1
-	check(g.goal().is_empty(), "마지막 가게면 목표 없음(흥정왕)")
+	g.start_day()
 	check(not FileAccess.file_exists("res://data/story.json"), "이야기 장면 없음")
-
+	var gl: Dictionary = g.goal()
+	check(gl.get("kind", "") == "up" and gl["step"] == 1 and gl["of"] == 3, "첫 목표는 가게 확장 1/3단계")
+	g.money = 100000
+	check(not g.can_move(), "확장을 다 안 하면 이전 불가")
+	var c0 := g.cap()
+	var q0 := g.cust_base()
+	var r0 := g.rep
+	g.expand(); g.expand(); g.expand()
+	check(g.cap() == c0 + 3 and g.cust_base() == q0 + 1 and g.rep == r0 + 10, "확장 효과: 창고 +3, 손님 +1, 평판 +10")
+	check(g.goal()["kind"] == "move" and g.can_move(), "확장을 마치면 다음 목표는 이전")
+	g.move_shop()
+	check(g.shop == 1 and g.shop_up == 0 and g.goal()["kind"] == "up", "이전하면 새 가게의 확장이 다시 시작")
+	g.shop = data.shops.size() - 1
+	g.shop_up = 3
+	check(g.goal().is_empty(), "마지막 가게까지 다 키우면 목표 없음(흥정왕)")
+	g.shop = 0
+	g.shop_up = 0
+	# 살림
+	g.money = 100000
+	var ch0 := g.charm_lv()
+	check(not g.buy_belong("observatory"), "좋은 집이 없으면 비싼 창밖 풍경은 못 삼")
+	check(g.buy_belong("canal") and g.home == "canal" and g.charm_lv() == ch0 + 1, "수로변 기와집: 집 2단계 → 화술 +1")
+	var m0 := g.money
+	check(g.buy_belong("garden") and g.money == m0 - 90000 + g.resale("canal"), "새 집을 사면 옛 집은 되팔림")
+	check(g.buy_belong("farm") and g.view == "farm", "창밖 풍경을 사면 바로 걸림")
+	g.money += 20000
+	g.buy_belong("bike")
+	check(g.best_lv("ride") == 2, "탈것 단계")
+	var m1 := g.money
+	var got := g.sell_belong("bike")
+	check(got == g.resale("bike") and g.money == m1 + got and not g.owns("bike"), "급전: 탈것을 70%에 되팔기")
+	got = g.sell_belong("garden")
+	check(got > 0 and g.home == "backroom" and g.view == "unkyeong", "집을 팔면 뒷방으로, 높은 풍경은 내려감")
+	check(g.sell_belong("backroom") == 0, "뒷방은 팔 수 없음")
+	var h := GameState.new(data)
+	h.from_dict(JSON.parse_string(JSON.stringify(g.to_dict())))
+	check(h.owned == g.owned and h.home == g.home and h.shop_up == g.shop_up, "살림·확장 저장")
 
 func test_trips() -> void:
 	print("[가게 준비: 운경 장소별 기능]")

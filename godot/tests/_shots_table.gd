@@ -47,7 +47,13 @@ func _process(_d):
 			g.money = 8000
 			main._map_sel = "workshop"
 			main._map_x = -1.0
+			main._map_sel = "unkyeong"
 			main.show_map()
 		60: shot("map_result")
-		61: quit()
+		61:
+			g.shop_up = 1
+			g.home = "canal"; g.owned = ["cart", "farm"]; g.view = "farm"
+			main.show_home()
+		68: shot("home")
+		69: quit()
 	return false

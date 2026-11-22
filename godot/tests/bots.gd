@@ -153,7 +153,13 @@ func _evening() -> void:
 		if rng.randf() < 0.1 and g.inv.size() > 0:
 			g.dump(g.inv[0]["id"])
 		if rng.randf() < 0.2:
+			g.expand()
+		if rng.randf() < 0.2:
 			g.move_shop()
+		if rng.randf() < 0.05:
+			g.buy_belong(["alley", "cart", "market", "canal"][rng.randi_range(0, 3)])
+		if rng.randf() < 0.05 and not g.owned.is_empty():
+			g.sell_belong(g.owned[0])
 		return
 	while g.sp > 0:
 		var order := ["appraise", "haggle", "charm", "psych"]
@@ -182,6 +188,8 @@ func _evening() -> void:
 			g.restore(it["id"])
 	if g.inv.size() >= g.cap() and g.inv.size() > 0:
 		g.dump(g.inv[0]["id"])
+	while not g.next_up_step().is_empty() and g.money > int(g.next_up_step()["cost"]) + 3000:
+		g.expand()
 	if g.shop + 1 < g.D.shops.size() and g.money > int(g.D.shops[g.shop + 1]["cost"]) + 4000:
 		g.move_shop()
 
@@ -189,8 +197,11 @@ func _evening() -> void:
 ## 순자산 = 현금 + 재고(가치의 절반) + 가게 이전에 투자한 금액
 func net_worth() -> float:
 	var w := float(g.money)
-	for i in range(1, g.shop + 1):
+	for i in range(0, g.shop + 1):
 		w += float(g.D.shops[i]["cost"])
+		var ups: Array = g.D.shops[i].get("ups", [])
+		for j in (ups.size() if i < g.shop else mini(g.shop_up, ups.size())):
+			w += float(ups[j]["cost"])
 	for it in g.inv:
 		w += g.val(it, false) * 0.5
 	return w

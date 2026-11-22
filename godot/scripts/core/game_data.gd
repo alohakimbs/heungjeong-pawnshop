@@ -13,6 +13,7 @@ var events: Dictionary = {}
 var lines: Dictionary = {}
 var tips: Array = []
 var trips: Dictionary = {}
+var belong: Dictionary = {}
 
 
 func _init() -> void:
@@ -31,6 +32,7 @@ func reload() -> void:
 	lines = load_json("res://data/lines.json")
 	tips = load_json("res://data/tips.json")
 	trips = load_json("res://data/trips.json")
+	belong = load_json("res://data/belongings.json")
 
 
 static func load_json(path: String) -> Variant:
