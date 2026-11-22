@@ -77,8 +77,7 @@
    " 심해별에선 물건값도 둥둥 떠다녀요.",
    " 촉수가 여덟이라 계산이 빨라요."
   ],
-  "species": "jelly",
-  "needs_art": true
+  "species": "jelly"
  },
  {
   "id": "crystal",
@@ -88,8 +87,7 @@
    " 빛의 굴절로 보건대...",
    " 우리 별에선 깎는 걸 실례라 하오."
   ],
-  "species": "crystal",
-  "needs_art": true
+  "species": "crystal"
  },
  {
   "id": "toad",
@@ -99,8 +97,7 @@
    " 섬여성 상단의 이름을 걸고.",
    " 두둑해야 복이 오지."
   ],
-  "species": "toad",
-  "needs_art": true
+  "species": "toad"
  },
  {
   "id": "cyclops",
@@ -110,8 +107,7 @@
    " 쿵.",
    " 이 가게 문이 좀 작구려."
   ],
-  "species": "cyclops",
-  "needs_art": true
+  "species": "cyclops"
  },
  {
   "id": "mushroom",
@@ -121,8 +117,7 @@
    " 습한 날엔 기분이 좋아요.",
    " 포자 한 알 덤으로 드릴까요?"
   ],
-  "species": "mushroom",
-  "needs_art": true
+  "species": "mushroom"
  },
  {
   "id": "turtle",
@@ -132,7 +127,6 @@
    " 내가 천문항 처음 열리던 날도 봤지.",
    " 흥정은 서두르는 쪽이 지는 법."
   ],
-  "species": "turtle",
-  "needs_art": true
+  "species": "turtle"
  }
 ]

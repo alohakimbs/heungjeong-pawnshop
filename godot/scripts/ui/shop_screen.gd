@@ -1814,6 +1814,7 @@ func _belong_buttons(v: VBoxContainer, cat: String, again: Callable) -> void:
 		if g.owns(id):
 			t(v, "✓ %s (가지고 있음)" % b["n"], 14, null, Color("#9fd8c6"))
 			continue
+		_belong_pic(v, id, 110)
 		var label := "%s · %s" % [b["n"], GameState.fmt(c)]
 		var ok := g.money >= c
 		if cat == "home":
@@ -1832,6 +1833,19 @@ func _belong_buttons(v: VBoxContainer, cat: String, again: Callable) -> void:
 			t(v, b["d"], 12, null, Color("#9fb8b0"))
 
 
+## 살림 그림(assets/belong/<id>.png)이 있으면 보여 준다
+func _belong_pic(v: Control, id: String, h: float) -> void:
+	var path := "res://assets/belong/%s.png" % id
+	if not ResourceLoader.exists(path):
+		return
+	var pr := TextureRect.new()
+	pr.texture = load(path)
+	pr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pr.custom_minimum_size = Vector2(0, h)
+	v.add_child(pr)
+
+
 ## 내 살림: 집 창밖 풍경 + 가진 것들. 급전이 필요하면 되팔기.
 func show_home(msg := "") -> void:
 	var v := sheet(Color("#13201d"), CREAM, Color("#c9a24a"), true, 500)
@@ -1847,6 +1861,7 @@ func show_home(msg := "") -> void:
 		pr.clip_contents = true
 		v.add_child(pr)
 	var hm := g.belong(g.home)
+	_belong_pic(v, g.home, 150)
 	t(v, hm["n"], 26, font_k, Color("#f3d68a"), HORIZONTAL_ALIGNMENT_CENTER)
 	t(v, "창밖: %s · %s" % [vw["n"], hm["d"]], 14, null, null, HORIZONTAL_ALIGNMENT_CENTER)
 	if msg != "":

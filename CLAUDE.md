@@ -50,7 +50,8 @@
 - [x] (M2) 아트 공급 방식: 사용자가 ChatGPT 이미지 생성으로 캐릭터를 만들어 드라이브에 올림 (2026-11-21 결정)
 - [x] 캐릭터 시트 20장 업로드 (2026-11-21, 폴더 1131cRcnz4He3F5laRQD7eZhhEyPQYEnJ) → `godot/assets/chars/` 75장 적용. 경매 상대 3명은 단골·손님 그림 재사용
 - [x] 물건 시트 10장 + 가게 배경 5장 업로드 → 적용 완료 (2026-11-21)
-- [ ] 수묵 담채 반실사로 전체 그림 새로 그리기(인물 시트 22장 + 직원·방문객 6장 + 물건 10장 + 배경 5장 + 소품 1장) — `docs/art/chatgpt_sumuk_final.md`, 드라이브 「수묵_최종」
+- [x] 수묵 담채 반실사로 전체 그림 새로 그리기 41장 → 전부 적용 (2026-11-22)
+- [ ] (ChatGPT) 내 살림 그림 belong_1·2 + 스토어 icon·feature — `docs/art/chatgpt_handoff_2.md`, 드라이브 「수묵_최종 › H_살림_스토어」(1Z-125ko9RghC94wZkUTiI54xdWpSOOdR). 들어오면 `tools/slice_sheets.py grid3`로 잘라 `godot/assets/belong/<id>.png`(belong_1: backroom,alley,canal,garden,pavilion,skygarden,cart,bike,pass / belong_2: hover,limo,skiff,freighter,clipper), icon → assets/icon, feature → docs/store
 - [ ] (M4) 수익 모델 결정: 유료 / 광고 / 인앱
 새로 생기면 여기에 추가하고 일일 보고에도 적는다.
 
