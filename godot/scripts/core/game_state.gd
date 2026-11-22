@@ -785,7 +785,8 @@ func best_lv(cat: String) -> int:
 
 
 func resale(id: String) -> int:
-	return r10(int(belong(id).get("cost", 0)) * float(D.belong["resale"]))
+	var cost := int(belong(id).get("cost", 0))
+	return 0 if cost <= 0 else r10(cost * float(D.belong["resale"]))
 
 
 ## 살림 사기 (아침 가게 준비 때만). 새 집을 사면 옛 집은 되팔린다.
@@ -802,9 +803,12 @@ func buy_belong(id: String) -> bool:
 		toast("돈이 모자라요")
 		return false
 	money += back - c
-	book("fees", c - back)
+	book("assets_bought", c)
+	book("assets_sold", back)
 	if o["cat"] == "home":
 		home = id
+		if home_lv() < int(belong(view).get("need", 0)):
+			view = "unkyeong"
 	else:
 		owned.append(id)
 		if o["cat"] == "view":
@@ -820,6 +824,7 @@ func sell_belong(id: String) -> int:
 		return 0
 	var m := resale(id)
 	money += m
+	book("assets_sold", m)
 	if o["cat"] == "home":
 		home = "backroom"
 		var v := belong(view)
@@ -1096,6 +1101,7 @@ func move_shop() -> bool:
 	if not can_move():
 		return false
 	money -= int(D.shops[shop + 1]["cost"])
+	book("fees", int(D.shops[shop + 1]["cost"]))
 	shop += 1
 	shop_up = 0
 	if shop == D.shops.size() - 1:
@@ -1345,7 +1351,7 @@ func close_shop() -> void:
 			notes.append("빚 독촉: 도매상이 %s을(를) 헐값에 가져감" % ", ".join(taken))
 	receipt = {"day": day, "deals": today["deals"], "bought": today["bought"], "sold": today["sold"], "rent": int(sh["rent"]), "shop": sh["n"], "wages": wg, "lent": int(today.get("lent", 0)), "repaid": int(today.get("repaid", 0)), "d": money - int(today["start"]), "xp": today.get("xp", 0), "notes": notes}
 	var h := {"day": day, "rent": int(sh["rent"]), "wages": wg}
-	for k in ["bought", "sold", "lent", "repaid", "fees", "penalty", "prize", "deals"]:
+	for k in ["bought", "sold", "lent", "repaid", "fees", "penalty", "prize", "deals", "assets_bought", "assets_sold"]:
 		h[k] = int(today.get(k, 0))
 	h["cash"] = money - int(today["start"])
 	history.append(h)
@@ -1530,7 +1536,7 @@ func _finalize_history() -> void:
 	if history.is_empty() or int(history[-1]["day"]) != day:
 		return
 	var h: Dictionary = history[-1]
-	for k in ["bought", "sold", "lent", "repaid", "fees", "penalty", "prize", "deals"]:
+	for k in ["bought", "sold", "lent", "repaid", "fees", "penalty", "prize", "deals", "assets_bought", "assets_sold"]:
 		h[k] = int(today.get(k, 0))
 	h["cash"] = money - int(today["start"])
 

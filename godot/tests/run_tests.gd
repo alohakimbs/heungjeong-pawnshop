@@ -42,6 +42,8 @@ func _init() -> void:
 	test_event_effects()
 	test_later()
 	test_goal()
+	test_belongings_regressions()
+	test_large_customer_day()
 	test_trips()
 	test_sim_random()
 	test_sim_smart()
@@ -374,6 +376,41 @@ func test_goal() -> void:
 	h.from_dict(JSON.parse_string(JSON.stringify(g.to_dict())))
 	check(h.owned == g.owned and h.home == g.home and h.shop_up == g.shop_up, "살림·확장 저장")
 
+func test_belongings_regressions() -> void:
+	print("[살림 거래·마감 회복 회귀]")
+	var g = new_game(930)
+	check(g.resale("backroom") == 0 and g.resale("missing") == 0, "무료·없는 살림의 되팔기 값은 0냥")
+	var before: int = g.money
+	g.buy_belong("alley")
+	check(g.money == before - 2500, "무료 뒷방 교환으로 돈이 생기지 않음")
+	g.money = 100000
+	g.buy_belong("canal")
+	g.buy_belong("farm")
+	g.buy_belong("alley")
+	check(g.view == "unkyeong" and g.owns("farm") and not g.set_view("farm"), "집 단계가 내려가면 풍경만 기본으로, 소유권 유지")
+	check(int(g.today.get("assets_bought", 0)) == 26000 and int(g.today.get("assets_sold", 0)) == 14350, "집 교환의 구입·되팔기 금액을 분리 기록")
+	g.buy_belong("cart")
+	g.close_shop()
+	g.money = g.bankrupt_line() - 500
+	var day_before: int = g.day
+	check(not g.next_day() and g.day == day_before, "파산선 아래에서는 다음 날로 진행하지 않음")
+	g.sell_belong("cart")
+	check(not g.is_bankrupt() and g.next_day() and g.day == day_before + 1, "밤에 살림을 팔아 파산선 회복 후 다음 날 진행")
+	check(int(g.history[-1].get("assets_sold", 0)) == 15400, "마감 뒤 살림 되팔기도 그날 기록에 포함")
+	var h = new_game(931)
+	h.money = 100000
+	h.shop_up = 3
+	var fees: int = int(h.today.get("fees", 0))
+	h.move_shop()
+	check(int(h.today.get("fees", 0)) == fees + 6000, "가게 이전 비용도 장부에 기록")
+	var missing: Array = []
+	for cat in ["home", "ride", "ship"]:
+		for b in data.belong[cat]:
+			if not ResourceLoader.exists("res://assets/belong/%s.png" % b["id"]):
+				missing.append(b["id"])
+	check(missing.is_empty(), "집·탈것·우주선 14종 모두 실제 그림 존재 %s" % str(missing))
+
+
 func test_trips() -> void:
 	print("[가게 준비: 운경 장소별 기능]")
 	var g := GameState.new(data)
@@ -521,6 +558,7 @@ func test_ui_smoke() -> void:
 		if main._char_tex("s_" + k, "ok") == null:
 			no_art.append("s_" + k)
 	check(no_art.is_empty(), "손님·단골·불청객·직원 모두 손그림 있음 %s" % str(no_art))
+	test_night_recovery_ui()
 	check(int(ProjectSettings.get_setting("display/window/size/viewport_width")) < int(ProjectSettings.get_setting("display/window/size/viewport_height")) and int(ProjectSettings.get_setting("display/window/handheld/orientation")) == 1, "세로 화면 설정")
 
 
@@ -734,3 +772,66 @@ func test_event_effects() -> void:
 		if JSON.stringify(e).contains("$"):
 			bad.append(k + "$")
 	check(bad.is_empty(), "모든 이벤트에 선택지별 결과가 있고 달러 표기 없음 %s" % str(bad))
+
+
+func _find_button(node: Node, text: String) -> Button:
+	if node.is_queued_for_deletion():
+		return null
+	if node is Button and node.text.begins_with(text):
+		return node
+	for child in node.get_children():
+		var found := _find_button(child, text)
+		if found != null:
+			return found
+	return null
+
+
+func test_night_recovery_ui() -> void:
+	var old = _main.g
+	var g = GameState.new(_main.D, 932)
+	g.start_day()
+	g.money = 10000
+	g.buy_belong("alley")
+	g.buy_belong("cart")
+	g.close_shop()
+	g.money = -3500
+	_main.g = g
+	_main.show_receipt()
+	var enter := _find_button(_main.modal, "살림 되팔아 현금 마련")
+	check(enter != null, "마감 장부에 살림 되팔기 진입 버튼")
+	if enter != null:
+		enter.pressed.emit()
+	var sell := _find_button(_main.modal, "짐꾼 로봇 수레 팔기")
+	check(sell != null, "마감 중 실제 살림 판매 버튼이 열림")
+	if sell != null:
+		sell.pressed.emit()
+	check(g.money == -2450 and not g.is_bankrupt(), "마감 화면에서 판매하면 실제 현금과 파산 여부 갱신")
+	var back := _find_button(_main.modal, "마감 장부로 돌아가기")
+	if back != null:
+		back.pressed.emit()
+	var next := _find_button(_main.modal, "불 끄고 퇴근")
+	check(back != null and next != null, "살림을 판 뒤 마감 장부와 다음 날로 복귀")
+	if next != null:
+		next.pressed.emit()
+	check(g.day == 2 and g.phase == "morning", "마감 회복 전체 화면 흐름으로 다음 날 도달")
+	_main.g = old
+	_main.close_modal()
+
+
+func test_large_customer_day() -> void:
+	print("[후반 많은 손님 진단]")
+	var g = new_game(933)
+	g.rep = 15000
+	g.event = ""
+	var bot = Bots.new(g, "smart", 1033)
+	check(bot.day_step_limit() > 2000, "후반 행동 한도가 평판에 따라 늘어남")
+	var n := 0
+	while g.phase != "night" and n < bot.day_step_limit():
+		if g.phase == "morning":
+			g.flip_open()
+		elif g.cur.get("gone", false):
+			g.next_customer()
+		else:
+			g.refuse()
+		n += 1
+	check(g.phase == "night" and n > 1000, "평판 15,000의 많은 손님도 정상 마감 가능")

@@ -1,0 +1,1687 @@
+{
+  "days": 240,
+  "policy": "growth",
+  "runs": [
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 1001,
+          "day": 30,
+          "deals": 132,
+          "equipment": {
+            "censer": 1,
+            "lens": 1,
+            "shelf": 1
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 0,
+          "ride": 0,
+          "ship": 0,
+          "shop": 0,
+          "shop_up": 2,
+          "worth": 3859
+        },
+        {
+          "cash": 6467,
+          "day": 60,
+          "deals": 336,
+          "equipment": {
+            "censer": 1,
+            "lens": 2,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 131,
+          "ride": 0,
+          "ship": 0,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 16863
+        },
+        {
+          "cash": 12336,
+          "day": 90,
+          "deals": 976,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 816,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 153540
+        },
+        {
+          "cash": 172200,
+          "day": 120,
+          "deals": 2531,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "canal",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2389,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 703998
+        },
+        {
+          "cash": 298414,
+          "day": 150,
+          "deals": 5333,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 5195,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1811420
+        },
+        {
+          "cash": 1091636,
+          "day": 180,
+          "deals": 8869,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 8766,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3076127
+        },
+        {
+          "cash": 2075075,
+          "day": 210,
+          "deals": 11983,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo"
+          ],
+          "rep": 11894,
+          "ride": 5,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4050083
+        },
+        {
+          "cash": 3020542,
+          "day": 240,
+          "deals": 15078,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 15006,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4993341
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 62,
+          "shop": 1
+        },
+        {
+          "day": 84,
+          "shop": 2
+        },
+        {
+          "day": 103,
+          "shop": 3
+        },
+        {
+          "day": 134,
+          "shop": 4
+        }
+      ],
+      "seed": 300
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 8307,
+          "day": 30,
+          "deals": 196,
+          "equipment": {
+            "censer": 1,
+            "lens": 1,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 119,
+          "ride": 0,
+          "ship": 0,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 15623
+        },
+        {
+          "cash": 3267,
+          "day": 60,
+          "deals": 794,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 761,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 142902
+        },
+        {
+          "cash": 99074,
+          "day": 90,
+          "deals": 2387,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "canal",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2368,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 653121
+        },
+        {
+          "cash": 271297,
+          "day": 120,
+          "deals": 5412,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 5402,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1775279
+        },
+        {
+          "cash": 1205471,
+          "day": 150,
+          "deals": 9118,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 9121,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3190621
+        },
+        {
+          "cash": 1720498,
+          "day": 180,
+          "deals": 12453,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 12390,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3712604
+        },
+        {
+          "cash": 3742921,
+          "day": 210,
+          "deals": 16501,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 16468,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5747515
+        },
+        {
+          "cash": 4134086,
+          "day": 240,
+          "deals": 19836,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "skygarden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 19821,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 6126419
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 33,
+          "shop": 1
+        },
+        {
+          "day": 53,
+          "shop": 2
+        },
+        {
+          "day": 77,
+          "shop": 3
+        },
+        {
+          "day": 107,
+          "shop": 4
+        }
+      ],
+      "seed": 301
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 8120,
+          "day": 30,
+          "deals": 226,
+          "equipment": {
+            "censer": 1,
+            "lens": 1,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 117,
+          "ride": 0,
+          "ship": 0,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 14516
+        },
+        {
+          "cash": 3096,
+          "day": 60,
+          "deals": 780,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 699,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 112130
+        },
+        {
+          "cash": 164408,
+          "day": 90,
+          "deals": 2441,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "canal",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2388,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 676315
+        },
+        {
+          "cash": 127694,
+          "day": 120,
+          "deals": 5335,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 5300,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1621771
+        },
+        {
+          "cash": 976740,
+          "day": 150,
+          "deals": 8413,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 8403,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 2952874
+        },
+        {
+          "cash": 1672420,
+          "day": 180,
+          "deals": 11590,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo"
+          ],
+          "rep": 11593,
+          "ride": 5,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3678079
+        },
+        {
+          "cash": 2614062,
+          "day": 210,
+          "deals": 14739,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 14742,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4604278
+        },
+        {
+          "cash": 4271412,
+          "day": 240,
+          "deals": 17996,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 18013,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 6262432
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 39,
+          "shop": 1
+        },
+        {
+          "day": 56,
+          "shop": 2
+        },
+        {
+          "day": 79,
+          "shop": 3
+        },
+        {
+          "day": 106,
+          "shop": 4
+        }
+      ],
+      "seed": 302
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5243,
+          "day": 30,
+          "deals": 192,
+          "equipment": {
+            "censer": 1,
+            "lens": 2,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 94,
+          "ride": 0,
+          "ship": 0,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 10706
+        },
+        {
+          "cash": 18883,
+          "day": 60,
+          "deals": 736,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 677,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 120616
+        },
+        {
+          "cash": 118273,
+          "day": 90,
+          "deals": 2322,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "canal",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2295,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 638634
+        },
+        {
+          "cash": 81106,
+          "day": 120,
+          "deals": 4796,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 4770,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1585735
+        },
+        {
+          "cash": 823558,
+          "day": 150,
+          "deals": 8027,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 8029,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 2796188
+        },
+        {
+          "cash": 1880824,
+          "day": 180,
+          "deals": 11584,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo"
+          ],
+          "rep": 11595,
+          "ride": 5,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3864865
+        },
+        {
+          "cash": 2725165,
+          "day": 210,
+          "deals": 14960,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 14971,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4714294
+        },
+        {
+          "cash": 3397871,
+          "day": 240,
+          "deals": 18360,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "skygarden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 18387,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5389653
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 40,
+          "shop": 1
+        },
+        {
+          "day": 56,
+          "shop": 2
+        },
+        {
+          "day": 74,
+          "shop": 3
+        },
+        {
+          "day": 110,
+          "shop": 4
+        }
+      ],
+      "seed": 303
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 6810,
+          "day": 30,
+          "deals": 221,
+          "equipment": {
+            "censer": 1,
+            "lens": 2,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 178,
+          "ride": 0,
+          "ship": 0,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 25132
+        },
+        {
+          "cash": 66038,
+          "day": 60,
+          "deals": 960,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "canal",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 974,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 218931
+        },
+        {
+          "cash": 325596,
+          "day": 90,
+          "deals": 2968,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 3001,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 864607
+        },
+        {
+          "cash": 157028,
+          "day": 120,
+          "deals": 6194,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 6242,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 2127320
+        },
+        {
+          "cash": 1367135,
+          "day": 150,
+          "deals": 9858,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 9922,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3395070
+        },
+        {
+          "cash": 1724966,
+          "day": 180,
+          "deals": 12885,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 12966,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3733516
+        },
+        {
+          "cash": 3454091,
+          "day": 210,
+          "deals": 16499,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 16597,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5437459
+        },
+        {
+          "cash": 3815951,
+          "day": 240,
+          "deals": 20307,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "skygarden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 20417,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5801166
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 26,
+          "shop": 1
+        },
+        {
+          "day": 47,
+          "shop": 2
+        },
+        {
+          "day": 72,
+          "shop": 3
+        },
+        {
+          "day": 98,
+          "shop": 4
+        }
+      ],
+      "seed": 304
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5889,
+          "day": 30,
+          "deals": 222,
+          "equipment": {
+            "censer": 1,
+            "lens": 2,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [
+            "cart"
+          ],
+          "rep": 176,
+          "ride": 1,
+          "ship": 0,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 26864
+        },
+        {
+          "cash": 44504,
+          "day": 60,
+          "deals": 973,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 1003,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 199817
+        },
+        {
+          "cash": 259133,
+          "day": 90,
+          "deals": 2841,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2883,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 790610
+        },
+        {
+          "cash": 477216,
+          "day": 120,
+          "deals": 5805,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 5852,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1963418
+        },
+        {
+          "cash": 1139904,
+          "day": 150,
+          "deals": 9118,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 9187,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3141871
+        },
+        {
+          "cash": 1877085,
+          "day": 180,
+          "deals": 12778,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 12854,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3847808
+        },
+        {
+          "cash": 3639470,
+          "day": 210,
+          "deals": 16148,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 16255,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5607687
+        },
+        {
+          "cash": 4170026,
+          "day": 240,
+          "deals": 19694,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "skygarden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 19806,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 6168843
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 22,
+          "shop": 1
+        },
+        {
+          "day": 51,
+          "shop": 2
+        },
+        {
+          "day": 65,
+          "shop": 3
+        },
+        {
+          "day": 100,
+          "shop": 4
+        }
+      ],
+      "seed": 305
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 2249,
+          "day": 30,
+          "deals": 210,
+          "equipment": {
+            "censer": 1,
+            "lens": 2,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [],
+          "rep": 142,
+          "ride": 0,
+          "ship": 0,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 18202
+        },
+        {
+          "cash": 16890,
+          "day": 60,
+          "deals": 738,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 654,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 112774
+        },
+        {
+          "cash": 104123,
+          "day": 90,
+          "deals": 2373,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "canal",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2318,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 644209
+        },
+        {
+          "cash": 99870,
+          "day": 120,
+          "deals": 4998,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 4963,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1588749
+        },
+        {
+          "cash": 900925,
+          "day": 150,
+          "deals": 8504,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 8494,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 2910392
+        },
+        {
+          "cash": 2096077,
+          "day": 180,
+          "deals": 11872,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo"
+          ],
+          "rep": 11873,
+          "ride": 5,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4097549
+        },
+        {
+          "cash": 2807709,
+          "day": 210,
+          "deals": 15261,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 15267,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4796502
+        },
+        {
+          "cash": 3234784,
+          "day": 240,
+          "deals": 18815,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "skygarden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 18851,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5221695
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 24,
+          "shop": 1
+        },
+        {
+          "day": 55,
+          "shop": 2
+        },
+        {
+          "day": 74,
+          "shop": 3
+        },
+        {
+          "day": 109,
+          "shop": 4
+        }
+      ],
+      "seed": 306
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 7195,
+          "day": 30,
+          "deals": 212,
+          "equipment": {
+            "censer": 2,
+            "lens": 2,
+            "shelf": 2
+          },
+          "home": "backroom",
+          "owned": [
+            "cart"
+          ],
+          "rep": 142,
+          "ride": 1,
+          "ship": 0,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 22806
+        },
+        {
+          "cash": 44851,
+          "day": 60,
+          "deals": 921,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "alley",
+          "owned": [
+            "cart",
+            "bike"
+          ],
+          "rep": 926,
+          "ride": 2,
+          "ship": 0,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 189777
+        },
+        {
+          "cash": 256363,
+          "day": 90,
+          "deals": 2827,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass"
+          ],
+          "rep": 2847,
+          "ride": 3,
+          "ship": 0,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 772016
+        },
+        {
+          "cash": 151927,
+          "day": 120,
+          "deals": 6134,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "garden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover"
+          ],
+          "rep": 6176,
+          "ride": 4,
+          "ship": 0,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 2151405
+        },
+        {
+          "cash": 1216354,
+          "day": 150,
+          "deals": 9419,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff"
+          ],
+          "rep": 9435,
+          "ride": 4,
+          "ship": 1,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 3208773
+        },
+        {
+          "cash": 2028780,
+          "day": 180,
+          "deals": 13216,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 13248,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 4024047
+        },
+        {
+          "cash": 3798655,
+          "day": 210,
+          "deals": 16477,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "pavilion",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 16551,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 5800959
+        },
+        {
+          "cash": 4084862,
+          "day": 240,
+          "deals": 20069,
+          "equipment": {
+            "censer": 3,
+            "lens": 3,
+            "shelf": 3
+          },
+          "home": "skygarden",
+          "owned": [
+            "cart",
+            "bike",
+            "pass",
+            "hover",
+            "skiff",
+            "limo",
+            "freighter"
+          ],
+          "rep": 20008,
+          "ride": 5,
+          "ship": 2,
+          "shop": 4,
+          "shop_up": 3,
+          "worth": 6068992
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 18,
+          "shop": 1
+        },
+        {
+          "day": 52,
+          "shop": 2
+        },
+        {
+          "day": 71,
+          "shop": 3
+        },
+        {
+          "day": 101,
+          "shop": 4
+        }
+      ],
+      "seed": 307
+    }
+  ],
+  "seeds": 8
+}

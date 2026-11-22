@@ -22,7 +22,7 @@
 - 화면 스크린샷: `xvfb-run -a -s "-screen 0 540x1170x24" godot --path godot --rendering-driver opengl3 --resolution 540x1170 -s res://tests/_shots.gd` → /tmp/shot_*.png
 - 드라이브 업로드: 큰 파일(APK 60MB)은 파일 참조 업로드가 안 됨 → 링크만 문서로 남긴다. 작은 이미지는 작업 폴더(/home/claude 아래)에 두고 sha256 참조로 업로드.
 - 출시용 AAB: Actions 「출시용 AAB」 수동 실행(`gh api -X POST repos/alohakimbs/heungjeong-pawnshop/actions/workflows/release.yml/dispatches -f ref=main`) → 릴리스 `aab-latest`. 업로드 키 Secrets 4개가 있으면 정식 서명.
-- 스토어 문서: `docs/store/`, 아이콘·그래픽 생성: `tools/store_art.gd` (xvfb 필요)
+- 스토어 문서: `docs/store/`, 아이콘·그래픽 생성: `python3 tools/prepare_store_art.py` (Pillow 필요, 수묵 원본 `docs/art/generated/`)
 - 개인정보처리방침 페이지(비공개 상태): https://claude.ai/artifact/2Jq7oLhZK2Nk3Y7jEGd7c6
 - 웹 프로토타입 v0.2(참고): `web/index.html`, https://claude.ai/artifact/Nk7PV3mSaa26BNdmLksho7
 
@@ -52,10 +52,15 @@
 - [x] 캐릭터 시트 20장 업로드 (2026-11-21, 폴더 1131cRcnz4He3F5laRQD7eZhhEyPQYEnJ) → `godot/assets/chars/` 75장 적용. 경매 상대 3명은 단골·손님 그림 재사용
 - [x] 물건 시트 10장 + 가게 배경 5장 업로드 → 적용 완료 (2026-11-21)
 - [x] 수묵 담채 반실사로 전체 그림 새로 그리기 41장 → 전부 적용 (2026-11-22)
-- [ ] (ChatGPT) 내 살림 그림 belong_1·2 + 스토어 icon·feature — `docs/art/chatgpt_handoff_2.md`, 드라이브 「수묵_최종 › H_살림_스토어」(1Z-125ko9RghC94wZkUTiI54xdWpSOOdR). 들어오면 `tools/slice_sheets.py grid3`로 잘라 `godot/assets/belong/<id>.png`(belong_1: backroom,alley,canal,garden,pavilion,skygarden,cart,bike,pass / belong_2: hover,limo,skiff,freighter,clipper), icon → assets/icon, feature → docs/store
+- [x] (ChatGPT, 2026-11-22 / 1.13.0) 내 살림 그림 belong_1·2 + 스토어 icon·feature — `docs/art/chatgpt_handoff_2.md`, 드라이브 「수묵_최종 › H_살림_스토어」(1Z-125ko9RghC94wZkUTiI54xdWpSOOdR). 들어오면 `tools/slice_sheets.py grid3`로 잘라 `godot/assets/belong/<id>.png`(belong_1: backroom,alley,canal,garden,pavilion,skygarden,cart,bike,pass / belong_2: hover,limo,skiff,freighter,clipper), icon → assets/icon, feature → docs/store
 - [ ] (M4) 수익 모델 결정: 유료 / 광고 / 인앱
 새로 생기면 여기에 추가하고 일일 보고에도 적는다.
 
 ## 사용자 결정 대기 중일 때 할 일
 결정이 필요한 항목(아트·수익 모델·이름)에 막혀도 멈추지 말고 다음을 한다:
 화면 다듬기(애니메이션·전환·가독성), 버그 수정, 밸런스(봇 시뮬레이션), 콘텐츠(물건·이벤트·단골 사연·대사), 접근성(글자 크기·색 대비), 테스트 보강.
+
+## 1.13.0 개발 검증
+- 장기 진단·구매 정책·한계: `docs/qa/1.13.0/REPORT.md`. 재현: `godot --headless --path godot -s res://tests/run_balance.gd -- --days=120 --seeds=32 --policy=growth`.
+- `assets_bought`/`assets_sold`는 살림 구입·처분 장부 항목. 옛 저장에 없는 항목은 0으로 읽는다.
+- `.import` 설정은 chars/items/bg 외에 belong/icon/ui/places도 커밋한다. chars 실행용 텍스처 최대 변 600px; 원본 PNG를 줄이지 않는다.

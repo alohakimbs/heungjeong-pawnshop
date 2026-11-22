@@ -1,0 +1,1853 @@
+{
+  "days": 120,
+  "policy": "smart",
+  "runs": [
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 7080,
+          "day": 30,
+          "deals": 221,
+          "rep": 146,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 21083
+        },
+        {
+          "cash": 9315,
+          "day": 60,
+          "deals": 866,
+          "rep": 724,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 159519
+        },
+        {
+          "cash": 37632,
+          "day": 90,
+          "deals": 2263,
+          "rep": 1792,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 550926
+        },
+        {
+          "cash": 50742,
+          "day": 120,
+          "deals": 4608,
+          "rep": 3545,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1217139
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 18,
+          "shop": 1
+        },
+        {
+          "day": 48,
+          "shop": 2
+        },
+        {
+          "day": 76,
+          "shop": 3
+        },
+        {
+          "day": 116,
+          "shop": 4
+        }
+      ],
+      "seed": 300
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4157,
+          "day": 30,
+          "deals": 187,
+          "rep": 98,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 21209
+        },
+        {
+          "cash": 15420,
+          "day": 60,
+          "deals": 704,
+          "rep": 511,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 155321
+        },
+        {
+          "cash": 4295,
+          "day": 90,
+          "deals": 1944,
+          "rep": 1441,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 510844
+        },
+        {
+          "cash": 136131,
+          "day": 120,
+          "deals": 4048,
+          "rep": 2966,
+          "shop": 4,
+          "shop_up": 0,
+          "worth": 1167478
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 25,
+          "shop": 1
+        },
+        {
+          "day": 45,
+          "shop": 2
+        },
+        {
+          "day": 77,
+          "shop": 3
+        },
+        {
+          "day": 118,
+          "shop": 4
+        }
+      ],
+      "seed": 301
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5803,
+          "day": 30,
+          "deals": 183,
+          "rep": 86,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 11176
+        },
+        {
+          "cash": 22008,
+          "day": 60,
+          "deals": 587,
+          "rep": 404,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 58523
+        },
+        {
+          "cash": 21050,
+          "day": 90,
+          "deals": 1585,
+          "rep": 1213,
+          "shop": 3,
+          "shop_up": 0,
+          "worth": 320961
+        },
+        {
+          "cash": 481503,
+          "day": 120,
+          "deals": 3515,
+          "rep": 2647,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 998707
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 36,
+          "shop": 1
+        },
+        {
+          "day": 64,
+          "shop": 2
+        },
+        {
+          "day": 87,
+          "shop": 3
+        }
+      ],
+      "seed": 302
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4229,
+          "day": 30,
+          "deals": 192,
+          "rep": 101,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 14800
+        },
+        {
+          "cash": 30553,
+          "day": 60,
+          "deals": 689,
+          "rep": 540,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 140947
+        },
+        {
+          "cash": 22144,
+          "day": 90,
+          "deals": 1734,
+          "rep": 1289,
+          "shop": 3,
+          "shop_up": 1,
+          "worth": 370742
+        },
+        {
+          "cash": 432423,
+          "day": 120,
+          "deals": 3646,
+          "rep": 2569,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 942832
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 30,
+          "shop": 1
+        },
+        {
+          "day": 55,
+          "shop": 2
+        },
+        {
+          "day": 84,
+          "shop": 3
+        }
+      ],
+      "seed": 303
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 1893,
+          "day": 30,
+          "deals": 223,
+          "rep": 102,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 15130
+        },
+        {
+          "cash": 14000,
+          "day": 60,
+          "deals": 718,
+          "rep": 540,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 154093
+        },
+        {
+          "cash": 33913,
+          "day": 90,
+          "deals": 1825,
+          "rep": 1328,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 451490
+        },
+        {
+          "cash": 84055,
+          "day": 120,
+          "deals": 4139,
+          "rep": 3039,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1316883
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 25,
+          "shop": 1
+        },
+        {
+          "day": 55,
+          "shop": 2
+        },
+        {
+          "day": 81,
+          "shop": 3
+        },
+        {
+          "day": 115,
+          "shop": 4
+        }
+      ],
+      "seed": 304
+    },
+    {
+      "bankrupt": true,
+      "checkpoints": [
+        {
+          "cash": 753,
+          "day": 30,
+          "deals": 221,
+          "rep": 146,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 19361
+        },
+        {
+          "cash": -4802,
+          "day": 60,
+          "deals": 228,
+          "rep": 152,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 13498
+        },
+        {
+          "cash": -5102,
+          "day": 62,
+          "deals": 228,
+          "rep": 152,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 13198
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 25,
+          "shop": 1
+        }
+      ],
+      "seed": 305
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4749,
+          "day": 30,
+          "deals": 171,
+          "rep": 88,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 15724
+        },
+        {
+          "cash": 45600,
+          "day": 60,
+          "deals": 591,
+          "rep": 429,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 78717
+        },
+        {
+          "cash": 23415,
+          "day": 90,
+          "deals": 1606,
+          "rep": 1172,
+          "shop": 3,
+          "shop_up": 0,
+          "worth": 317792
+        },
+        {
+          "cash": 415711,
+          "day": 120,
+          "deals": 3661,
+          "rep": 2691,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 923471
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 30,
+          "shop": 1
+        },
+        {
+          "day": 61,
+          "shop": 2
+        },
+        {
+          "day": 88,
+          "shop": 3
+        }
+      ],
+      "seed": 306
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 3427,
+          "day": 30,
+          "deals": 240,
+          "rep": 155,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 27549
+        },
+        {
+          "cash": 138465,
+          "day": 60,
+          "deals": 942,
+          "rep": 802,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 280628
+        },
+        {
+          "cash": 271081,
+          "day": 90,
+          "deals": 2524,
+          "rep": 1925,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 777406
+        },
+        {
+          "cash": 285590,
+          "day": 120,
+          "deals": 5236,
+          "rep": 3917,
+          "shop": 4,
+          "shop_up": 2,
+          "worth": 1799823
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 16,
+          "shop": 1
+        },
+        {
+          "day": 42,
+          "shop": 2
+        },
+        {
+          "day": 63,
+          "shop": 3
+        },
+        {
+          "day": 103,
+          "shop": 4
+        }
+      ],
+      "seed": 307
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 7132,
+          "day": 30,
+          "deals": 212,
+          "rep": 115,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 29854
+        },
+        {
+          "cash": 44092,
+          "day": 60,
+          "deals": 777,
+          "rep": 613,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 185178
+        },
+        {
+          "cash": 37477,
+          "day": 90,
+          "deals": 1951,
+          "rep": 1438,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 452141
+        },
+        {
+          "cash": 458903,
+          "day": 120,
+          "deals": 3806,
+          "rep": 2753,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 971497
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 15,
+          "shop": 1
+        },
+        {
+          "day": 45,
+          "shop": 2
+        },
+        {
+          "day": 82,
+          "shop": 3
+        }
+      ],
+      "seed": 308
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4966,
+          "day": 30,
+          "deals": 211,
+          "rep": 128,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 18189
+        },
+        {
+          "cash": 802,
+          "day": 60,
+          "deals": 691,
+          "rep": 476,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 117120
+        },
+        {
+          "cash": 152751,
+          "day": 90,
+          "deals": 1715,
+          "rep": 1185,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 301200
+        },
+        {
+          "cash": 370476,
+          "day": 120,
+          "deals": 3787,
+          "rep": 2762,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 883815
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 23,
+          "shop": 1
+        },
+        {
+          "day": 51,
+          "shop": 2
+        },
+        {
+          "day": 91,
+          "shop": 3
+        }
+      ],
+      "seed": 309
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4264,
+          "day": 30,
+          "deals": 177,
+          "rep": 81,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 16434
+        },
+        {
+          "cash": 8602,
+          "day": 60,
+          "deals": 589,
+          "rep": 414,
+          "shop": 2,
+          "shop_up": 0,
+          "worth": 87467
+        },
+        {
+          "cash": 127205,
+          "day": 90,
+          "deals": 1570,
+          "rep": 1102,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 268972
+        },
+        {
+          "cash": 362660,
+          "day": 120,
+          "deals": 3548,
+          "rep": 2595,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 874972
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 28,
+          "shop": 1
+        },
+        {
+          "day": 58,
+          "shop": 2
+        },
+        {
+          "day": 92,
+          "shop": 3
+        }
+      ],
+      "seed": 310
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 1707,
+          "day": 30,
+          "deals": 194,
+          "rep": 113,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 15558
+        },
+        {
+          "cash": 3852,
+          "day": 60,
+          "deals": 656,
+          "rep": 432,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 95717
+        },
+        {
+          "cash": 24912,
+          "day": 90,
+          "deals": 1613,
+          "rep": 1130,
+          "shop": 3,
+          "shop_up": 1,
+          "worth": 367863
+        },
+        {
+          "cash": 427117,
+          "day": 120,
+          "deals": 3410,
+          "rep": 2510,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 950559
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 24,
+          "shop": 1
+        },
+        {
+          "day": 53,
+          "shop": 2
+        },
+        {
+          "day": 87,
+          "shop": 3
+        }
+      ],
+      "seed": 311
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5624,
+          "day": 30,
+          "deals": 169,
+          "rep": 79,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 12592
+        },
+        {
+          "cash": 42282,
+          "day": 60,
+          "deals": 559,
+          "rep": 391,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 79491
+        },
+        {
+          "cash": 148326,
+          "day": 90,
+          "deals": 1581,
+          "rep": 1212,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 299997
+        },
+        {
+          "cash": 339650,
+          "day": 120,
+          "deals": 3657,
+          "rep": 2702,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 845389
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 33,
+          "shop": 1
+        },
+        {
+          "day": 63,
+          "shop": 2
+        },
+        {
+          "day": 91,
+          "shop": 3
+        }
+      ],
+      "seed": 312
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 2601,
+          "day": 30,
+          "deals": 243,
+          "rep": 174,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 26586
+        },
+        {
+          "cash": 3845,
+          "day": 60,
+          "deals": 850,
+          "rep": 680,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 152371
+        },
+        {
+          "cash": 59674,
+          "day": 90,
+          "deals": 2192,
+          "rep": 1625,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 472215
+        },
+        {
+          "cash": 491654,
+          "day": 120,
+          "deals": 4226,
+          "rep": 3161,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 1011966
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 13,
+          "shop": 1
+        },
+        {
+          "day": 47,
+          "shop": 2
+        },
+        {
+          "day": 80,
+          "shop": 3
+        }
+      ],
+      "seed": 313
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 3418,
+          "day": 30,
+          "deals": 254,
+          "rep": 201,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 34561
+        },
+        {
+          "cash": 24220,
+          "day": 60,
+          "deals": 860,
+          "rep": 635,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 151199
+        },
+        {
+          "cash": 63579,
+          "day": 90,
+          "deals": 2162,
+          "rep": 1528,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 493572
+        },
+        {
+          "cash": 11330,
+          "day": 120,
+          "deals": 4474,
+          "rep": 3207,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1193930
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 19,
+          "shop": 1
+        },
+        {
+          "day": 52,
+          "shop": 2
+        },
+        {
+          "day": 75,
+          "shop": 3
+        },
+        {
+          "day": 114,
+          "shop": 4
+        }
+      ],
+      "seed": 314
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 3155,
+          "day": 30,
+          "deals": 230,
+          "rep": 158,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 25216
+        },
+        {
+          "cash": 18172,
+          "day": 60,
+          "deals": 822,
+          "rep": 640,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 160870
+        },
+        {
+          "cash": 44568,
+          "day": 90,
+          "deals": 2142,
+          "rep": 1557,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 563064
+        },
+        {
+          "cash": 157539,
+          "day": 120,
+          "deals": 4512,
+          "rep": 3255,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1346810
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 16,
+          "shop": 1
+        },
+        {
+          "day": 46,
+          "shop": 2
+        },
+        {
+          "day": 78,
+          "shop": 3
+        },
+        {
+          "day": 111,
+          "shop": 4
+        }
+      ],
+      "seed": 315
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 639,
+          "day": 30,
+          "deals": 186,
+          "rep": 104,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 11746
+        },
+        {
+          "cash": 11240,
+          "day": 60,
+          "deals": 704,
+          "rep": 529,
+          "shop": 2,
+          "shop_up": 0,
+          "worth": 93070
+        },
+        {
+          "cash": 47905,
+          "day": 90,
+          "deals": 1859,
+          "rep": 1366,
+          "shop": 3,
+          "shop_up": 1,
+          "worth": 386727
+        },
+        {
+          "cash": 457337,
+          "day": 120,
+          "deals": 4079,
+          "rep": 2958,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 965231
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 15,
+          "shop": 1
+        },
+        {
+          "day": 54,
+          "shop": 2
+        },
+        {
+          "day": 85,
+          "shop": 3
+        }
+      ],
+      "seed": 316
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 7364,
+          "day": 30,
+          "deals": 178,
+          "rep": 80,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 14287
+        },
+        {
+          "cash": 45458,
+          "day": 60,
+          "deals": 614,
+          "rep": 460,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 83947
+        },
+        {
+          "cash": 81132,
+          "day": 90,
+          "deals": 1507,
+          "rep": 1123,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 226434
+        },
+        {
+          "cash": 223490,
+          "day": 120,
+          "deals": 3533,
+          "rep": 2659,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 768072
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 32,
+          "shop": 1
+        },
+        {
+          "day": 61,
+          "shop": 2
+        },
+        {
+          "day": 94,
+          "shop": 3
+        }
+      ],
+      "seed": 317
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 3345,
+          "day": 30,
+          "deals": 193,
+          "rep": 105,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 15561
+        },
+        {
+          "cash": 39010,
+          "day": 60,
+          "deals": 570,
+          "rep": 383,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 83142
+        },
+        {
+          "cash": 11839,
+          "day": 90,
+          "deals": 1514,
+          "rep": 1100,
+          "shop": 3,
+          "shop_up": 0,
+          "worth": 310265
+        },
+        {
+          "cash": 414251,
+          "day": 120,
+          "deals": 3484,
+          "rep": 2592,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 934721
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 28,
+          "shop": 1
+        },
+        {
+          "day": 62,
+          "shop": 2
+        },
+        {
+          "day": 88,
+          "shop": 3
+        }
+      ],
+      "seed": 318
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 3707,
+          "day": 30,
+          "deals": 234,
+          "rep": 143,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 15968
+        },
+        {
+          "cash": 16796,
+          "day": 60,
+          "deals": 782,
+          "rep": 562,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 109522
+        },
+        {
+          "cash": 48755,
+          "day": 90,
+          "deals": 2029,
+          "rep": 1451,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 457475
+        },
+        {
+          "cash": 107741,
+          "day": 120,
+          "deals": 4315,
+          "rep": 3128,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1299417
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 23,
+          "shop": 1
+        },
+        {
+          "day": 58,
+          "shop": 2
+        },
+        {
+          "day": 82,
+          "shop": 3
+        },
+        {
+          "day": 113,
+          "shop": 4
+        }
+      ],
+      "seed": 319
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 3406,
+          "day": 30,
+          "deals": 174,
+          "rep": 85,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 16318
+        },
+        {
+          "cash": 12470,
+          "day": 60,
+          "deals": 585,
+          "rep": 387,
+          "shop": 2,
+          "shop_up": 0,
+          "worth": 92527
+        },
+        {
+          "cash": 14776,
+          "day": 90,
+          "deals": 1655,
+          "rep": 1195,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 430050
+        },
+        {
+          "cash": 56693,
+          "day": 120,
+          "deals": 3702,
+          "rep": 2621,
+          "shop": 4,
+          "shop_up": 0,
+          "worth": 1082618
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 24,
+          "shop": 1
+        },
+        {
+          "day": 58,
+          "shop": 2
+        },
+        {
+          "day": 76,
+          "shop": 3
+        },
+        {
+          "day": 118,
+          "shop": 4
+        }
+      ],
+      "seed": 320
+    },
+    {
+      "bankrupt": true,
+      "checkpoints": [
+        {
+          "cash": 8727,
+          "day": 30,
+          "deals": 232,
+          "rep": 123,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 22337
+        },
+        {
+          "cash": 12424,
+          "day": 60,
+          "deals": 692,
+          "rep": 454,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 120300
+        },
+        {
+          "cash": -7278,
+          "day": 70,
+          "deals": 752,
+          "rep": 490,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 98022
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 20,
+          "shop": 1
+        },
+        {
+          "day": 54,
+          "shop": 2
+        }
+      ],
+      "seed": 321
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5686,
+          "day": 30,
+          "deals": 197,
+          "rep": 81,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 24472
+        },
+        {
+          "cash": 3996,
+          "day": 60,
+          "deals": 648,
+          "rep": 449,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 91795
+        },
+        {
+          "cash": 17547,
+          "day": 90,
+          "deals": 1733,
+          "rep": 1252,
+          "shop": 3,
+          "shop_up": 0,
+          "worth": 315811
+        },
+        {
+          "cash": 385272,
+          "day": 120,
+          "deals": 3691,
+          "rep": 2663,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 891064
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 18,
+          "shop": 1
+        },
+        {
+          "day": 53,
+          "shop": 2
+        },
+        {
+          "day": 90,
+          "shop": 3
+        }
+      ],
+      "seed": 322
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 8879,
+          "day": 30,
+          "deals": 246,
+          "rep": 133,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 19924
+        },
+        {
+          "cash": 20691,
+          "day": 60,
+          "deals": 755,
+          "rep": 574,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 158329
+        },
+        {
+          "cash": 33085,
+          "day": 90,
+          "deals": 1946,
+          "rep": 1439,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 445805
+        },
+        {
+          "cash": 65163,
+          "day": 120,
+          "deals": 4030,
+          "rep": 3004,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1230642
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 30,
+          "shop": 1
+        },
+        {
+          "day": 54,
+          "shop": 2
+        },
+        {
+          "day": 80,
+          "shop": 3
+        },
+        {
+          "day": 114,
+          "shop": 4
+        }
+      ],
+      "seed": 323
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5332,
+          "day": 30,
+          "deals": 243,
+          "rep": 177,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 20542
+        },
+        {
+          "cash": 2672,
+          "day": 60,
+          "deals": 812,
+          "rep": 627,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 99645
+        },
+        {
+          "cash": 54850,
+          "day": 90,
+          "deals": 2135,
+          "rep": 1606,
+          "shop": 3,
+          "shop_up": 1,
+          "worth": 400474
+        },
+        {
+          "cash": 13208,
+          "day": 120,
+          "deals": 4439,
+          "rep": 3306,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1182726
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 26,
+          "shop": 1
+        },
+        {
+          "day": 52,
+          "shop": 2
+        },
+        {
+          "day": 83,
+          "shop": 3
+        },
+        {
+          "day": 114,
+          "shop": 4
+        }
+      ],
+      "seed": 324
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4053,
+          "day": 30,
+          "deals": 238,
+          "rep": 152,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 26622
+        },
+        {
+          "cash": 18675,
+          "day": 60,
+          "deals": 790,
+          "rep": 612,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 135962
+        },
+        {
+          "cash": 16634,
+          "day": 90,
+          "deals": 2053,
+          "rep": 1525,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 426354
+        },
+        {
+          "cash": 47117,
+          "day": 120,
+          "deals": 4187,
+          "rep": 3112,
+          "shop": 4,
+          "shop_up": 0,
+          "worth": 1052710
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 20,
+          "shop": 1
+        },
+        {
+          "day": 50,
+          "shop": 2
+        },
+        {
+          "day": 78,
+          "shop": 3
+        },
+        {
+          "day": 120,
+          "shop": 4
+        }
+      ],
+      "seed": 325
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 4561,
+          "day": 30,
+          "deals": 140,
+          "rep": 36,
+          "shop": 0,
+          "shop_up": 2,
+          "worth": 6917
+        },
+        {
+          "cash": 7430,
+          "day": 60,
+          "deals": 460,
+          "rep": 302,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 30659
+        },
+        {
+          "cash": 99411,
+          "day": 90,
+          "deals": 1321,
+          "rep": 994,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 246052
+        },
+        {
+          "cash": 191873,
+          "day": 120,
+          "deals": 3093,
+          "rep": 2284,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 713292
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 53,
+          "shop": 1
+        },
+        {
+          "day": 72,
+          "shop": 2
+        },
+        {
+          "day": 96,
+          "shop": 3
+        }
+      ],
+      "seed": 326
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 6375,
+          "day": 30,
+          "deals": 255,
+          "rep": 174,
+          "shop": 1,
+          "shop_up": 2,
+          "worth": 26677
+        },
+        {
+          "cash": 24059,
+          "day": 60,
+          "deals": 794,
+          "rep": 595,
+          "shop": 2,
+          "shop_up": 2,
+          "worth": 157262
+        },
+        {
+          "cash": 88382,
+          "day": 90,
+          "deals": 2015,
+          "rep": 1476,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 504688
+        },
+        {
+          "cash": 127184,
+          "day": 120,
+          "deals": 4256,
+          "rep": 3107,
+          "shop": 4,
+          "shop_up": 1,
+          "worth": 1292677
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 13,
+          "shop": 1
+        },
+        {
+          "day": 50,
+          "shop": 2
+        },
+        {
+          "day": 74,
+          "shop": 3
+        },
+        {
+          "day": 111,
+          "shop": 4
+        }
+      ],
+      "seed": 327
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5091,
+          "day": 30,
+          "deals": 175,
+          "rep": 97,
+          "shop": 1,
+          "shop_up": 0,
+          "worth": 16183
+        },
+        {
+          "cash": 25348,
+          "day": 60,
+          "deals": 569,
+          "rep": 385,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 59150
+        },
+        {
+          "cash": 14841,
+          "day": 90,
+          "deals": 1532,
+          "rep": 1140,
+          "shop": 3,
+          "shop_up": 1,
+          "worth": 353413
+        },
+        {
+          "cash": 391381,
+          "day": 120,
+          "deals": 3505,
+          "rep": 2610,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 903585
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 30,
+          "shop": 1
+        },
+        {
+          "day": 63,
+          "shop": 2
+        },
+        {
+          "day": 87,
+          "shop": 3
+        }
+      ],
+      "seed": 328
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 7306,
+          "day": 30,
+          "deals": 164,
+          "rep": 61,
+          "shop": 0,
+          "shop_up": 3,
+          "worth": 11402
+        },
+        {
+          "cash": 8433,
+          "day": 60,
+          "deals": 527,
+          "rep": 350,
+          "shop": 1,
+          "shop_up": 3,
+          "worth": 48255
+        },
+        {
+          "cash": 134938,
+          "day": 90,
+          "deals": 1407,
+          "rep": 992,
+          "shop": 2,
+          "shop_up": 3,
+          "worth": 280697
+        },
+        {
+          "cash": 187848,
+          "day": 120,
+          "deals": 3180,
+          "rep": 2238,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 713517
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 40,
+          "shop": 1
+        },
+        {
+          "day": 66,
+          "shop": 2
+        },
+        {
+          "day": 93,
+          "shop": 3
+        }
+      ],
+      "seed": 329
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 5304,
+          "day": 30,
+          "deals": 217,
+          "rep": 130,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 20406
+        },
+        {
+          "cash": 13187,
+          "day": 60,
+          "deals": 727,
+          "rep": 546,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 105954
+        },
+        {
+          "cash": 56740,
+          "day": 90,
+          "deals": 1882,
+          "rep": 1401,
+          "shop": 3,
+          "shop_up": 1,
+          "worth": 400627
+        },
+        {
+          "cash": 429935,
+          "day": 120,
+          "deals": 3896,
+          "rep": 2822,
+          "shop": 3,
+          "shop_up": 3,
+          "worth": 942289
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 24,
+          "shop": 1
+        },
+        {
+          "day": 54,
+          "shop": 2
+        },
+        {
+          "day": 86,
+          "shop": 3
+        }
+      ],
+      "seed": 330
+    },
+    {
+      "bankrupt": false,
+      "checkpoints": [
+        {
+          "cash": 1334,
+          "day": 30,
+          "deals": 233,
+          "rep": 97,
+          "shop": 1,
+          "shop_up": 1,
+          "worth": 14996
+        },
+        {
+          "cash": 7896,
+          "day": 60,
+          "deals": 670,
+          "rep": 488,
+          "shop": 2,
+          "shop_up": 1,
+          "worth": 96097
+        },
+        {
+          "cash": 25964,
+          "day": 90,
+          "deals": 1851,
+          "rep": 1396,
+          "shop": 3,
+          "shop_up": 2,
+          "worth": 442774
+        },
+        {
+          "cash": 32166,
+          "day": 120,
+          "deals": 3883,
+          "rep": 2833,
+          "shop": 4,
+          "shop_up": 0,
+          "worth": 1037199
+        }
+      ],
+      "errors": [],
+      "milestones": [
+        {
+          "day": 18,
+          "shop": 1
+        },
+        {
+          "day": 59,
+          "shop": 2
+        },
+        {
+          "day": 80,
+          "shop": 3
+        },
+        {
+          "day": 119,
+          "shop": 4
+        }
+      ],
+      "seed": 331
+    }
+  ],
+  "seeds": 32
+}

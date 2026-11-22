@@ -1,33 +1,39 @@
-# Google Play Store Listing (English draft)
+# Google Play listing — English draft (1.13.0)
+
+Working title. Developer email, name clearance and monetization remain user decisions.
 
 ## App name
-Haggle King Pawn Shop (working title)
+Bargain King Pawnshop
 
-## Short description (≤80)
-Buy low, sell high! Read your customers and haggle your way to a pawn empire.
+## Short description
+Read your customers, strike a deal, and grow your pawnshop into a trading empire.
 
 ## Full description
-Start in a rundown garage and build your way to a luxury boutique.
+Start with a small stall in Ungyeong, a future trading city built along mountain cliffs and canals.
+Read an item's value and your customer's mood. Buy low, sell high, and put the proceeds into your next upgrade.
 
-■ It's all about the haggle
-Every customer is different — greedy sellers, naive grannies, busy socialites, a self-proclaimed Parisian appraiser.
-Read their faces, watch their patience, and push the price tag. Push too hard and they storm out.
+Make your offer
+Compare the asking price with your estimate. Push too hard and the customer may walk away. Regulars remember how you treated them.
 
-■ Real or fake?
-Check rarity and condition, estimate the value, and grab your magnifier when something smells off.
-Catch a fake and slash the price — but call a genuine piece fake and you'll regret it.
+Check what you buy
+Rarity, condition and daily market prices affect value. Hire an appraiser and upgrade your equipment to spot suspicious items. Selling counterfeits can lead to refunds or fines.
 
-■ Lend, hold, and wait
-Give pawn loans against collateral. They pay back with interest — or the item is yours.
+Lend against valuables
+Keep a customer's item as collateral. Receive repayment before the deadline, or claim the item when the loan expires.
 
-■ Grow your shop
-Read the morning paper for market trends, hire appraisers, restorers and profilers from the job ads,
-win treasures at auctions, complete your collection, and move to a bigger shop.
+Build a life beyond the counter
+Complete three expansions at each shop before moving to a bigger one. Visit six city locations to upgrade equipment, shop for stock and join auctions.
+Buy homes, window views, vehicles and spacecraft. Sell belongings for 70% of the purchase price when you need cash.
 
-■ Regulars remember
-Rip someone off yesterday and they'll bring it up today. Treat them fairly and they'll be friendlier.
+• 83 items across 10 categories, in a refined ink-and-watercolor style
+• 13 customer archetypes, 12 traits and 8 memorable regulars
+• 6 staff roles, 4 skills and 5 shops
+• 6 home levels, 6 window views, 5 vehicles and 3 spacecraft
+• 17 visitor events, a collection journal and financial records
+• Offline play and automatic saves
 
-• 125 items in 12 categories
-• 12 personality traits × 7 customer types + 8 memorable regulars
-• Pawn loans, auctions, 6 staff roles, 4 skills, 5 shop tiers
-• Offline play, autosave
+## Category
+Games > Simulation
+
+## Developer contact
+User input required

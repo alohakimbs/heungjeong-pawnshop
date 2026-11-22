@@ -1866,6 +1866,9 @@ func show_home(msg := "") -> void:
 	t(v, "창밖: %s · %s" % [vw["n"], hm["d"]], 14, null, null, HORIZONTAL_ALIGNMENT_CENTER)
 	if msg != "":
 		t(v, msg, 15, null, Color("#f3d68a"))
+	if g.phase == "night":
+		t(v, "현재 현금 %s · 파산선 %s" % [GameState.fmt(g.money), GameState.fmt(g.bankrupt_line())], 15)
+		btn(v, "마감 장부로 돌아가기", func(): show_receipt(), Color("#16221f"), Color.WHITE)
 	var eff: Array = []
 	if g.home_lv() >= 2:
 		eff.append("화술 +%d" % (g.home_lv() / 2))
@@ -1895,6 +1898,8 @@ func show_home(msg := "") -> void:
 		t(v, "팔 살림이 없소.", 14)
 	for sid in sellable:
 		var sb := g.belong(sid)
+		if sb["cat"] in ["ride", "ship"]:
+			_belong_pic(v, sid, 100)
 		btn(v, "%s 팔기 → %s" % [sb["n"], GameState.fmt(g.resale(sid))], func():
 			var m := g.sell_belong(sid)
 			g.save_game()
@@ -2251,8 +2256,9 @@ func show_receipt() -> void:
 	var v := sheet(Color("#fffdf6"), Color("#222222"), Color("#cccccc"), false, 520)
 	t(v, "흥정왕 전당포", 24, font_k, null, HORIZONTAL_ALIGNMENT_CENTER)
 	t(v, "%s · %d일차 마감" % [r["shop"], r["day"]], 15, null, null, HORIZONTAL_ALIGNMENT_CENTER)
-	var good: bool = r["d"] >= 0
-	for pair in [["거래", "%d건" % r["deals"]], ["매입", GameState.fmt(-r["bought"])], ["판매", GameState.fmt(r["sold"])], ["대출", GameState.fmt(-int(r.get("lent", 0)))], ["상환 받음", GameState.fmt(int(r.get("repaid", 0)))], ["임대료", GameState.fmt(-r["rent"])], ["직원 급여", GameState.fmt(-r["wages"])], ["현금 변화", GameState.fmt(r["d"])], ["경험치", "+%d XP" % r["xp"]]]:
+	var cash_delta: int = g.money - int(g.today.get("start", g.money))
+	var good: bool = cash_delta >= 0
+	for pair in [["거래", "%d건" % r["deals"]], ["매입", GameState.fmt(-r["bought"])], ["판매", GameState.fmt(r["sold"])], ["대출", GameState.fmt(-int(r.get("lent", 0)))], ["상환 받음", GameState.fmt(int(r.get("repaid", 0)))], ["임대료", GameState.fmt(-r["rent"])], ["직원 급여", GameState.fmt(-r["wages"])], ["현금 변화", GameState.fmt(cash_delta)], ["경험치", "+%d XP" % r["xp"]]]:
 		var h := row(v)
 		var a := t(h, pair[0], 16)
 		a.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -2261,6 +2267,12 @@ func show_receipt() -> void:
 		b.autowrap_mode = TextServer.AUTOWRAP_OFF
 	for nt in r["notes"]:
 		t(v, "· " + nt, 15)
+	for pair in [["살림 구입", -int(g.today.get("assets_bought", 0))], ["살림 되팔기", int(g.today.get("assets_sold", 0))]]:
+		if int(pair[1]) != 0:
+			t(v, "%s: %s" % [pair[0], GameState.fmt(pair[1])], 16)
+	t(v, "현재 현금: %s" % GameState.fmt(g.money), 18, font_b)
+	if g.home != "backroom" or not g.owned.is_empty():
+		btn(v, "살림 되팔아 현금 마련", func(): show_home(), Color("#16221f"), Color.WHITE)
 	t(v, "*창고 물건은 현금이 아니라 재고입니다. 파산선: %s" % GameState.fmt(g.bankrupt_line()), 13, null, Color("#777777"))
 	btn(v, "결과 보기" if g.is_bankrupt() else "불 끄고 퇴근 → 다음 날", func():
 		if not g.next_day():
@@ -2273,6 +2285,9 @@ func _show_bankrupt() -> void:
 	var v := sheet(Color("#f3ead4"), Color("#1d1915"), Color("#1d1915"), false, 520)
 	t(v, "파산!", 34, font_k)
 	t(v, "%d일 동안 버텼습니다. 빚쟁이들이 셔터를 두드립니다." % g.day, 17)
+	if g.home != "backroom" or not g.owned.is_empty():
+		t(v, "살림을 되팔아 파산선 이상을 마련하면 장사를 계속할 수 있습니다.", 16)
+		btn(v, "내 살림 확인하기", func(): show_home(), Color("#16221f"), Color.WHITE)
 	btn(v, "새로 시작", func():
 		g = GameState.new(D)
 		g.start_day()
@@ -2489,7 +2504,7 @@ func show_stats(mode: String) -> void:
 	else:
 		d = g.stats_sum(7 if mode == "week" else 0)
 		t(v, "마감한 날 %d일 기준" % int(d.get("days", 0)), 13, null, Color("#6b4a10"))
-	var rows := [["수입 · 판매", "sold", 1], ["수입 · 대출 상환", "repaid", 1], ["수입 · 도감 상금", "prize", 1], ["지출 · 매입", "bought", -1], ["지출 · 대출", "lent", -1], ["지출 · 감정·수리·참가비", "fees", -1], ["지출 · 벌금·사고", "penalty", -1], ["지출 · 임대료", "rent", -1], ["지출 · 직원 급여", "wages", -1]]
+	var rows := [["수입 · 판매", "sold", 1], ["수입 · 대출 상환", "repaid", 1], ["수입 · 도감 상금", "prize", 1], ["수입 · 살림 되팔기", "assets_sold", 1], ["지출 · 매입", "bought", -1], ["지출 · 대출", "lent", -1], ["지출 · 감정·수리·가게·장비", "fees", -1], ["지출 · 살림 구입", "assets_bought", -1], ["지출 · 벌금·사고", "penalty", -1], ["지출 · 임대료", "rent", -1], ["지출 · 직원 급여", "wages", -1]]
 	for r in rows:
 		var h := row(v)
 		var a := t(h, r[0], 16)

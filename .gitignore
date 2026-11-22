@@ -8,3 +8,8 @@ godot/android/
 !godot/assets/chars/*.import
 !godot/assets/items/*.import
 !godot/assets/bg/*.import
+
+!godot/assets/belong/*.import
+!godot/assets/icon/*.import
+!godot/assets/ui/*.import
+!godot/assets/places/*.import

@@ -248,3 +248,11 @@ xvfb-run -a -s "-screen 0 1080x2340x24" $G --path godot --rendering-driver openg
 - "유아적 그림 싫음" → 수묵 담채 반실사.
 - "장소는 그냥 구경이 아니라 기능" → 장비 강화는 여기, 가게 업그레이드는 여기, 물건 사기는 여기.
 - "스토리 없이 돈 벌고 가게 키우는 게 계속하게 만드는 요인", "가게 확장을 세부 단계로, 집·집 배경·차·우주선 사고 급하면 되팔기."
+
+## 2026-11-22 인수 후 갱신 (1.13.0 / versionCode 32)
+- H/I 살림·스토어 4장 제작 및 지정 Drive 폴더 업로드 완료. 원본 `docs/art/generated/`, 살림 14개 `godot/assets/belong/`.
+- 구입/처분은 today/history의 `assets_bought`/`assets_sold`에 기록. 가게 이전은 fees에 기록. 무료 살림 환급·낮은 집의 풍경 자격 오류 수정.
+- 밤 마감/파산 화면 → 내 살림 처분 → 장부 복귀 → 다음 날 진행 가능. 파산선·되팔기 비율은 유지.
+- 테스트 129개, 장기 진단 원자료와 한계 `docs/qa/1.13.0/REPORT.md`. 봇 구매 정책은 게임 규칙이 아님.
+- 이미지 임포트 메타데이터는 belong/icon/ui/places도 추적. chars는 원본을 보존하고 실행용 최대 변 600px로 임포트.
+- 스토어 아트 재생성: `python3 tools/prepare_store_art.py`. 기존 GDScript 진입점도 이 도구를 호출.

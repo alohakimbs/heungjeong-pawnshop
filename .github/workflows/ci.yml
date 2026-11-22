@@ -21,7 +21,7 @@ jobs:
           mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot-bin
           chmod +x godot-bin
       - name: 프로젝트 임포트
-        run: timeout 300 ./godot-bin --headless --path godot --import || true
+        run: timeout 300 ./godot-bin --headless --path godot --import
       - name: 테스트 실행
         run: timeout 900 ./godot-bin --headless --path godot -s res://tests/run_tests.gd
 
@@ -68,7 +68,7 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
           mkdir -p export
-          timeout 300 ./godot-bin --headless --path godot --import || true
+          timeout 300 ./godot-bin --headless --path godot --import
           timeout 900 ./godot-bin --headless --path godot --export-debug "Android" ../export/heungjeong-debug.apk
           ls -la export
       - uses: actions/upload-artifact@v4
@@ -81,7 +81,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VER=$(grep -oP 'version/name="\K[^"]+' godot/export_presets.cfg)
+          VER=$(grep -m1 -oP 'version/name="\K[^"]+' godot/export_presets.cfg)
           cp export/heungjeong-debug.apk "export/heungjeong-test.apk"
           gh release view test-latest >/dev/null 2>&1 || gh release create test-latest --prerelease --title "테스트 빌드 (최신)" --notes "main 브랜치에 푸시될 때마다 자동으로 갱신되는 디버그 APK입니다."
           gh release upload test-latest "export/heungjeong-test.apk" --clobber
