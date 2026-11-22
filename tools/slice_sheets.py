@@ -20,6 +20,9 @@ def keyed(cell):
         border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
         bg = np.isin(lab, list(border))
         a[..., 3] = np.where(bg, 0, 255)
+    else:  # 투명 시트: 거의 안 보이는 얼룩(알파<40)은 지우고, 거의 불투명(≥235)은 완전 불투명으로
+        al = a[..., 3]
+        a[..., 3] = np.where(al < 40, 0, np.where(al >= 235, 255, al))
     return a
 
 
