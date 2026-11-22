@@ -65,19 +65,5 @@ func _process(_d):
 			g.phase = "morning"; g.cur = {}; g.day = 6
 			main.render()
 		110: shot("11_morning_goal")
-		111:
-			g.home = "garden"; g.owned = ["bike", "hover", "freighter", "clipper", "market"]; g.view = "market"
-			main.show_home()
-		120: shot("12_home")
-		121:
-			main.close_modal()
-			g.money = 900000; g.home = "alley"; g.owned = []
-			main._map_sel = "unkyeong"
-			main.show_map()
-		130: shot("13_upper_street")
-		131:
-			main._map_sel = "workshop"
-			main.show_map()
-		140: shot("14_workshop")
-		141: quit()
+		111: quit()
 	return false

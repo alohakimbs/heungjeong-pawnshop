@@ -1846,28 +1846,6 @@ func _belong_pic(v: Control, id: String, h: float) -> void:
 	v.add_child(pr)
 
 
-## 가진 살림을 그림 카드로 한 줄에 셋씩 (그림 없으면 이름만)
-func _belong_row(v: Control, ids: Array) -> void:
-	var gr := GridContainer.new()
-	gr.columns = 3
-	gr.add_theme_constant_override("h_separation", 6)
-	gr.add_theme_constant_override("v_separation", 6)
-	v.add_child(gr)
-	for id in ids:
-		var cell := VBoxContainer.new()
-		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		cell.add_theme_constant_override("separation", 2)
-		gr.add_child(cell)
-		_belong_pic(cell, id, 86)
-		var lb := Label.new()
-		lb.text = g.belong(id)["n"]
-		lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lb.add_theme_font_size_override("font_size", 12)
-		lb.add_theme_color_override("font_color", CREAM)
-		cell.add_child(lb)
-
-
 ## 내 살림: 집 창밖 풍경 + 가진 것들. 급전이 필요하면 되팔기.
 func show_home(msg := "") -> void:
 	var v := sheet(Color("#13201d"), CREAM, Color("#c9a24a"), true, 500)
@@ -1896,10 +1874,6 @@ func show_home(msg := "") -> void:
 	if g.best_lv("ship") > 0:
 		eff.append("천문항 매물 +%d" % g.best_lv("ship"))
 	t(v, "살림 효과: " + (" · ".join(eff) if not eff.is_empty() else "아직 없음 — 운경 상단 거리·옥맥공방·천문항에서 장만"), 14, null, Color("#9fd8c6"))
-	var rides: Array = g.owned.filter(func(x): return ["ride", "ship"].has(g.belong(x).get("cat", "")))
-	if not rides.is_empty():
-		t(v, "— 탈것 · 우주선 —", 16, font_k, Color("#f3d68a"))
-		_belong_row(v, rides)
 	var mine: Array = []
 	for vid in g.owned:
 		if g.belong(vid).get("cat", "") == "view":

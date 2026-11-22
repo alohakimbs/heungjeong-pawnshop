@@ -94,7 +94,7 @@ godot/
   tests/run_tests.gd            ★ 헤드리스 테스트 진입점
   tests/bots.gd                 자동 플레이 봇(random / smart)
   tests/_shots.gd, _shots_table.gd   스크린샷 촬영 스크립트(개발용)
-  tools/store_images.py         icon.png·feature.png → 앱 아이콘(512·192·적응형)·대표 그래픽 1024x500
+  tools/store_art.gd            아이콘·대표 그래픽 생성(xvfb 필요)
 ```
 
 ## 4. 핵심 시스템 (코드 읽기 지도)
@@ -200,7 +200,7 @@ xvfb-run -a -s "-screen 0 1080x2340x24" $G --path godot --rendering-driver openg
   - `python3 tools/slice_sheets.py grid3 belong_1.png backroom,alley,canal,garden,pavilion,skygarden,cart,bike,pass godot/assets/belong`
   - `python3 tools/slice_sheets.py grid3 belong_2.png hover,limo,skiff,freighter,clipper,,,, godot/assets/belong`
 - 넣은 뒤: Godot import → `.import` 파일을 손실 압축으로 → 스크린샷으로 확인.
-- 2차 그림(`docs/art/chatgpt_handoff_2.md`: 살림 belong_1·2, 앱 아이콘, 대표 그래픽, 드라이브 「수묵_최종 › H_살림_스토어」 `1Z-125ko9RghC94wZkUTiI54xdWpSOOdR`)은 1.13.0에서 모두 적용. 아이콘·대표 그래픽은 `python3 tools/store_images.py icon.png feature.png`. 투명 시트의 옅은 얼룩(알파<40)은 slice_sheets.py가 지운다.
+- 남은 그림 지시서: `docs/art/chatgpt_handoff_2.md` (내 살림 belong_1·2, 앱 아이콘, 대표 그래픽) → 드라이브 「수묵_최종 › H_살림_스토어」(`1Z-125ko9RghC94wZkUTiI54xdWpSOOdR`). 코드는 `assets/belong/<id>.png`가 있으면 자동으로 보여 준다.
 
 **구글 드라이브 폴더 ID**
 | 폴더 | ID |
@@ -218,7 +218,7 @@ xvfb-run -a -s "-screen 0 1080x2340x24" $G --path godot --rendering-driver openg
 
 1. **휴대폰 플레이 피드백 반영** — 사용자가 테스트 APK를 해 보고 말한 것을 최우선으로.
 2. **밸런스 재조정** — 1.11.0에서 확장 3단계(가게마다)와 이전 비용 인하를 넣었다. 숙련 봇 30일 결과가 순자산 중앙값 약 1.75만 냥(1.1만~2.8만), 8명 중 7명이 첫 이전. 살림 가격(집 최대 150만, 우주선 최대 250만)이 후반 목표로 적절한지 60~120일 봇으로 확인.
-3. ~~살림 그림 넣기~~ — 1.13.0에서 완료.
+3. **살림 그림 넣기** — 사용자가 `belong_1/2.png`를 올리면 자르기(9장 참고).
 4. **APK 용량 줄이기**(약 90MB) — 큰 인물 그림 해상도 축소(표시 높이 500px 기준 1.2배면 충분), 배경 webp/손실 압축 확인, 쓰지 않는 그림(예전 SVG 대체 코드 경로) 정리.
 5. **연출** — 화면 전환, 거래 성사 도장·돈 소리 강화, 가게 확장·이전 축하 장면, 살림 장만 장면(창밖 풍경 전환).
 6. **콘텐츠** — 물건 200종(지금 83; 종류당 9개 제한 → 새 종류 추가 또는 시트 추가), 방문객 이벤트 40종(지금 17), 단골 연속 사연(며칠 이어지는 부탁 — 「이야기 장면」이 아니라 거래 의뢰 형태로).

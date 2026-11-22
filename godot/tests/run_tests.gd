@@ -506,17 +506,6 @@ func test_ui_smoke() -> void:
 			if not ItemArt.MAP.has(it[1]):
 				missing.append(it[1])
 	check(missing.is_empty(), "모든 물건에 그림 아이콘이 있음 %s" % str(missing))
-	var nobel: Array = []
-	for cat in ["home", "ride", "ship"]:
-		for b in main.D.belong[cat]:
-			if not ResourceLoader.exists("res://assets/belong/%s.png" % b["id"]):
-				nobel.append(b["id"])
-	check(nobel.is_empty(), "집·탈것·우주선 모두 살림 그림 있음 %s" % str(nobel))
-	main.g.owned = ["bike", "freighter"]
-	main.show_home()
-	check(main.modal.visible, "내 살림 화면에 탈것·우주선 그림 줄이 열림")
-	main.g.owned = []
-	main.close_modal()
 	var no_art: Array = []
 	for a in main.D.archetypes.filter(func(x): return not x.get("needs_art", false)):
 		for md in ["ok", "happy", "angry", "meh"]:

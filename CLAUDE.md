@@ -22,7 +22,7 @@
 - 화면 스크린샷: `xvfb-run -a -s "-screen 0 540x1170x24" godot --path godot --rendering-driver opengl3 --resolution 540x1170 -s res://tests/_shots.gd` → /tmp/shot_*.png
 - 드라이브 업로드: 큰 파일(APK 60MB)은 파일 참조 업로드가 안 됨 → 링크만 문서로 남긴다. 작은 이미지는 작업 폴더(/home/claude 아래)에 두고 sha256 참조로 업로드.
 - 출시용 AAB: Actions 「출시용 AAB」 수동 실행(`gh api -X POST repos/alohakimbs/heungjeong-pawnshop/actions/workflows/release.yml/dispatches -f ref=main`) → 릴리스 `aab-latest`. 업로드 키 Secrets 4개가 있으면 정식 서명.
-- 스토어 문서: `docs/store/`, 아이콘·대표 그래픽 만들기: `python3 tools/store_images.py icon.png feature.png`
+- 스토어 문서: `docs/store/`, 아이콘·그래픽 생성: `tools/store_art.gd` (xvfb 필요)
 - 개인정보처리방침 페이지(비공개 상태): https://claude.ai/artifact/2Jq7oLhZK2Nk3Y7jEGd7c6
 - 웹 프로토타입 v0.2(참고): `web/index.html`, https://claude.ai/artifact/Nk7PV3mSaa26BNdmLksho7
 
@@ -52,7 +52,7 @@
 - [x] 캐릭터 시트 20장 업로드 (2026-11-21, 폴더 1131cRcnz4He3F5laRQD7eZhhEyPQYEnJ) → `godot/assets/chars/` 75장 적용. 경매 상대 3명은 단골·손님 그림 재사용
 - [x] 물건 시트 10장 + 가게 배경 5장 업로드 → 적용 완료 (2026-11-21)
 - [x] 수묵 담채 반실사로 전체 그림 새로 그리기 41장 → 전부 적용 (2026-11-22)
-- [x] (ChatGPT) 내 살림 그림 belong_1·2 + 스토어 icon·feature — 2026-11-23 적용 완료. — `docs/art/chatgpt_handoff_2.md`, 드라이브 「수묵_최종 › H_살림_스토어」(1Z-125ko9RghC94wZkUTiI54xdWpSOOdR). 들어오면 `tools/slice_sheets.py grid3`로 잘라 `godot/assets/belong/<id>.png`(belong_1: backroom,alley,canal,garden,pavilion,skygarden,cart,bike,pass / belong_2: hover,limo,skiff,freighter,clipper), icon → assets/icon, feature → docs/store
+- [ ] (ChatGPT) 내 살림 그림 belong_1·2 + 스토어 icon·feature — `docs/art/chatgpt_handoff_2.md`, 드라이브 「수묵_최종 › H_살림_스토어」(1Z-125ko9RghC94wZkUTiI54xdWpSOOdR). 들어오면 `tools/slice_sheets.py grid3`로 잘라 `godot/assets/belong/<id>.png`(belong_1: backroom,alley,canal,garden,pavilion,skygarden,cart,bike,pass / belong_2: hover,limo,skiff,freighter,clipper), icon → assets/icon, feature → docs/store
 - [ ] (M4) 수익 모델 결정: 유료 / 광고 / 인앱
 새로 생기면 여기에 추가하고 일일 보고에도 적는다.
 
