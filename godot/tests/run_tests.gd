@@ -428,11 +428,11 @@ func test_ui_smoke() -> void:
 	main.close_modal()
 	main.render()
 	check(g.cur["stage"] == "haggle", "흥정 진행 중")
-	var stamps := 0
+	var labels2: Array = []
 	for c in main.dyn.get_children():
-		if c is Button and not c.is_queued_for_deletion() and c.text in ["제안", "최종 제안", "거절"]:
-			stamps += 1
-	check(stamps == 3, "흥정 중에만 도장 3개(제안·최종·거절)가 책상에 나옴 (%d)" % stamps)
+		if c is Button and not c.is_queued_for_deletion():
+			labels2.append(c.text)
+	check(labels2.has("제안") and labels2.has("필요 없소") and not labels2.has("최종 제안"), "흥정: 제안 도장 하나 + 필요 없소 + 수락 (최종 제안 버튼 없음)")
 	var before: int = g.neg.rounds
 	g.draft = int(g.their_price() * 0.7)
 	g.propose(g.draft)

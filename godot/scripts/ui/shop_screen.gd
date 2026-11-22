@@ -17,9 +17,9 @@ const HANJI := Color("#f1e6cb")
 const LACQUER := Color("#2b1d1f")
 const GOLD := Color("#d9a441")
 const SEAL := Color("#b8322a")
-const PRICE_POS := Vector2(110, 894)
-const COUNTER_Y := 660.0
-const DESK_Y := 772.0
+const PRICE_POS := Vector2(110, 846)
+const COUNTER_Y := 624.0
+const DESK_Y := 736.0
 
 var g: GameState
 var D
@@ -1087,13 +1087,13 @@ func _render_haggle_desk() -> void:
 	smoke.tree_exiting.connect(func(): tw.kill())
 	if g.has_staff("profiler"):
 		lbl("인내심 %d/%d" % [maxi(0, int(g.neg.patience)), int(g.neg.max_patience)], Vector2(356, y0 + 92), Vector2(140, 18), 11, Color("#7a6a5a"), font_b, HORIZONTAL_ALIGNMENT_RIGHT)
-	# 내 값: 붓글씨 숫자 + 양옆 먹 표시(−/+), 끌거나 눌러서 입력
-	var py := y0 + 108.0
-	_ink_mark(Rect2(40, py, 64, 58), false, func():
+	# 내 값: 붓글씨 숫자 + 양옆 먹 표시(−/+). 끌거나 눌러서 입력
+	var py := y0 + 96.0
+	_ink_mark(Rect2(40, py, 70, 60), false, func():
 		g.draft = maxi(10, GameState.r10(g.draft - maxf(10.0, g.their_price() * 0.05))))
-	_ink_mark(Rect2(436, py, 64, 58), true, func():
+	_ink_mark(Rect2(430, py, 70, 60), true, func():
 		g.draft = GameState.r10(g.draft + maxf(10.0, g.their_price() * 0.05)))
-	lbl(GameState.fmt(g.draft), PRICE_POS, Vector2(320, 58), 36, INK, font_k, HORIZONTAL_ALIGNMENT_CENTER)
+	lbl(GameState.fmt(g.draft), PRICE_POS, Vector2(320, 58), 38, INK, font_k, HORIZONTAL_ALIGNMENT_CENTER)
 	var ul := ColorRect.new()
 	ul.color = Color(0.16, 0.1, 0.06, 0.7)
 	ul.position = Vector2(150, py + 56)
@@ -1102,22 +1102,17 @@ func _render_haggle_desk() -> void:
 	dyn.add_child(ul)
 	var pb := hot(Rect2(110, py, 320, 60), "내 제시 가격: 좌우로 끌어 조정, 눌러서 직접 입력", func(): show_keypad())
 	pb.gui_input.connect(_on_sign_drag)
-	if int(g.stats.get("deals", 0)) < 3:
-		lbl("숫자를 좌우로 끌거나 눌러서 쓰기", Vector2(90, py + 60), Vector2(360, 18), 13, Color("#5a4a3a"), font_b, HORIZONTAL_ALIGNMENT_CENTER)
-	# 수: 손님 값 수락 + 특수 선택지 (먹글씨 줄)
-	var opts := _choices().filter(func(o): return o[0] != "관심 없소")
-	var oy := py + 80.0
-	for i in mini(opts.size(), 4):
-		var o: Array = opts[i]
-		var lone := i == opts.size() - 1 and i % 2 == 0
-		_ink_line(Rect2(40 + (i % 2) * 230, oy + (i / 2) * 36, 460 if lone else 230, 34), o[0], o[1], o.size() > 2 and o[2], 16)
-	# 책상 위: 가운데 인주 도장 하나(제안), 양옆 먹글씨(최종 제안 · 거절)
-	var sy := H - 104.0
-	_ink_line(Rect2(28, sy + 34, 150, 52), "최종 제안", func():
-		sfx.play("bell")
-		g.propose(g.draft, true), false, 21, true, true)
-	_seal_obj(Rect2(200, sy, 140, 98), "제안", Color("#93392c"), func(): g.propose(g.draft))
-	_ink_line(Rect2(362, sy + 34, 150, 52), "거절", func(): g.refuse(), false, 21, true, true)
+	# 한 줄: [필요 없소]  (제안 도장)  [그 값에 하죠] — 엄지가 닿는 가운데 높이
+	var ay := py + 84.0
+	_ink_line(Rect2(30, ay + 22, 160, 50), "필요 없소", func(): g.refuse(), false, 19, true)
+	_seal_obj(Rect2(200, ay, 140, 96), "제안", Color("#93392c"), func(): g.propose(g.draft))
+	var acc := ("빌려드리리다" if pawn else ("그 값에 팔죠" if g.cur.get("buy", false) else "그 값에 사죠"))
+	_ink_line(Rect2(350, ay + 22, 160, 50), acc, func(): g.accept(), false, 19, true)
+	# 특수 선택지(설득·속마음 읽기·가품 지적 등)는 맨 아래 작은 먹글씨로
+	var sp := _choices().filter(func(o): return o.size() > 2 and o[2])
+	for i in mini(sp.size(), 3):
+		var o: Array = sp[i]
+		_ink_line(Rect2(30 + i * 162, ay + 100, 160, 34), o[0], o[1], true, 14, true)
 
 
 ## 먹으로 그은 −/+ 표시 (글꼴에 기대지 않고 획으로)
@@ -1158,7 +1153,13 @@ func _offer_page(ch: Array) -> void:
 
 ## 책상 위 펼친 한지 장부 (버튼 판이 아니라 종이 한 장)
 func _page() -> void:
-	var r := Rect2(20, DESK_Y + 12, 500, H - DESK_Y - (128 if g.is_haggling() and g.cur.get("stage", "") == "haggle" else 36))
+	# 내용만큼만: 탁자가 보이도록 종이는 필요한 높이로
+	var hh := 200.0
+	if g.is_haggling() and g.cur.get("stage", "") == "haggle":
+		hh = 296.0 + (40.0 if _choices().any(func(o): return o.size() > 2 and o[2]) else 0.0)
+	elif g.phase == "open" and not g.cur.is_empty() and (g.cur.get("gone", false) or g.cur.get("visitor", false)):
+		hh = 60.0 + 60.0 * _choices().size()
+	var r := Rect2(20, DESK_Y + 12, 500, hh)
 	pic(_raster("page%d" % int(r.size.y), _page_svg(r.size), [0, 0, r.size.x, r.size.y]), r.position, r.size)
 
 
