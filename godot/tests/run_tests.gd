@@ -42,6 +42,7 @@ func _init() -> void:
 	test_event_effects()
 	test_later()
 	test_story()
+	test_trips()
 	test_sim_random()
 	test_sim_smart()
 	data.free()
@@ -361,6 +362,39 @@ func test_story() -> void:
 	check(g.stats.get("ending", -1) == 1 and g.story_due() == "", "결말 기록, 이후 자유 장사")
 	g.phase = "open"
 	check(g.story_due() == "", "이야기는 아침에만")
+
+
+func test_trips() -> void:
+	print("[운경 나들이]")
+	var g := GameState.new(data)
+	g.start_day()
+	check(g.can_trip(), "아침에는 나들이 가능")
+	var m := g.money
+	var r := g.trip("market")
+	check(r != "" and g.money == m - int(data.trips["market"]["fare"]), "운임을 내고 수로 장터에 다녀옴")
+	check(g.journal.has("market") and r.contains("견문록"), "처음 간 곳은 견문록에 기록")
+	check(not g.trip_offer.is_empty(), "장터에서 살 물건을 만남")
+	var n := g.inv.size()
+	check(g.trip_buy() and g.inv.size() == n + 1, "나들이 물건 사기")
+	check(not g.can_trip() and g.trip("dock") == "", "하루 한 번만")
+	g.day += 1
+	check(g.can_trip() and g.trip("dock").contains("내일"), "화물 부두: 내일 시세 소문")
+	g.day += 1
+	g.inv[0]["c"] = 0
+	g.money = 100000
+	g.trip("workshop")
+	check(int(g.inv[0]["c"]) == 1, "옥빛 정비소: 물건 상태 한 단계 수리")
+	g.day += 1
+	g.trip("ring")
+	check(not g.trip_offer.is_empty() and int(g.trip_offer["item"]["r"]) >= 0, "고리 교역항: 귀한 물건")
+	g.phase = "open"
+	check(not g.can_trip(), "영업 중엔 나들이 불가")
+	var all_ok := true
+	for k in data.trips:
+		var tp: Dictionary = data.trips[k]
+		for bad in ["조선", "한양", "결계", "청룡항", "황룡성"]:
+			all_ok = all_ok and not String(tp["d"]).contains(bad) and not String(tp["lore"]).contains(bad)
+	check(all_ok, "나들이 글은 세계관 기준 문서 범위")
 
 
 func test_later() -> void:

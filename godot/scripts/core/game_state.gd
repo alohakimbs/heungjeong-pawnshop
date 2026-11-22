@@ -47,6 +47,9 @@ var plan_buy := 0  # 오늘 남은 사러 올 손님
 var plan_sell := 0  # 오늘 남은 팔러(맡기러) 올 손님
 var later: Array = []  # 「나중에」로 미룬 손님: [{cur, neg}]
 var story_seen: Array = []  # 본 이야기 장면 id
+var trip_day := 0  # 마지막으로 나들이한 날
+var journal: Array = []  # 견문록: 가 본 곳 id
+var trip_offer: Dictionary = {}  # 나들이에서 만난 살 수 있는 물건
 var messages: Array = []  # 화면이 토스트로 띄울 메시지 큐
 
 
@@ -520,6 +523,83 @@ func accept() -> void:
 		_deal_buy(neg.offer)
 	else:
 		_deal_sell(neg.ask)
+
+
+# ---------------------------------------------------------------- 운경 나들이
+## 아침마다 한 번, 부상열차를 타고 운경 한 곳에 다녀온다. 결과 문장을 돌려준다(빈 문자열이면 못 감).
+func can_trip() -> bool:
+	return phase == "morning" and trip_day != day
+
+
+func trip(id: String) -> String:
+	if not can_trip() or not D.trips.has(id):
+		return ""
+	var t: Dictionary = D.trips[id]
+	var fare := int(t["fare"])
+	if money < fare:
+		toast("운임이 모자라요")
+		return ""
+	money -= fare
+	book("fees", fare)
+	trip_day = day
+	trip_offer = {}
+	var first := not journal.has(id)
+	if first:
+		journal.append(id)
+		xp += 10
+	var out := ""
+	match id:
+		"market":
+			var it := gen_item(0.3)
+			trip_offer = {"item": it, "price": r10(val(it, true) * rnd(0.45, 0.75))}
+			out = "좌판 할아범이 「%s」을(를) 떨이로 내놓았다. 진짜인지는 장담 못 한다나." % it["name"]
+		"ring":
+			var it2 := gen_item(0.05, 2)
+			trip_offer = {"item": it2, "price": r10(val(it2, true) * rnd(0.85, 1.05))}
+			out = "막 닿은 상선에서 낯선 「%s」이(가) 나왔다. 귀하지만 값도 만만치 않다." % it2["name"]
+		"workshop":
+			var worst: Dictionary = {}
+			for i in inv:
+				if not is_pawned(i) and int(i["c"]) < 4 and (worst.is_empty() or int(i["c"]) < int(worst["c"])):
+					worst = i
+			if worst.is_empty():
+				out = "장인이 창고를 둘러보더니 「고칠 게 없구먼」 하고 웃었다."
+			else:
+				var cost := r10(val(worst, true) * 0.06)
+				if money >= cost:
+					money -= cost
+					book("fees", cost)
+					worst["c"] = int(worst["c"]) + 1
+					out = "장인이 「%s」의 옥 부품을 갈아 끼웠다. 상태가 「%s」(으)로 좋아졌다. 수리비 %s." % [worst["name"], D.items["condition"][int(worst["c"])]["n"], fmt(cost)]
+				else:
+					out = "고칠 물건은 있는데 수리비가 모자랐다."
+		"dock":
+			var cn: String = D.items["categories"][next_up]["n"] if D.items["categories"].has(next_up) else "?"
+			out = "뱃사람들 말로는 내일 「%s」 쪽 물건이 귀해진단다. 미리 챙겨 두면 좋겠다." % cn
+		"terrace":
+			rep += 2
+			out = "회랑 정원에서 단골들과 차를 마셨다. 소문이 좋게 퍼져 평판이 조금 올랐다."
+	if first:
+		out += "\n\n[견문록에 새로 적음] " + String(t["lore"])
+	return out
+
+
+## 나들이에서 만난 물건 사기
+func trip_buy() -> bool:
+	if trip_offer.is_empty():
+		return false
+	var price := int(trip_offer["price"])
+	if money < price or inv.size() >= cap():
+		toast("돈이나 창고 자리가 모자라요")
+		return false
+	var it: Dictionary = trip_offer["item"]
+	money -= price
+	it["paid"] = price
+	inv.append(it)
+	collect(it)
+	book("bought", price)
+	trip_offer = {}
+	return true
 
 
 # ---------------------------------------------------------------- 이야기
@@ -1177,8 +1257,8 @@ func auction_next() -> bool:
 
 
 # ---------------------------------------------------------------- 저장
-const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "story_seen"]
-const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell"]
+const FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "skills", "shop", "inv", "staff", "trend", "next_up", "scams", "phase", "queue", "cur", "today", "nid", "auction_day", "auction_done", "event", "news", "won", "stats", "rel", "receipt", "draft", "upcoming", "history", "collection", "col_done", "plan_buy", "plan_sell", "later", "story_seen", "trip_day", "journal", "trip_offer"]
+const INT_FIELDS := ["money", "day", "rep", "xp", "lv", "sp", "shop", "queue", "nid", "auction_day", "draft", "plan_buy", "plan_sell", "trip_day"]
 
 
 func to_dict() -> Dictionary:

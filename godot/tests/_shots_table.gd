@@ -35,5 +35,18 @@ func _process(_d):
 			g.stats["tut"] = []
 			main._tutorial()
 		40: shot("tut")
-		41: quit()
+		41:
+			main.close_modal()
+			g.phase = "morning"; g.cur = {}; g.trip_day = 0
+			main.render()
+		45: shot("morning")
+		46:
+			main._map_sel = "ring"
+			main.show_map()
+		52: shot("map")
+		53:
+			var r = g.trip("ring")
+			main.show_map(r)
+		60: shot("map_result")
+		61: quit()
 	return false

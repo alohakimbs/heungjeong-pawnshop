@@ -1373,7 +1373,9 @@ func _board(rect: Rect2, text: String, cb: Callable, fs := 40, raw := false) -> 
 # ---------------------------------------------------------------- 아침·밤
 func _render_morning() -> void:
 	_render_newspaper()
-	_plaque(Rect2(120, DESK_Y + 120, 300, 150), "閉 · 닫힘", "패를 뒤집어 문을 엽니다", func(): g.flip_open())
+	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "閉 · 닫힘", "패를 뒤집어 문을 엽니다", func(): g.flip_open())
+	var went := not g.can_trip()
+	_jbtn(Rect2(120, DESK_Y + 300, 300, 50), "오늘 나들이는 다녀왔소" if went else "운경 나들이 · 부상열차", func(): show_map(), "dark" if went else "jade", 18)
 
 
 ## 아침 방문(榜文): 「은하 일보」. 시세·경매·구인·팁을 붙인 종이 쪽지.
@@ -1468,6 +1470,152 @@ func _render_newspaper() -> void:
 func _render_night() -> void:
 	lbl("오늘 장사는 여기까지", Vector2(40, 300), Vector2(460, 60), 30, HANJI, font_k, HORIZONTAL_ALIGNMENT_CENTER)
 	_plaque(Rect2(120, DESK_Y + 110, 300, 150), "마감", "패를 눌러 오늘 장부를 셈합니다", func(): show_receipt(), true)
+
+
+# ---------------------------------------------------------------- 운경 나들이 (지도)
+var _map_sel := ""
+var _map_x := -1.0
+
+
+func show_map(result := "") -> void:
+	for c in modal.get_children():
+		c.queue_free()
+	modal.visible = true
+	var vs := get_viewport_rect().size
+	var bgc := ColorRect.new()
+	bgc.color = Color("#0d0b0e")
+	bgc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	modal.add_child(bgc)
+	# 지도: 운경 전경을 좌우로 끌어 둘러본다
+	var mh := vs.y * 0.56
+	var clip := Control.new()
+	clip.position = Vector2(0, 54)
+	clip.size = Vector2(vs.x, mh)
+	clip.clip_contents = true
+	modal.add_child(clip)
+	var tex: Texture2D = load("res://assets/bg/title_city.png")
+	var mw := mh * tex.get_width() / float(tex.get_height())
+	var sc := mh / float(tex.get_height())
+	var img := TextureRect.new()
+	img.texture = tex
+	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	img.stretch_mode = TextureRect.STRETCH_SCALE
+	img.size = Vector2(mw, mh)
+	if _map_x < 0:
+		_map_x = -(mw - vs.x) * 0.35
+		if _map_sel != "" and D.trips.has(_map_sel):
+			_map_x = -(float(D.trips[_map_sel]["pos"][0]) * sc - vs.x / 2.0)
+	img.position.x = clampf(_map_x, vs.x - mw, 0)
+	clip.add_child(img)
+	clip.gui_input.connect(func(ev):
+		var dx := 0.0
+		if ev is InputEventScreenDrag:
+			dx = ev.relative.x
+		elif ev is InputEventMouseMotion and (ev.button_mask & MOUSE_BUTTON_MASK_LEFT):
+			dx = ev.relative.x
+		if dx != 0.0:
+			img.position.x = clampf(img.position.x + dx, vs.x - mw, 0)
+			_map_x = img.position.x)
+	for id in D.trips:
+		var tp: Dictionary = D.trips[id]
+		var p := Vector2(tp["pos"][0], tp["pos"][1]) * sc
+		var mk := Button.new()
+		mk.position = p - Vector2(17, 17)
+		mk.size = Vector2(34, 34)
+		mk.focus_mode = Control.FOCUS_NONE
+		var on: bool = id == _map_sel
+		var st := _jstyle(Color("#1e4a3f") if not on else Color("#9a2e22"), Color("#bff5e2") if not on else Color("#f3d68a"), 3, 17)
+		for k in ["normal", "hover", "pressed"]:
+			mk.add_theme_stylebox_override(k, st)
+		mk.text = "✓" if g.journal.has(id) else ""
+		mk.add_theme_color_override("font_color", Color("#f3d68a"))
+		mk.pressed.connect(func():
+			_map_sel = id
+			_map_x = -(p.x - vs.x / 2.0)
+			show_map())
+		img.add_child(mk)
+		var nl := Label.new()
+		nl.text = tp["n"]
+		nl.position = p + Vector2(-60, 18)
+		nl.size = Vector2(120, 22)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		nl.add_theme_font_override("font", font_k)
+		nl.add_theme_font_size_override("font_size", 14)
+		nl.add_theme_color_override("font_color", Color("#fff6dc"))
+		nl.add_theme_constant_override("outline_size", 5)
+		nl.add_theme_color_override("font_outline_color", Color("#0d1a17"))
+		img.add_child(nl)
+	# 위 제목
+	var hd := Label.new()
+	hd.text = "운경 나들이   ·   견문록 %d/%d" % [g.journal.size(), D.trips.size()]
+	hd.position = Vector2(16, 12)
+	hd.size = Vector2(vs.x - 32, 30)
+	hd.add_theme_font_override("font", font_k)
+	hd.add_theme_font_size_override("font_size", 19)
+	hd.add_theme_color_override("font_color", Color("#f3d68a"))
+	modal.add_child(hd)
+	var hint := Label.new()
+	hint.text = "← 지도를 끌어 둘러보세요 →"
+	hint.position = Vector2(0, 54 + mh - 26)
+	hint.size = Vector2(vs.x, 22)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 13)
+	hint.add_theme_color_override("font_color", Color(1, 0.96, 0.85, 0.85))
+	hint.add_theme_constant_override("outline_size", 4)
+	hint.add_theme_color_override("font_outline_color", Color("#0d1a17"))
+	modal.add_child(hint)
+	# 아래 판
+	var panel := PanelContainer.new()
+	var psb := _jstyle(Color("#13201d"), Color("#c9a24a"), 2, 8)
+	psb.set_content_margin_all(16)
+	panel.add_theme_stylebox_override("panel", psb)
+	panel.position = Vector2(12, 54 + mh + 10)
+	panel.size = Vector2(vs.x - 24, vs.y - mh - 76)
+	modal.add_child(panel)
+	var v := VBoxContainer.new()
+	v.set_meta("ink", CREAM)
+	v.add_theme_constant_override("separation", 6)
+	panel.add_child(v)
+	if result != "":
+		t(v, D.trips[_map_sel]["n"] if _map_sel != "" else "나들이", 20, font_k)
+		t(v, result, 15)
+		if not g.trip_offer.is_empty():
+			var it: Dictionary = g.trip_offer["item"]
+			var e := g.est(it)
+			t(v, "%s · %s · 감정가 %s~%s" % [D.items["rarity"][int(it["r"])]["n"], D.items["condition"][int(it["c"])]["n"], GameState.fmt(e[0]), GameState.fmt(e[1])], 14)
+			btn(v, "%s에 산다" % GameState.fmt(int(g.trip_offer["price"])), func():
+				if g.trip_buy():
+					show_map("창고에 넣었다."), Color("#9a2e22"))
+			btn(v, "지나친다", func():
+				g.trip_offer = {}
+				show_map("구경만 하고 돌아섰다."))
+		btn(v, "가게로 돌아가기", func(): close_modal())
+		_recolor_btns(v)
+		return
+	if _map_sel == "":
+		t(v, "부상열차를 타고 운경 한 곳에 다녀올 수 있습니다(하루 한 번).", 15)
+		t(v, "지도에서 옥빛 표시를 눌러 갈 곳을 고르세요.", 15)
+	else:
+		var tp2: Dictionary = D.trips[_map_sel]
+		t(v, tp2["n"], 21, font_k)
+		t(v, tp2["d"], 15)
+		if g.can_trip():
+			btn(v, "부상열차 타고 가기 · 운임 %s" % GameState.fmt(int(tp2["fare"])), func():
+				var r := g.trip(_map_sel)
+				g.save_game()
+				render()
+				show_map(r if r != "" else "운임이 모자라 다음에 가기로 했다."), Color("#9a2e22"), Color.WHITE, g.money >= int(tp2["fare"]))
+		else:
+			t(v, "오늘은 이미 다녀왔소. 내일 아침에 다시.", 14)
+	btn(v, "가게로 돌아가기", func(): close_modal())
+	_recolor_btns(v)
+
+
+## 어두운 판 위의 btn 글자를 금빛으로
+func _recolor_btns(v: Control) -> void:
+	for c in v.get_children():
+		if c is Label:
+			c.add_theme_color_override("font_color", CREAM)
 
 
 # ---------------------------------------------------------------- 이야기
