@@ -1,9 +1,9 @@
-# 흥정왕 전당포
+# 폐기된 프로젝트 — 개발 중단
 
-전당포 흥정 시뮬레이션 (Godot 4.7, 안드로이드 출시 목표).
+2026-11-24 사용자 지시에 따라 「흥정왕 전당포」 개발을 중단했다. 새 방향은 승인된 개화기 UI를 유지하는 상점 경영 게임 「한성상회」다.
 
-- `godot/` — 게임 프로젝트 (Godot 4.7로 열기)
-- `godot/data/` — 물건·손님·가게 데이터 (JSON)
-- `godot/tests/` — 헤드리스 테스트: `godot --headless --path godot -s res://tests/run_tests.gd`
-- `web/` — 웹 프로토타입 v0.2 (참고용)
-- `docs/ROADMAP.md` — 로드맵, `docs/CHANGELOG.md` — 변경 내역
+기존 코드·세계관·그림·앱 ID는 새 프로젝트의 기준이 아니다. 과거 로드맵·인수인계에 적힌 개발 재개 지시보다 이 중단 지시를 우선한다. 사용자가 명시적으로 되살리라고 지시하기 전에는 기존 게임을 수정·빌드·출시하거나 닫힌 PR을 재개하지 않는다.
+
+새 프로젝트 기준: https://drive.google.com/drive/folders/1-_H_Ixxuo3cqoPDnBGatuBoCt1-l3Th5
+
+자동 빌드·출시 워크플로는 `.github/retired-workflows/`로 옮겨 실행 대상에서 제외했다. 이전 소스와 이력은 폐기 기록으로 보관한다. GitHub 저장소 전체 Archive 설정은 별도 관리 화면 인증이 필요하며, 이 문구만으로 Archive 완료를 뜻하지 않는다.
